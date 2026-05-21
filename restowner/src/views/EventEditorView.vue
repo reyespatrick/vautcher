@@ -267,10 +267,12 @@ async function onCancelEvent() {
             <span>{{ t('editor.rebateOf') }}</span>
             <input v-model="form.rebate_value" type="number" min="0" step="any"
               class="rb-val" placeholder="20" />
-            <select v-model="form.rebate_unit" class="rb-unit">
-              <option value="percent">%</option>
-              <option value="chf">CHF</option>
-            </select>
+            <div class="rb-unit-seg">
+              <button type="button" :class="{ on: form.rebate_unit === 'percent' }"
+                @click="form.rebate_unit = 'percent'">%</button>
+              <button type="button" :class="{ on: form.rebate_unit === 'chf' }"
+                @click="form.rebate_unit = 'chf'">CHF</button>
+            </div>
           </div>
 
           <label class="toggle sub">
@@ -429,7 +431,24 @@ async function onCancelEvent() {
   flex-wrap: wrap;
 }
 .rb-val { width: 76px; text-align: center; padding: 8px 6px; }
-.rb-unit { width: 80px; padding: 8px 6px; }
+.rb-unit-seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.rb-unit-seg button {
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 9px 15px;
+  cursor: pointer;
+}
+.rb-unit-seg button + button { border-left: 1px solid var(--line); }
+.rb-unit-seg button.on { background: var(--accent); color: #fff; }
 .rebate-note {
   display: block;
   font-size: 0.8rem;
