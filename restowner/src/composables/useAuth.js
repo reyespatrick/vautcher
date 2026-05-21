@@ -88,9 +88,15 @@ supabase.auth.getSession()
     resolveInit()
   })
 
-supabase.auth.onAuthStateChange(async (_event, s) => {
+supabase.auth.onAuthStateChange((_event, s) => {
   session.value = s
-  try { await loadOwner() } catch (e) { console.error('[auth] loadOwner failed', e) }
+  // CRITICAL: never call other Supabase methods directly inside this
+  // callback — it runs while the auth lock is held, so a query would
+  // deadlock it (getSession + every query then hang). Defer with
+  // setTimeout so loadOwner runs after the lock is released.
+  setTimeout(() => {
+    loadOwner().catch((e) => console.error('[boot] auth: loadOwner failed', e))
+  }, 0)
 })
 
 export function whenAuthReady() {
