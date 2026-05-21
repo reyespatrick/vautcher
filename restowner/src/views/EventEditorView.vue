@@ -18,11 +18,13 @@ const editingId = computed(() => (route.name === 'event-edit' ? route.params.id 
 const form = ref({
   title: '', description: '', event_date: '', event_time: '',
   location: '', price: '', image_url: '/assets/photo1.jpg',
-  age_min: null, age_max: null, notify_days_before: 3,
+  age_min: null, age_max: null, points_min: null, points_max: null,
+  notify_days_before: 3,
   rebate_value: null, rebate_unit: 'percent', rebate_first_n: null,
   published: true, status: 'active'
 })
 const ageTargeted = ref(false)
+const pointsTargeted = ref(false)
 const rebateOn = ref(false)
 const rebateLimited = ref(false)
 const fileInput = ref(null)
@@ -39,12 +41,14 @@ function fillFrom(ev) {
     location: ev.location || '', price: ev.price || '',
     image_url: ev.image_url || '/assets/photo1.jpg',
     age_min: ev.age_min, age_max: ev.age_max,
+    points_min: ev.points_min, points_max: ev.points_max,
     notify_days_before: ev.notify_days_before ?? 3,
     rebate_value: ev.rebate_value, rebate_unit: ev.rebate_unit || 'percent',
     rebate_first_n: ev.rebate_first_n,
     published: ev.published, status: ev.status || 'active'
   }
   ageTargeted.value = !!(ev.age_min || ev.age_max)
+  pointsTargeted.value = !!(ev.points_min || ev.points_max)
   rebateOn.value = ev.rebate_value != null
   rebateLimited.value = ev.rebate_first_n != null
 }
@@ -135,6 +139,8 @@ async function save() {
       image_url: form.value.image_url,
       age_min: ageTargeted.value ? (Number(form.value.age_min) || null) : null,
       age_max: ageTargeted.value ? (Number(form.value.age_max) || null) : null,
+      points_min: pointsTargeted.value ? (Number(form.value.points_min) || null) : null,
+      points_max: pointsTargeted.value ? (Number(form.value.points_max) || null) : null,
       notify_days_before: null,
       rebate_value: rebateOn.value ? (Number(form.value.rebate_value) || null) : null,
       rebate_unit: form.value.rebate_unit,
@@ -264,6 +270,23 @@ async function onCancelEvent() {
           <input v-model="form.age_max" type="number" min="0" max="120" :placeholder="t('editor.ageMax')" />
         </div>
         <span v-else class="opt-help">{{ t('editor.ageOpen') }}</span>
+      </div>
+
+      <!-- Loyalty-points targeting -->
+      <div class="opt">
+        <label class="toggle">
+          <input type="checkbox" v-model="pointsTargeted" />
+          <span class="track"></span>
+          <span class="tg-text">{{ t('editor.pointsTarget') }}</span>
+        </label>
+        <div v-if="pointsTargeted">
+          <div class="row2 opt-body">
+            <input v-model="form.points_min" type="number" min="0" :placeholder="t('editor.pointsMin')" />
+            <input v-model="form.points_max" type="number" min="0" :placeholder="t('editor.pointsMax')" />
+          </div>
+          <span class="opt-help" style="margin-left:0">{{ t('editor.pointsHint') }}</span>
+        </div>
+        <span v-else class="opt-help">{{ t('editor.pointsOpen') }}</span>
       </div>
 
       <!-- Rebate -->

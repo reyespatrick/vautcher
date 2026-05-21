@@ -35,6 +35,7 @@ jobs:
             restowner/supabase/storage.sql \
             restowner/supabase/rebate-schema.sql \
             restowner/supabase/prefs-schema.sql \
+            restowner/supabase/points-schema.sql \
             app/supabase/pass-schema.sql; do
             echo "→ applying $f"
             jq -Rs '{query: .}' "$f" \

@@ -25,6 +25,14 @@ const rebateBadge = computed(() => {
   if (!v) return ''
   return props.event.rebate_unit === 'chf' ? `−${v} CHF` : `−${v}%`
 })
+
+const pointsBadge = computed(() => {
+  const { points_min, points_max } = props.event
+  if (points_min && points_max) return `${points_min}–${points_max} pts`
+  if (points_min) return `≥${points_min} pts`
+  if (points_max) return `≤${points_max} pts`
+  return ''
+})
 </script>
 
 <template>
@@ -42,6 +50,7 @@ const rebateBadge = computed(() => {
         <span v-else class="badge badge--off">{{ t('event.draft') }}</span>
         <span v-if="ageText" class="badge badge--age">{{ ageText }}</span>
         <span v-if="rebateBadge" class="badge badge--rebate">{{ rebateBadge }}</span>
+        <span v-if="pointsBadge" class="badge badge--age">{{ pointsBadge }}</span>
       </div>
       <p class="ev-meta">
         {{ dateText }}<template v-if="event.event_time"> · {{ event.event_time }}</template><template v-if="event.location"> · {{ event.location }}</template>
