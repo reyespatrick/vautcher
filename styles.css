@@ -1,0 +1,325 @@
+/* La Gioconda — home page mockup
+   Colors and fonts mirror the existing website
+   (restaurant-pizzeria-la-gioconda.ch) */
+
+:root {
+  --burgundy: #9e053d;
+  --burgundy-dark: #870024;
+  --ink: #1b1b1b;
+  --paper: #faf9f9;
+  --grey: #666;
+  --light-grey: #f5f5f5;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  color: var(--ink);
+  background: #fff;
+  line-height: 1.65;
+}
+
+h1, h2, h3 { font-family: 'Rufina', Georgia, serif; font-weight: 700; }
+
+a { color: inherit; text-decoration: none; }
+
+img { display: block; max-width: 100%; }
+
+.container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+.topbar .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 38px;
+}
+.topbar a { color: #fff; }
+.topbar .socials a { margin-left: 14px; }
+.topbar .socials a:hover { color: var(--burgundy); }
+
+/* ---------- Header / nav ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.07);
+}
+.site-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 96px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img { height: 70px; width: auto; }
+.brand .name {
+  font-family: 'Rufina', serif;
+  font-size: 1.5rem;
+  color: var(--burgundy);
+  line-height: 1.1;
+}
+.brand .name small {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.main-nav { display: flex; gap: 30px; }
+.main-nav a {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+.main-nav a:hover { color: var(--burgundy); border-color: var(--burgundy); }
+
+.btn {
+  display: inline-block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 13px 28px;
+  border: 2px solid var(--burgundy);
+  border-radius: 2px;
+  background: var(--burgundy);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.btn:hover { background: var(--burgundy-dark); border-color: var(--burgundy-dark); }
+.btn--ghost { background: transparent; color: var(--burgundy); }
+.btn--ghost:hover { background: var(--burgundy); color: #fff; }
+.btn--light { border-color: #fff; background: transparent; color: #fff; }
+.btn--light:hover { background: #fff; color: var(--burgundy); }
+
+.nav-toggle {
+  display: none;
+  background: none;
+  border: 0;
+  font-size: 1.6rem;
+  color: var(--burgundy);
+  cursor: pointer;
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  min-height: 78vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(rgba(20, 0, 8, 0.62), rgba(20, 0, 8, 0.62)),
+              url('assets/photo1.jpg') center/cover no-repeat;
+}
+.hero-inner { max-width: 760px; padding: 60px 24px; }
+.hero .eyebrow {
+  font-size: 0.82rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.hero h1 {
+  font-size: clamp(2.8rem, 6vw, 4.6rem);
+  line-height: 1.05;
+  margin-bottom: 16px;
+}
+.hero p.lead {
+  font-size: 1.1rem;
+  margin-bottom: 32px;
+  font-weight: 300;
+}
+.hero .actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+/* ---------- Promo strip ---------- */
+.promo {
+  background: var(--burgundy);
+  color: #fff;
+  text-align: center;
+  padding: 16px 24px;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+}
+.promo strong { font-weight: 700; }
+
+/* ---------- Section base ---------- */
+section { padding: 84px 0; }
+.section-head { text-align: center; max-width: 680px; margin: 0 auto 52px; }
+.section-head .kicker {
+  color: var(--burgundy);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.section-head h2 { font-size: clamp(2rem, 4vw, 2.8rem); margin: 12px 0 14px; }
+.section-head p { color: var(--grey); }
+.divider {
+  width: 64px;
+  height: 3px;
+  background: var(--burgundy);
+  margin: 18px auto 0;
+}
+
+/* ---------- About ---------- */
+.about { background: var(--paper); }
+.about .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+.about img { border-radius: 4px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.15); }
+.about h2 { font-size: clamp(1.9rem, 3.6vw, 2.6rem); margin-bottom: 8px; }
+.about .kicker {
+  color: var(--burgundy);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.about p { color: var(--grey); margin: 16px 0; }
+
+/* ---------- Specialties ---------- */
+.specialties .cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+.card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 38px 30px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform: translateY(-6px); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.1); }
+.card .icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: var(--burgundy);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+}
+.card h3 { font-size: 1.3rem; margin-bottom: 10px; }
+.card p { color: var(--grey); font-size: 0.95rem; }
+
+/* ---------- Gallery ---------- */
+.gallery { background: var(--paper); }
+.gallery .grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.gallery figure {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  aspect-ratio: 4 / 3;
+}
+.gallery img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+.gallery figure:hover img { transform: scale(1.08); }
+
+/* ---------- Reservation CTA ---------- */
+.reserve {
+  background: linear-gradient(rgba(20, 0, 8, 0.78), rgba(20, 0, 8, 0.78)),
+              url('assets/photo3.jpg') center/cover fixed no-repeat;
+  color: #fff;
+  text-align: center;
+}
+.reserve h2 { font-size: clamp(2rem, 4vw, 2.8rem); margin-bottom: 14px; }
+.reserve p { margin-bottom: 28px; font-weight: 300; }
+.reserve .phone {
+  font-family: 'Rufina', serif;
+  font-size: 1.6rem;
+  color: #fff;
+  display: inline-block;
+  margin-top: 6px;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  background: var(--ink);
+  color: #cfcfcf;
+  padding: 62px 0 0;
+  font-size: 0.92rem;
+}
+.site-footer .grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 44px;
+  padding-bottom: 48px;
+}
+.site-footer h4 {
+  color: #fff;
+  font-family: 'Rufina', serif;
+  font-size: 1.15rem;
+  margin-bottom: 16px;
+}
+.site-footer p { margin-bottom: 8px; }
+.site-footer a:hover { color: var(--burgundy); }
+.footer-brand img { height: 84px; margin-bottom: 14px; }
+.footer-hours span { display: block; }
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 20px 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 880px) {
+  .nav-toggle { display: block; }
+  .main-nav {
+    display: none;
+    position: absolute;
+    top: 96px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    background: #fff;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    padding: 10px 0;
+  }
+  .main-nav.open { display: flex; }
+  .main-nav a { padding: 14px 24px; border-bottom: 1px solid #f0f0f0; }
+  .header-cta { display: none; }
+  .about .grid { grid-template-columns: 1fr; gap: 30px; }
+  .specialties .cards { grid-template-columns: 1fr; }
+  .gallery .grid { grid-template-columns: repeat(2, 1fr); }
+  .site-footer .grid { grid-template-columns: 1fr; gap: 30px; }
+  .topbar .container { font-size: 0.72rem; }
+}

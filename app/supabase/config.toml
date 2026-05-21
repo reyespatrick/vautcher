@@ -1,0 +1,6 @@
+project_id = "yfyfoqrautdogivalimb"
+
+# vautcher-pass serves Apple/Safari, which send no Supabase JWT — the
+# function does its own per-route auth, so JWT verification is off.
+[functions.vautcher-pass]
+verify_jwt = false

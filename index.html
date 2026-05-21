@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Gioconda — Restaurant Pizzeria Napolitain à Cointrin</title>
+  <meta name="description" content="La Gioconda, votre restaurant napolitain à Cointrin, Genève. Pâtes fraîches, risotto à la meule de parmesan, pizzas et vins italiens." />
+
+  <!-- Fonts: Rufina + Montserrat + Poppins — all Google Fonts, SIL Open Font License (free) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rufina:wght@400;700&family=Montserrat:wght@300;400;600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="assets/logo.jpg" />
+</head>
+<body>
+
+  <!-- ===== Top bar ===== -->
+  <div class="topbar">
+    <div class="container">
+      <span>📍 Avenue Louis-Casaï 81, 1216 Cointrin &nbsp;·&nbsp; ☎ +41 22 798 96 05</span>
+      <span class="socials">
+        <a href="#" aria-label="Facebook">Facebook</a>
+        <a href="#" aria-label="Instagram">Instagram</a>
+      </span>
+    </div>
+  </div>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="#">
+        <img src="assets/logo.jpg" alt="La Gioconda" />
+        <span class="name">
+          La Gioconda
+          <small>Ristorante · Pizzeria</small>
+        </span>
+      </a>
+
+      <nav class="main-nav" id="mainNav">
+        <a href="#accueil">Accueil</a>
+        <a href="#cuisine">Notre Cuisine</a>
+        <a href="#menu">Menu</a>
+        <a href="#presentation">Présentation</a>
+        <a href="#galerie">Galerie</a>
+        <a href="#contact">Nous Contacter</a>
+      </nav>
+
+      <a class="btn header-cta" href="#contact">Réserver</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero" id="accueil">
+    <div class="hero-inner">
+      <p class="eyebrow">Cointrin · Genève</p>
+      <h1>Une part de Naples au cœur de Genève</h1>
+      <p class="lead">
+        Votre restaurant napolitain à Cointrin — cuisine italienne authentique,
+        pâtes fraîches et pizzas cuites au feu de bois.
+      </p>
+      <div class="actions">
+        <a class="btn btn--light" href="#contact">Réserver une table</a>
+        <a class="btn btn--light" href="#menu">Découvrir le menu</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Promo strip ===== -->
+  <div class="promo">
+    🍕 <strong>Pizzas à l'emporter</strong> — commandez par téléphone au
+    <strong>+41 22 798 96 05</strong> &nbsp;·&nbsp; Menu de Pâques 2026 disponible à 65 CHF
+  </div>
+
+  <!-- ===== About / Présentation ===== -->
+  <section class="about" id="presentation">
+    <div class="container grid">
+      <img src="assets/photo1.jpg" alt="Salle du restaurant La Gioconda" />
+      <div>
+        <span class="kicker">Notre Maison</span>
+        <h2>Bienvenue à La Gioconda</h2>
+        <p>
+          Située à Cointrin, notre maison représente une véritable part de Naples
+          au sein de Genève. Dans un cadre chaleureux et lumineux, nous vous
+          accueillons midi et soir pour une parenthèse gourmande aux saveurs
+          authentiques de l'Italie.
+        </p>
+        <p>
+          Produits frais, recettes traditionnelles et accueil familial : chaque
+          assiette est préparée avec passion par notre équipe.
+        </p>
+        <a class="btn btn--ghost" href="#cuisine">Notre cuisine</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Specialties / Notre Cuisine ===== -->
+  <section class="specialties" id="cuisine">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">Nos Spécialités</span>
+        <h2>Le goût de l'Italie</h2>
+        <p>Des classiques napolitains préparés sous vos yeux, avec des produits choisis.</p>
+        <div class="divider"></div>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <div class="icon">🧀</div>
+          <h3>Risotto à la meule</h3>
+          <p>
+            Notre risotto est préparé en salle et flambé dans une meule de
+            parmesan, pour une onctuosité incomparable.
+          </p>
+        </article>
+        <article class="card">
+          <div class="icon">🍝</div>
+          <h3>Pâtes fraîches</h3>
+          <p>
+            Des pâtes fraîches préparées à la commande, dans la plus pure
+            tradition artisanale italienne.
+          </p>
+        </article>
+        <article class="card">
+          <div class="icon">🍷</div>
+          <h3>Vins d'Italie</h3>
+          <p>
+            Une sélection de vins italiens pour accompagner chaque plat et
+            sublimer votre repas.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Gallery ===== -->
+  <section class="gallery" id="galerie">
+    <div class="container">
+      <div class="section-head">
+        <span class="kicker">Galerie</span>
+        <h2>L'ambiance La Gioconda</h2>
+        <p>Salle vitrée, bar à vin Da Vinci et terrasse ensoleillée.</p>
+        <div class="divider"></div>
+      </div>
+      <div class="grid">
+        <figure><img src="assets/photo1.jpg" alt="Salle vitrée" /></figure>
+        <figure><img src="assets/photo2.jpg" alt="Le bar" /></figure>
+        <figure><img src="assets/photo3.jpg" alt="La terrasse" /></figure>
+        <figure><img src="assets/photo4.jpg" alt="Da Vinci, bar à vin" /></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Reservation CTA / Menu ===== -->
+  <section class="reserve" id="menu">
+    <div class="container">
+      <h2>Réservez votre table</h2>
+      <p>
+        Ouvert 7j/7 — midi et soir. Pour une réservation ou une commande de
+        pizzas à l'emporter, contactez-nous directement.
+      </p>
+      <a class="btn btn--light" href="tel:+41227989605">Appeler le restaurant</a>
+      <div><a class="phone" href="tel:+41227989605">+41 22 798 96 05</a></div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer" id="contact">
+    <div class="container grid">
+      <div class="footer-brand">
+        <img src="assets/logo.jpg" alt="La Gioconda" />
+        <p>Votre restaurant napolitain à Cointrin, une part de Naples au cœur de Genève.</p>
+      </div>
+      <div>
+        <h4>Nous Contacter</h4>
+        <p>Avenue Louis-Casaï 81</p>
+        <p>1216 Cointrin, Genève</p>
+        <p><a href="tel:+41227989605">+41 22 798 96 05</a></p>
+        <p><a href="mailto:nicola.cassella@gmail.com">nicola.cassella@gmail.com</a></p>
+      </div>
+      <div>
+        <h4>Horaires</h4>
+        <p class="footer-hours">
+          <span>Lundi – Dimanche</span>
+          <span>11h30 – 14h00</span>
+          <span>18h30 – 23h30</span>
+        </p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        © 2026 La Gioconda — Restaurant Pizzeria. Maquette de démonstration.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile navigation toggle
+    var toggle = document.getElementById('navToggle');
+    var nav = document.getElementById('mainNav');
+    toggle.addEventListener('click', function () {
+      nav.classList.toggle('open');
+    });
+    nav.addEventListener('click', function (e) {
+      if (e.target.tagName === 'A') nav.classList.remove('open');
+    });
+  </script>
+
+</body>
+</html>

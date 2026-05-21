@@ -1,0 +1,93 @@
+/* La Gioconda web app — global styles
+   Palette & fonts mirror restaurant-pizzeria-la-gioconda.ch */
+
+:root {
+  --burgundy: #9e053d;
+  --burgundy-dark: #870024;
+  --ink: #1b1b1b;
+  --paper: #faf9f9;
+  --grey: #666;
+  --line: #e8e8e8;
+  --header-h: 64px;
+  --bottomnav-h: 64px;
+  --radius: 6px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Montserrat', 'Poppins', sans-serif;
+  color: var(--ink);
+  background: #fff;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: 'Rufina', Georgia, serif; font-weight: 700; line-height: 1.15; }
+
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+button, input, select, textarea { font-family: inherit; font-size: inherit; }
+
+.container { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+/* App scroll region sits between fixed header and bottom nav */
+.app-main {
+  padding-top: var(--header-h);
+  padding-bottom: var(--bottomnav-h);
+  min-height: 100vh;
+}
+/* On wider screens the bottom tab bar is hidden — drop its reserved space */
+@media (min-width: 721px) {
+  .app-main { padding-bottom: 0; }
+}
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 13px 26px;
+  border: 2px solid var(--burgundy);
+  border-radius: var(--radius);
+  background: var(--burgundy);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.1s;
+}
+.btn:hover { background: var(--burgundy-dark); border-color: var(--burgundy-dark); }
+.btn:active { transform: scale(0.98); }
+.btn--ghost { background: transparent; color: var(--burgundy); }
+.btn--ghost:hover { background: var(--burgundy); color: #fff; }
+.btn--light { background: transparent; border-color: #fff; color: #fff; }
+.btn--light:hover { background: #fff; color: var(--burgundy); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Section headings ---- */
+.section { padding: 56px 0; }
+.section-head { text-align: center; max-width: 620px; margin: 0 auto 36px; }
+.section-head .kicker {
+  color: var(--burgundy);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.section-head h2 { font-size: clamp(1.7rem, 4.5vw, 2.4rem); margin: 8px 0 10px; }
+.section-head p { color: var(--grey); }
+.divider { width: 56px; height: 3px; background: var(--burgundy); margin: 14px auto 0; }
+
+/* ---- Route transition ---- */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.22s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* ---- Utilities ---- */
+.text-center { text-align: center; }

@@ -1,0 +1,1397 @@
+<!doctype html >
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr"
+      class="">
+<head>
+    <meta charset="utf-8">
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+    window._currentDevice = 'desktop';
+    window.Parameters = window.Parameters || {
+        HomeUrl: 'https://www.restaurant-pizzeria-la-gioconda.ch/',
+
+        SystemID: 'EU_PRODUCTION',
+        SiteAlias: '7132478fee9f4672a01b86d09a2a064c',
+        SiteType: atob('RFVEQU9ORQ=='),
+        PublicationDate: 'Apr 01, 2026',
+        ExternalUid: '200558255',
+        IsSiteMultilingual: false,
+        InitialPostAlias: '',
+        InitialPostPageUuid: '',
+        InitialDynamicItem: '',
+        DynamicPageInfo: {
+            isDynamicPage: false,
+            base64JsonRowData: 'null',
+        },
+        InitialPageAlias: 'home',
+        InitialPageUuid: '0d902d0cd9b94c7e95fad817913bb2c1',
+        InitialPageId: '36557457',
+        InitialEncodedPageAlias: 'aG9tZQ==',
+        InitialHeaderUuid: 'e3b62c2739364d588d926131493f6ccf',
+        CurrentPageUrl: '',
+        IsCurrentHomePage: true,
+        AllowAjax: false,
+        AfterAjaxCommand: null,
+        HomeLinkText: 'Back To Home',
+        UseGalleryModule: false,
+        CurrentThemeName: 'Layout Theme',
+        ThemeVersion: '500000',
+        DefaultPageAlias: '',
+        RemoveDID: true,
+        WidgetStyleID: null,
+        IsHeaderFixed: false,
+        IsHeaderSkinny: false,
+        IsBfs: true,
+        StorePageAlias: 'null',
+        StorePagesUrls: 'e30=',
+        IsNewStore: 'false',
+        StorePath: '',
+        StoreId: 'null',
+        StoreVersion: 0,
+        StoreBaseUrl: '',
+        StoreCleanUrl: true,
+        StoreDisableScrolling: true,
+        IsStoreSuspended: false,
+        HasCustomDomain: true,
+        SimpleSite: false,
+        showCookieNotification: false,
+        cookiesNotificationMarkup: 'null',
+        translatedPageUrl: '',
+        isFastMigrationSite: false,
+        sidebarPosition: 'NA',
+        currentLanguage: 'fr',
+        currentLocale: 'fr',
+        NavItems: '{}',
+        errors: {
+            general: 'There was an error connecting to the page.<br/> Make sure you are not offline.',
+            password: 'Incorrect name/password combination',
+            tryAgain: 'Try again'
+        },
+        NavigationAreaParams: {
+            ShowBackToHomeOnInnerPages: true,
+            NavbarSize: -1,
+            NavbarLiveHomePage: 'https://www.restaurant-pizzeria-la-gioconda.ch/',
+            BlockContainerSelector: '.dmBody',
+            NavbarSelector: '#dmNav:has(a)',
+            SubNavbarSelector: '#subnav_main'
+        },
+        hasCustomCode: true,
+        planID: '1710',
+        customTemplateId: 'null',
+        siteTemplateId: 'null',
+        productId: 'DM_DIRECT',
+        disableTracking: false,
+        pageType: 'FROM_SCRATCH',
+        isRuntimeServer: true,
+        isInEditor: false,
+        hasNativeStore: false,
+        defaultLang: 'fr',
+        hamburgerMigration: null,
+        isFlexSite: false
+    };
+
+    window.Parameters.LayoutID = {};
+    window.Parameters.LayoutID[window._currentDevice] = 6;
+    window.Parameters.LayoutVariationID = {};
+    window.Parameters.LayoutVariationID[window._currentDevice] = 5;
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Injecting site-wide to the head -->
+
+
+
+
+<!-- End Injecting site-wide to the head -->
+
+<!-- Inject secured cdn script -->
+
+
+<!-- ========= Meta Tags ========= -->
+<!-- PWA settings -->
+<script>
+    function toHash(str) {
+        var hash = 5381, i = str.length;
+        while (i) {
+            hash = hash * 33 ^ str.charCodeAt(--i)
+        }
+        return hash >>> 0
+    }
+</script>
+<script>
+    (function (global) {
+    //const cacheKey = global.cacheKey;
+    const isOffline = 'onLine' in navigator && navigator.onLine === false;
+    const hasServiceWorkerSupport = 'serviceWorker' in navigator;
+    if (isOffline) {
+        console.log('offline mode');
+    }
+    if (!hasServiceWorkerSupport) {
+        console.log('service worker is not supported');
+    }
+    if (hasServiceWorkerSupport && !isOffline) {
+        window.addEventListener('load', function () {
+            const serviceWorkerPath = '/runtime-service-worker.js?v=3';
+            navigator.serviceWorker
+                .register(serviceWorkerPath, { scope: './' })
+                .then(
+                    function (registration) {
+                        // Registration was successful
+                        console.log(
+                            'ServiceWorker registration successful with scope: ',
+                            registration.scope
+                        );
+                    },
+                    function (err) {
+                        // registration failed :(
+                        console.log('ServiceWorker registration failed: ', err);
+                    }
+                )
+                .catch(function (err) {
+                    console.log(err);
+                });
+        });
+
+        // helper function to refresh the page
+        var refreshPage = (function () {
+            var refreshing;
+            return function () {
+                if (refreshing) return;
+                // prevent multiple refreshes
+                var refreshkey = 'refreshed' + location.href;
+                var prevRefresh = localStorage.getItem(refreshkey);
+                if (prevRefresh) {
+                    localStorage.removeItem(refreshkey);
+                    if (Date.now() - prevRefresh < 30000) {
+                        return; // dont go into a refresh loop
+                    }
+                }
+                refreshing = true;
+                localStorage.setItem(refreshkey, Date.now());
+                console.log('refereshing page');
+                window.location.reload();
+            };
+        })();
+
+        function messageServiceWorker(data) {
+            return new Promise(function (resolve, reject) {
+                if (navigator.serviceWorker.controller) {
+                    var worker = navigator.serviceWorker.controller;
+                    var messageChannel = new MessageChannel();
+                    messageChannel.port1.onmessage = replyHandler;
+                    worker.postMessage(data, [messageChannel.port2]);
+                    function replyHandler(event) {
+                        resolve(event.data);
+                    }
+                } else {
+                    resolve();
+                }
+            });
+        }
+    }
+})(window);
+</script>
+<!-- Add manifest -->
+<!-- End PWA settings -->
+
+
+
+<link rel="canonical" href="https://www.restaurant-pizzeria-la-gioconda.ch/">
+
+<meta id="view" name="viewport" content="initial-scale=1, minimum-scale=1, maximum-scale=5, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<!--Add favorites icons-->
+
+<link rel="icon" type="image/x-icon" href="https://de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/site_favicon_16_1686134663325.ico"/>
+
+<!-- End favorite icons -->
+<link rel="preconnect" href="https://le-de.cdn-website.com/"/>
+
+
+
+<!-- render the required CSS and JS in the head section -->
+<script id='d-js-dmapi'>
+    window.SystemID = 'EU_PRODUCTION';
+
+    if (!window.dmAPI) {
+        window.dmAPI = {
+            registerExternalRuntimeComponent: function () {
+            },
+            getCurrentDeviceType: function () {
+                return window._currentDevice;
+            },
+            runOnReady: (ns, fn) => {
+                const safeFn = dmAPI.toSafeFn(fn);
+                ns = ns || 'global_' + Math.random().toString(36).slice(2, 11);
+                const eventName = 'afterAjax.' + ns;
+
+                if (document.readyState === 'complete') {
+                    $.DM.events.off(eventName).on(eventName, safeFn);
+                    setTimeout(function () {
+                        safeFn({
+                            isAjax: false,
+                        });
+                    }, 0);
+                } else {
+                    window?.waitForDeferred?.('dmAjax', () => {
+                        $.DM.events.off(eventName).on(eventName, safeFn);
+                        safeFn({
+                            isAjax: false,
+                        });
+                    });
+                }
+            },
+            toSafeFn: (fn) => {
+                if (fn?.safe) {
+                    return fn;
+                }
+                const safeFn = function (...args) {
+                    try {
+                        return fn?.apply(null, args);
+                    } catch (e) {
+                        console.log('function failed ' + e.message);
+                    }
+                };
+                safeFn.safe = true;
+                return safeFn;
+            }
+        };
+    }
+
+    if (!window.requestIdleCallback) {
+        window.requestIdleCallback = function (fn) {
+            setTimeout(fn, 0);
+        }
+    }
+</script>
+
+<!-- loadCSS function header.jsp-->
+
+
+
+
+
+
+<script id="d-js-load-css">
+/**
+ * There are a few <link> tags with CSS resource in them that are preloaded in the page
+ * in each of those there is a "onload" handler which invokes the loadCSS callback
+ * defined here.
+ * We are monitoring 3 main CSS files - the runtime, the global and the page.
+ * When each load we check to see if we can append them all in a batch. If threre
+ * is no page css (which may happen on inner pages) then we do not wait for it
+ */
+(function () {
+  let cssLinks = {};
+  function loadCssLink(link) {
+    link.onload = null;
+    link.rel = "stylesheet";
+    link.type = "text/css";
+  }
+  
+    function checkCss() {
+      const pageCssLink = document.querySelector("[id*='CssLink']");
+      const widgetCssLink = document.querySelector("[id*='widgetCSS']");
+
+        if (cssLinks && cssLinks.runtime && cssLinks.global && (!pageCssLink || cssLinks.page) && (!widgetCssLink || cssLinks.widget)) {
+            const storedRuntimeCssLink = cssLinks.runtime;
+            const storedPageCssLink = cssLinks.page;
+            const storedGlobalCssLink = cssLinks.global;
+            const storedWidgetCssLink = cssLinks.widget;
+
+            storedGlobalCssLink.disabled = true;
+            loadCssLink(storedGlobalCssLink);
+
+            if (storedPageCssLink) {
+                storedPageCssLink.disabled = true;
+                loadCssLink(storedPageCssLink);
+            }
+
+            if(storedWidgetCssLink) {
+                storedWidgetCssLink.disabled = true;
+                loadCssLink(storedWidgetCssLink);
+            }
+
+            storedRuntimeCssLink.disabled = true;
+            loadCssLink(storedRuntimeCssLink);
+
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    storedRuntimeCssLink.disabled = false;
+                    storedGlobalCssLink.disabled = false;
+                    if (storedPageCssLink) {
+                      storedPageCssLink.disabled = false;
+                    }
+                    if (storedWidgetCssLink) {
+                      storedWidgetCssLink.disabled = false;
+                    }
+                    // (SUP-4179) Clear the accumulated cssLinks only when we're
+                    // sure that the document has finished loading and the document 
+                    // has been parsed.
+                    if(document.readyState === 'interactive') {
+                      cssLinks = null;
+                    }
+                }, 0);
+            });
+        }
+    }
+  
+
+  function loadCSS(link) {
+    try {
+      var urlParams = new URLSearchParams(window.location.search);
+      var noCSS = !!urlParams.get("nocss");
+      var cssTimeout = urlParams.get("cssTimeout") || 0;
+
+      if (noCSS) {
+        return;
+      }
+      if (link.href && link.href.includes("d-css-runtime")) {
+        cssLinks.runtime = link;
+        checkCss();
+      } else if (link.id === "siteGlobalCss") {
+        cssLinks.global = link;
+        checkCss();
+      } 
+      
+      else if (link.id && link.id.includes("CssLink")) {
+        cssLinks.page = link;
+        checkCss();
+      } else if (link.id && link.id.includes("widgetCSS")) {
+        cssLinks.widget = link;
+        checkCss();
+      }
+      
+      else {
+        requestIdleCallback(function () {
+          window.setTimeout(function () {
+            loadCssLink(link);
+          }, parseInt(cssTimeout, 10));
+        });
+      }
+    } catch (e) {
+      throw e
+    }
+  }
+  window.loadCSS = window.loadCSS || loadCSS;
+})();
+</script>
+
+
+
+<script data-role="deferred-init" type="text/javascript">
+    /* usage: window.getDeferred(<deferred name>).resolve() or window.getDeferred(<deferred name>).promise.then(...)*/
+    function Def() {
+        this.promise = new Promise((function (a, b) {
+            this.resolve = a, this.reject = b
+        }).bind(this))
+    }
+
+    const defs = {};
+    window.getDeferred = function (a) {
+        return null == defs[a] && (defs[a] = new Def), defs[a]
+    }
+    window.waitForDeferred = function (b, a, c) {
+        let d = window?.getDeferred?.(b);
+        d
+            ? d.promise.then(a)
+            : c && ["complete", "interactive"].includes(document.readyState)
+                ? setTimeout(a, 1)
+                : c
+                    ? document.addEventListener("DOMContentLoaded", a)
+                    : console.error(`Deferred  does not exist`);
+    };
+</script>
+<style id="forceCssIncludes">
+    /* This file is auto-generated from a `scss` file with the same name */
+
+.videobgwrapper{overflow:hidden;position:absolute;z-index:0;width:100%;height:100%;top:0;left:0;pointer-events:none;border-radius:inherit}.videobgframe{position:absolute;width:101%;height:100%;top:50%;left:50%;transform:translateY(-50%) translateX(-50%);object-fit:fill}#dm video.videobgframe{margin:0}@media (max-width:767px){.dmRoot .dmPhotoGallery.newPhotoGallery:not(.photo-gallery-done){min-height:80vh}}@media (min-width:1025px){.dmRoot .dmPhotoGallery.newPhotoGallery:not(.photo-gallery-done){min-height:45vh}}@media (min-width:768px) and (max-width:1024px){.responsiveTablet .dmPhotoGallery.newPhotoGallery:not(.photo-gallery-done){min-height:45vh}}#dm [data-show-on-page-only]{display:none!important}#dmRoot div.stickyHeaderFix div.site_content{margin-top:0!important}#dmRoot div.stickyHeaderFix div.hamburger-header-container{position:relative}
+    
+
+</style>
+<style id="cssVariables" type="text/css">
+    
+</style>
+
+
+<style id="hideAnimFix">
+  .dmDesktopBody:not(.editGrid) [data-anim-desktop]:not([data-anim-desktop='none']), .dmDesktopBody:not(.editGrid) [data-anim-extended] {
+    visibility: hidden;
+  }
+
+  .dmDesktopBody:not(.editGrid) .dmNewParagraph[data-anim-desktop]:not([data-anim-desktop='none']), .dmDesktopBody:not(.editGrid) .dmNewParagraph[data-anim-extended] {
+    visibility: hidden !important;
+  }
+
+  #dmRoot:not(.editGrid) .flex-element [data-anim-extended] {
+    visibility: hidden;
+  }
+
+</style>
+
+
+
+<style id="criticalCss">
+    @charset "UTF-8";.display_None,.dmPopupMask{display:none}.dmInner{min-height:100vh!important;position:relative}.dmPopup,.dmPopupMask{position:fixed;left:0}.dmDisplay_None{display:none!important}.clearfix:after{clear:both;visibility:hidden;line-height:0;height:0}.clearfix:after,.clearfix:before{content:" ";display:table}.clearfix{display:inline-block}#dm .dmWidget .icon{font-size:26px}body.dmRoot #dm .dmOuter .dmInner .dmWidget .icon.hasFontIcon{height:26px;margin-top:-13px;line-height:normal;text-align:center;background-image:none}.dmRoot .hasFontIcon{background-image:none!important}.dmPopupMask{margin:0;width:10px;z-index:1000000999;top:0}#dmRoot .dmPopup,.dmPopup,.dmPopupClose:before,[data-display-type=block]{display:block}.dmPopup{text-align:left;top:10px;width:93%;z-index:1000009999!important;box-sizing:border-box;background:#f5f5f5;overflow-y:auto;height:100%}.dmPopup .dmPopupTitle{text-align:left;font:700 19px Helvetica,Arial;margin:20px 20px 35px;color:#999}#dm .dmInner .dmWidget,#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner div,#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner h3,#dm .dmPhotoGallery.newPhotoGallery.captionAlignment-center_center .photoGalleryThumbs .caption-container .caption-inner:not(:has(>.caption-link)) div,#dm .dmPhotoGallery.newPhotoGallery.captionAlignment-center_center .photoGalleryThumbs .caption-container .caption-inner:not(:has(>.caption-link)) h3,.dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner,.dmPhotoGalleryHolder,.imageWidget a,.text-align-center{text-align:center}#dmPopup{opacity:0}.dmPopupClose,.dmPopupClose:before{position:absolute;visibility:visible}.dmPopupClose{border-radius:25px;width:27px;height:27px;z-index:1;background-color:rgba(255,255,255,.4);top:12px;right:12px}.dmPopupClose:before{font-size:20px;color:#000;top:3px;right:3px}body.dmDesktopBody:not(.mac) .data::-webkit-scrollbar{width:5px;height:5px}body.dmDesktopBody:not(.mac) .data::-webkit-scrollbar-track{background:rgba(0,0,0,.1)}body.dmDesktopBody:not(.mac) .data::-webkit-scrollbar-thumb{background:#c8c8c8;box-shadow:inset 0 1px 2px #454545;border-radius:45px}.dmRespRow.fullBleedMode>.dmRespColsWrapper{width:100%!important;max-width:100%!important}.dmRespRow.fullBleedMode{padding-left:0!important;padding-right:0!important}#dm .dmRespRow .dmRespColsWrapper{display:flex}#dm .hasBackgroundOverlay:not(.dmPopupPage):not(.layout-drawer){position:relative!important}#dm .hasBackgroundOverlay:not(.hasExtraLayerOverlay):before{display:block!important;position:absolute!important;top:0!important;left:0!important;width:100%!important;height:100%!important;content:" "!important;border-radius:inherit}#dm .dmInner .dmWidget.align-center,.align-center{margin-left:auto;margin-right:auto}body.fix-mobile-scrolling{overflow:initial}#dmRoot{text-decoration-skip-ink:none}#dm .sticky-widgets-container-global [data-element-type]{position:fixed!important}body{-webkit-overflow-scrolling:touch}@media (min-width:1025px){:root{--btn-text-font-size:16px}}nav{display:block}html{font-family:Source Sans Pro;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}h1{font-size:2em;margin:.67em 0}hr{box-sizing:content-box;height:0}img{border:0;max-width:100%;-ms-interpolation-mode:bicubic;display:inline-block}svg:not(:root){overflow:hidden}button{font-family:inherit;font-size:100%;margin:0;line-height:normal;text-transform:none;-webkit-appearance:button}button::-moz-focus-inner{border:0;padding:0}*,:after,:before{box-sizing:border-box}.dmRespRow.dmRespRowNoPadding{padding:0}.dmRespRow{padding-top:15px;padding-bottom:15px}.dmRespRow:after,.dmRespRow:before{content:" ";display:table}.dmRespRow:after{clear:both}.dmRespRow,.dmRespRow .dmRespColsWrapper{max-width:960px;position:relative;margin:0 auto;width:100%}@media screen and (min-width:1200px){.rows-1200 .dmRespRow:not(.fullBleedMode) .dmRespColsWrapper{max-width:1200px}}.dmRespRow .dmRespCol{position:relative;width:100%;display:inline-block;vertical-align:top;float:left}.dmRespRow .dmRespCol>*{max-width:100%}.dmDesktopBody .dmRespRow .large-4{position:relative;width:33.33333%}.dmDesktopBody .dmRespRow .large-8{position:relative;width:66.66667%}.dmDesktopBody .dmRespRow .large-12{position:relative;width:100%}[class*=" dm-common-icons-"]{speak:none;font-style:normal;font-weight:400;font-variant:normal;text-transform:none;line-height:1;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-family:dm-common-icons!important}.dm-common-icons-close:before{content:"\e901"}#dm div.dmContent [class*=" icon-"],[class*=" icon-"]{font-family:FontAwesome!important;font-weight:400;font-style:normal;text-decoration:inherit;-webkit-font-smoothing:antialiased}[class*=" icon-"]:before{text-decoration:none;display:inline-block;speak:none}a [class*=" icon-"]{display:inline}[class*=" icon-"]{display:inline;width:auto;height:auto;line-height:normal;vertical-align:baseline;background-image:none;background-position:0 0;background-repeat:repeat;margin-top:0}.icon-star:before{content:"\f005"}.icon-angle-right:before{content:"\f105"}.icon-angle-down:before{content:"\f107"}.animated{-webkit-animation-duration:1s;animation-duration:1s;-webkit-animation-fill-mode:both;animation-fill-mode:both}#dm .dmRespRow .dmRespCol>.dmWidget{overflow:initial}@media (min-width:768px){#dm .dmRespRow .dmRespCol>.dmWidget{width:280px;max-width:100%}#dm .sticky-widgets-container-global .dmWidget{width:230px;max-width:100%}}@media (max-width:767px){#dm .dmInner .dmWidget{width:100%}}#dm .dmInner .dmWidget:not(.displayNone){display:inline-block}#dm .dmInner .dmWidget:not(.flexButton):not(.displayNone)[data-display-type=block]{display:block}#dm .dmInner .dmWidget{text-decoration:none;margin:10px 0;clear:both;position:relative;line-height:22px;box-shadow:none;background-image:none;padding:0;height:auto;border-style:solid;white-space:nowrap}#dm .dmInner .dmWidget:after{content:"";display:inline-block;height:100%;vertical-align:middle;width:0;margin-right:-.25em}#dm .dmInner .dmWidget .iconBg{position:absolute;left:0;width:50px;top:50%;margin-top:-13px}#dm .dmWidget .text{display:inline-block;vertical-align:middle;font-size:1.125em;line-height:normal;white-space:normal;padding:10px 7px;max-width:98%}[data-hover-effect][data-hover-effect=opacity]{opacity:1}#dm .sticky-widgets-container-global [data-element-type].sticky-desktop-position-bottom,#dm .sticky-widgets-container-global [data-element-type].sticky-desktop-position-bottom-right{top:initial!important;bottom:0!important;margin-bottom:40px}#dm .sticky-widgets-container-global [data-element-type].sticky-desktop-position-bottom{right:initial!important;left:50%!important;transform:translateX(-50%);margin-left:0;margin-right:0}#dm .sticky-widgets-container-global [data-element-type].sticky-desktop-position-bottom-right{right:0!important;left:initial!important;margin-right:40px}.dmPhotoGallery .image-container{position:relative}.dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner h3{margin:0;line-height:normal;font-size:21px}.dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner .caption-text,.dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner .caption-title{max-width:100%}#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs{list-style:none;position:relative}#dm .dmPhotoGallery.newPhotoGallery.captionAlignment-center_center .photoGalleryThumbs .caption-container .caption-inner:not(:has(>.caption-link)){justify-content:center;align-items:center}#dm .dmPhotoGallery.newPhotoGallery.captionAlignment-center_center .photoGalleryThumbs .caption-container .caption-inner .caption-button{margin:10px auto}#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner{align-items:center}#dm .dmPhotoGallery.newPhotoGallery .dmPhotoGalleryHolder{width:100%;padding:0;display:none}#dm .dmPhotoGallery.newPhotoGallery .photogallery-row{display:flex}#dm .dmPhotoGallery.newPhotoGallery .photogallery-row.photogallery-hidden-row{display:none}#dm .dmPhotoGallery.newPhotoGallery .layout-container .photogallery-column{display:flex;flex-direction:column;padding:0;width:100%;margin:0}#dm .dmPhotoGallery.newPhotoGallery .layout-container .photogallery-column.column-1{width:100%}#dm .dmPhotoGallery.newPhotoGallery .layout-container .photogallery-column .photoGalleryThumbs{position:relative;overflow:hidden}#dm .dmPhotoGallery.newPhotoGallery .layout-container .photogallery-column .photoGalleryThumbs .image-container{width:100%;overflow:hidden;background:url(https://dd-cdn.multiscreensite.com/runtime-img/galleryLoader.gif) center no-repeat}#dm .dmPhotoGallery.newPhotoGallery .layout-container .photogallery-column .photoGalleryThumbs .image-container.revealed{background:0}#dm .dmPhotoGallery.newPhotoGallery .layout-container .photogallery-column .photoGalleryThumbs .image-container a{display:flex;flex-direction:column;background-size:cover;padding-top:100%}#dm .dmPhotoGallery.newPhotoGallery .layout-container .photogallery-column .photoGalleryThumbs .image-container a img{display:none!important}#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .thumbnailInnerWrapper{overflow:hidden;transform:translateZ(0)}#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .image-container{overflow:hidden}#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .image-container a{background-repeat:no-repeat;background-position:center}#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner{display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;z-index:1;background-color:rgba(255,255,255,.9);color:#333;padding:15px;height:100%;box-sizing:border-box}#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner .caption-button{margin:10px auto;max-width:100%}#dm .dmPhotoGallery.newPhotoGallery .photoGalleryThumbs .caption-container .caption-inner .caption-button .text{padding:10px 20px!important}#dm .dmPhotoGallery.newPhotoGallery.text-layout-over .photoGalleryThumbs .caption-container{height:100%;width:100%;position:absolute;top:0;left:0;padding:inherit}#dm .dmPhotoGallery.newPhotoGallery.text-layout-over .photoGalleryThumbs .caption-inner{display:flex;flex-direction:column;justify-content:center;box-sizing:border-box;min-height:0!important;padding:10px;transform:scale(1.05);opacity:0;filter:alpha(opacity=0)}.imageWidget{position:relative}.imageWidget a{font-style:italic}.imageWidget img[width][height]{height:auto}.dmNewParagraph[data-version] .text-align-center{text-align:center!important}.dmNewParagraph[data-version]{line-height:initial}.dmNewParagraph[data-version] [class*=size-]{width:auto!important;height:auto!important}.dmNewParagraph[data-version] h1,.dmNewParagraph[data-version] h2,.dmNewParagraph[data-version] p{margin-top:0;margin-bottom:0}.graphicWidget{width:200px;height:200px;margin:10px auto;text-align:center}.graphicWidget svg.svg{width:100%;height:100%;color:#000;fill:#000}img[width][height]{height:auto}*{border:0 solid #333;scrollbar-arrow-color:#fff;scrollbar-track-color:#F2F2F2;scrollbar-face-color:silver;scrollbar-highlight-color:silver;scrollbar-3dlight-color:silver;scrollbar-shadow-color:silver;scrollbar-darkshadow-color:silver;scrollbar-width:12px}body{width:100%;overflow:hidden;-webkit-text-size-adjust:100%!important;-ms-text-size-adjust:100%!important}A IMG{border:none}h1,h2,h3,ul{margin-left:0;margin-right:0}.dmInner *{-webkit-font-smoothing:antialiased}.clearfix,a,img,li,ul{vertical-align:top}#iscrollBody,#site_content{position:relative}.dmOuter{word-wrap:break-word}.dmInner{min-width:768px!important;font-size:16px;background:#fff;color:#666}.dmDesktopBody .dmInner{min-width:960px}.dmInner a{color:#463939}.dmInner ul:not(.defaultList){padding:0}.dmHeader{background:#68ccd1;color:#666;text-align:center;position:relative;width:100%;max-width:100%}DIV.dmBody{padding:0;clear:both}.dmContent{margin:0;padding:0}#site_content ul:not(.defaultList){-webkit-padding-start:0;-moz-padding-start:0;list-style-position:inside}#innerBar{position:relative;height:36px;width:100%;font-size:20px;margin:0;z-index:80}#dm .dmRespRow.dmRespRowNoPadding{padding:0}.dmRespRowsWrapper{max-width:960px;margin:0 auto}.dmRespCol>[dmle_extension]:not(:first-child){margin-top:10px}.dmLargeBody .imageWidget:not(.displayNone){display:inline-block;max-width:100%}.imageWidget:not(.displayNone) img{width:100%}h3{font-weight:400;font-size:23px}#dm .dmRespColsWrapper{display:block}.dmNewParagraph{text-align:left;margin:8px 0;padding:2px 0}.dmLargeBody .dmRespRowsWrapper>.dmRespRow .dmRespCol,.dmLargeBody .fHeader .dmRespRow .dmRespCol{padding-left:.75%;padding-right:.75%}.dmLargeBody .dmRespRowsWrapper>.dmRespRow .dmRespCol:first-child,.dmLargeBody .fHeader .dmRespRow .dmRespCol:first-child{padding-left:0;padding-right:1.5%}.dmLargeBody .dmRespRowsWrapper>.dmRespRow .dmRespCol:last-child,.dmLargeBody .fHeader .dmRespRow .dmRespCol:last-child{padding-right:0;padding-left:1.5%}#innerBar.lineInnerBar{display:table;width:100%;box-shadow:none;-webkit-box-shadow:none;-moz-box-shadow:none;font-size:20px;margin-top:30px;margin-bottom:30px;background-color:transparent;color:#666}#innerBar .titleLine{display:table-cell;vertical-align:middle;width:50%}.dmPageTitleRow:not(#innerBar){display:none}.titleLine hr{min-height:1px;background-color:rgba(102,102,102,.2)}.dmStandardDesktop{display:block}#dmFirstContainer .dmRespRowsWrapper:after,#dmFirstContainer .dmRespRowsWrapper:before{content:"";display:table}.dmInner a{outline:0;vertical-align:inherit}.dmLinksMenu>ul{display:block;margin:0;font-size:inherit}.dmStandardDesktop{margin:0 auto}.dmPhotoGalleryHolder{font-size:medium!important;margin:0;list-style:none}#dm .dmPhotoGallery .dmPhotoGalleryHolder{width:100%;padding:0}body{background-color:#eee}.main-navigation.unifiednav{-js-display:flex;display:flex;justify-content:flex-start;align-items:stretch;overflow:visible}.main-navigation.unifiednav ul{list-style:none;padding:0;margin:0;font-size:1rem}.main-navigation.unifiednav .unifiednav__container{-js-display:flex;display:flex;justify-content:flex-start;list-style:none}.main-navigation.unifiednav .unifiednav__container>.unifiednav__item-wrap{-js-display:flex;display:flex;justify-content:flex-start;position:relative;font-weight:400}.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap::after,.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap::before{content:'';align-self:center;font-weight:700}.main-navigation.unifiednav .unifiednav__container>.unifiednav__item-wrap>.unifiednav__item{-js-display:flex;display:flex;justify-content:flex-start;align-items:center;flex-direction:row;color:inherit;text-decoration:none;position:relative;padding:12px 15px;margin:0;font-weight:inherit;letter-spacing:.03em}.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item{padding:0 15px}.main-navigation.unifiednav .unifiednav__container>.unifiednav__item-wrap>.unifiednav__item .nav-item-text{white-space:nowrap}.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item .nav-item-text::after,.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item .nav-item-text::before{content:'';width:100%;height:0;border:0 solid transparent;border-top-color:currentColor;display:block;opacity:0}.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item.dmNavItemSelected .nav-item-text::after,.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item.dmNavItemSelected .nav-item-text::before{opacity:1}.main-navigation.unifiednav.effect-text-color{padding:12px 15px}.main-navigation.unifiednav.effect-text-color .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item.dmNavItemSelected{color:#9a9a9a}.main-navigation.unifiednav .unifiednav__container .unifiednav__item:not(.unifiednav__item_has-sub-nav) .icon{display:none}.main-navigation.unifiednav .unifiednav__container[data-depth]{position:absolute;top:0;left:0;flex-direction:column;opacity:0;z-index:100;background-color:#faf9f9}.main-navigation.unifiednav .unifiednav__container[data-depth='0']{top:100%;transform:translateY(-10px)}.main-navigation.unifiednav:not(.unifiednav_vertical) .unifiednav__container[data-depth='0']{left:15px}.main-navigation.unifiednav .unifiednav__container>.unifiednav__item-wrap .unifiednav__container>.unifiednav__item-wrap{flex-direction:column}.main-navigation.unifiednav .unifiednav__container[data-depth]>.unifiednav__item-wrap .unifiednav__item{padding:15px 30px 15px 15px;margin:0}.main-navigation.unifiednav .unifiednav__container[data-depth]>.unifiednav__item-wrap:not(:last-child)::after{content:''!important;width:100%;height:0;color:#ececec;align-self:center;border:0 solid currentColor}.main-navigation.unifiednav[layout-sub=submenu_horizontal_2] .unifiednav__container[data-depth]{color:#999}.main-navigation.unifiednav[layout-sub=submenu_horizontal_2] .unifiednav__container[data-depth]>.unifiednav__item-wrap:not(:last-child)::after{border-top-width:1px}.main-navigation.unifiednav .unifiednav__container>.unifiednav__item-wrap>.unifiednav__item.unifiednav__item_has-sub-nav .icon{display:initial;padding-left:10px;margin-left:0}.main-navigation.unifiednav:not(.unifiednav_vertical)>.unifiednav__container{justify-content:inherit}#dm .p_hfcontainer nav.main-navigation.unifiednav{min-width:9em!important;text-align:initial!important}#dm .main-navigation.unifiednav .unifiednav__container[data-depth]{background-color:transparent}#dm .main-navigation.unifiednav[layout-sub=submenu_horizontal_2] .unifiednav__container[data-depth]{background-color:#faf9f9}#dm .main-navigation.unifiednav .unifiednav__container[data-depth]>.unifiednav__item-wrap:not(:last-child)::after{color:#d1d1d1}#dm .main-navigation.unifiednav:not([data-nav-structure=VERTICAL])>.unifiednav__container{flex-wrap:wrap;justify-content:inherit}#dm .main-navigation.unifiednav:not([data-nav-structure=VERTICAL])>.unifiednav__container .nav-item-text::before{text-align:left}#dm .main-navigation.unifiednav:not([data-nav-structure=VERTICAL]) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::after,#dm .main-navigation.unifiednav:not([data-nav-structure=VERTICAL]) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::before{content:''}#dm .dmBody .dmRespRowsWrapper{max-width:none;background-color:transparent}.dmLargeBody .dmRespRow{width:100%;max-width:none;margin-left:0;margin-right:0;padding-left:40px;padding-right:40px}.dm-bfs.dm-layout-home div.dmInner{background-color:#fff}.dmStandardDesktop .dmHeader{background-color:#68ccd1;max-width:100%}.standardHeaderLayout .dmHeader{float:none;display:block;height:auto}#dm .dmWidget:not([data-buttonstyle]) .iconBg,.scrolltotop{display:none}.dmRespRow:not(.dmPlaceHolderRespRow) .dmRespColsWrapper .dmRespCol:not(.content-removed).empty-column{min-height:100px}.dmRespRow:not(.dmPlaceHolderRespRow) .dmRespCol:not(.content-removed).empty-column,.dmRespRow:not(.dmPlaceHolderRespRow) .dmRespCol:not(.content-removed):empty{min-height:1px}#dm div.dmContent h1{color:#666}#dm div.dmRespCol>*{line-height:normal}#dm div.dmContent h3{color:#fff;font-weight:700}#dm div.dmInner{line-height:initial}#dm div.dmInner h1,#dm div.dmInner h2,#dm div.dmInner h3{font-family:Montserrat,"Montserrat Fallback"}#dm .dmRespCol div.dmNewParagraph,#dm div.dmContent h1,#dm div.dmContent h2,#dm div.dmContent h3,#dm div.dmInner,#dm div.dmInner .dmRespCol,.dmPhotoGallery .caption-text.caption-text{font-family:Poppins,"Poppins Fallback";color:rgba(0,0,0,1)}#dm DIV.dmInner{background-repeat:no-repeat;background-image:url(https://irt-cdn.multiscreensite.com/ce0bb35f932b47bb809d0e37905542ba/dms3rep/multi/site_background_education-2087x1173.jpg);background-size:cover;background-position:50% 0}#dm div.dmOuter div.dmInner{background-position:center center;background-repeat:repeat;background-size:auto}#dm div.dmInner,#dm div.dmInner .dmRespCol{font-weight:300}.dmLargeBody .dmBody .dmRespRowsWrapper{background-color:transparent}#dm div.dmContent h1{color:rgba(255,255,255,1);direction:ltr;font-family:Rufina,"Rufina Fallback";font-weight:400;font-style:normal;text-decoration:none}#dm div.dmContent h2,#dm div.dmNewParagraph p{color:#000;direction:ltr;font-family:Rufina,"Rufina Fallback";font-style:normal}#dm div.dmContent .dmNewParagraph[data-version] h1{text-decoration:inherit}#dm div.dmContent .dmNewParagraph[data-version] h1 *,#dm div.dmContent h2{text-decoration:none}#dm div.dmContent h2{font-weight:400}#dm div.dmContent .dmNewParagraph[data-version] h2{text-decoration:inherit}#dm div.dmContent .dmNewParagraph[data-version] h2 *{text-decoration:none}#dm div.dmNewParagraph p{font-weight:300;text-decoration:none;line-height:1.6}#dm div.dmContent h1,#dm div.dmContent h2,#dm div.dmContent h3{line-height:initial}#dm div.dmContent h1{font-size:50px;line-height:1.1}#dm DIV.dmOuter DIV.dmInner{background-image:none;background-color:rgba(255,255,255,1)}#dm div.dmInner,#dm div.dmInner .dmRespCol{font-size:16px}#dm div.dmContent h3{font-size:24px}#dm div.dmContent h2{font-size:26px;line-height:1.2}.rows-1200 .dmRespRow:not(.fullBleedMode) .dmRespColsWrapper{max-width:1170px!important}#dm .dmInner div.u_hcontainer,#dm .p_hfcontainer nav.u_1112353738{float:none!important;position:relative!important;max-width:100%!important}@media all{:root{--btn-text-direction:ltr;--btn-border-r-color:var(--btn-border-color);--btn-border-l-color:var(--btn-border-color);--btn-border-b-width:var(--btn-border-width);--btn-border-width:3px;--btn-border-radius:0px;--btn-border-t-width:var(--btn-border-width);--btn-border-tl-radius:var(--btn-border-radius);--btn-border-br-radius:var(--btn-border-radius);--btn-border-bl-radius:var(--btn-border-radius);--btn-bg-color:rgba(255, 255, 255, 1);--btn-border-color:rgba(158, 5, 61, 1);--btn-border-tr-radius:var(--btn-border-radius);--btn-border-r-width:var(--btn-border-width);--btn-border-b-color:var(--btn-border-color);--btn-border-l-width:var(--btn-border-width);--btn-border-t-color:var(--btn-border-color);--btn-text-align:center;--btn-text-color:rgba(158, 5, 61, 1);--btn-text-decoration:none;--btn-text-font-weight:400;--btn-text-font-family:Rufina,"Rufina Fallback";--btn-icon-color:rgb(247, 247, 247);--btn-icon-fill:rgb(247, 247, 247);--btn-icon-wrpr-display:none;--btn-hover-border-b-color:var(--btn-hover-border-color);--btn-hover-bg:rgba(158, 5, 61, 1);--btn-hover-border-t-color:var(--btn-hover-border-color);--btn-hover-border-r-color:var(--btn-hover-border-color);--btn-hover-border-l-color:var(--btn-hover-border-color);--btn-hover-border-color:rgba(0, 0, 0, 1);--btn-hover-text-color:rgba(255, 255, 255, 1);--btn-hover-text-font-weight:var(--btn-text-font-weight);--btn-hover-text-decoration:var(--btn-text-decoration);--btn-hover-text-font-style:var(--btn-text-font-style)}}@media (min-width:768px) and (max-width:1024px){:root{--btn-text-font-size:15px}}@media (min-width:0px) and (max-width:767px){:root{--btn-text-font-size:16px}}#dm .dmWidget:not([data-buttonstyle]){border-radius:50px}#dm .dmWidget:not([data-buttonstyle]) .text{padding:10px 0}#dm div.dmInner #site_content .dmWidget{background-color:var(--btn-bg-color);border-color:var(--btn-border-color);border-bottom-color:var(--btn-border-b-color);border-left-color:var(--btn-border-l-color);border-right-color:var(--btn-border-r-color);border-top-color:var(--btn-border-t-color);border-radius:var(--btn-border-radius);border-bottom-left-radius:var(--btn-border-bl-radius);border-bottom-right-radius:var(--btn-border-br-radius);border-top-left-radius:var(--btn-border-tl-radius);border-top-right-radius:var(--btn-border-tr-radius);border-width:var(--btn-border-width);border-bottom-width:var(--btn-border-b-width);border-left-width:var(--btn-border-l-width);border-right-width:var(--btn-border-r-width);border-top-width:var(--btn-border-t-width);direction:var(--btn-text-direction);text-align:var(--btn-text-align)}#dm div.dmInner #site_content .dmWidget span.text{color:var(--btn-text-color);font-family:var(--btn-text-font-family);font-size:var(--btn-text-font-size);font-weight:var(--btn-text-font-weight);text-decoration:var(--btn-text-decoration)}#dm .p_hfcontainer .main-navigation.unifiednav:not(.unifiednav_vertical) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::after,#dm .p_hfcontainer .main-navigation.unifiednav:not(.unifiednav_vertical) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::before,#dm .p_hfcontainer .u_1112353738.main-navigation.unifiednav:not(.unifiednav_vertical) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::after,#dm .p_hfcontainer .u_1112353738.main-navigation.unifiednav:not(.unifiednav_vertical) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::before{font-size:14px!important}#dm div.dmInner #site_content .dmWidget span.icon{color:var(--btn-icon-color);fill:var(--btn-icon-fill)}#dm div.dmInner #site_content .dmWidget:not([data-buttonstyle]) .iconBg{display:var(--btn-icon-wrpr-display)}#dm .p_hfcontainer div.u_1011018909 img{border-radius:0!important;-moz-border-radius:0!important;-webkit-border-radius:0!important}#dm .p_hfcontainer .u_1112353738.main-navigation.unifiednav .unifiednav__container[data-depth="0"],#dm .p_hfcontainer .u_1112353738.main-navigation.unifiednav:not([image]) .unifiednav__container[data-depth="0"]{top:calc(100% - 0px - 0px)!important}#dm .p_hfcontainer .u_1112353738.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child) .unifiednav__container[data-depth="0"]{left:15px!important}#dm .p_hfcontainer .u_1112353738.main-navigation.unifiednav:not([data-nav-structure=VERTICAL]) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::after,#dm .p_hfcontainer .u_1112353738.main-navigation.unifiednav:not([data-nav-structure=VERTICAL]) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::before,#dm .p_hfcontainer nav.u_1112353738.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item,#dm .p_hfcontainer nav.u_1112353738.main-navigation.unifiednav .unifiednav__container[data-depth] .unifiednav__item{font-size:17px!important}#dm .p_hfcontainer nav.u_1112353738{color:#000!important}#dm .p_hfcontainer .u_1011018909{width:100%!important}#dm .dmInner div.dmHeader,#dm .dmInner div.dmHeader.u_hcontainer,#dm .dmInner div.u_hcontainer{background-color:rgba(255,255,255,1)!important;box-shadow:none!important;-moz-box-shadow:none!important;-webkit-box-shadow:none!important}#dm .p_hfcontainer nav.u_1112353738.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item{color:rgba(166,8,36,1)!important;font-family:Rufina!important}#dm .p_hfcontainer .u_1112353738.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item{padding:50px 20px 15px!important;margin:150px 0 0!important}#dm .p_hfcontainer nav.u_1112353738.main-navigation.unifiednav .unifiednav__container:not([data-depth])>.unifiednav__item-wrap>.unifiednav__item.dmNavItemSelected{color:rgba(0,0,0,1)!important}#dm .p_hfcontainer nav.u_1112353738.main-navigation.unifiednav .unifiednav__container[data-depth] .unifiednav__item{font-family:Rufina!important;color:rgba(255,255,255,1)!important}#dm .p_hfcontainer nav.u_1112353738.main-navigation.unifiednav .unifiednav__container[data-depth]{background-color:rgba(158,5,61,1)!important}#dm .p_hfcontainer nav.u_1112353738.main-navigation.unifiednav .unifiednav__container[data-depth]>.unifiednav__item-wrap:not(:last-child)::after{border-top-color:rgba(0,0,0,1)!important}div.u_1256868770 .svg{color:rgba(135,0,36,1)!important;fill:rgba(135,0,36,1)!important;width:50%!important}#dm .dmInner div.u_hcontainer{top:0!important;left:0!important;width:100%!important;height:auto!important;min-width:0!important;text-align:center!important;padding:25px 0 20px!important;margin:0 auto!important}#dm .dmInner div.dmHeader.u_hcontainer{padding-bottom:20px!important;padding-top:25px!important}#dm .dmInner div.fHeader .dmHeader[freeheader=true]{padding-top:12px!important;padding-bottom:12px!important}.fHeader #hcontainer.dmHeader[freeheader=true]{padding-top:initial!important;padding-bottom:initial!important}#dm .p_hfcontainer nav.u_1112353738.main-navigation.unifiednav:not(.unifiednav_vertical) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::after,#dm .p_hfcontainer nav.u_1112353738.main-navigation.unifiednav:not(.unifiednav_vertical) .unifiednav__container:not([data-depth])>.unifiednav__item-wrap:not(:last-child)::before{padding-top:0!important;padding-bottom:0!important;margin-top:0!important;margin-bottom:0!important}#dm .p_hfcontainer div.u_1861705244{width:auto!important;padding:0!important;margin:0!important}#dm .dmInner div.fHeader.dmHeaderContainer #hcontainer.dmHeader[freeheader=true]{margin:0!important;padding:0!important}div.u_1256868770{border-radius:50%!important;-moz-border-radius:50%!important;-webkit-border-radius:50%!important;border-color:rgba(158,5,61,1)!important;border-width:3px!important;background-color:rgba(241,241,241,1)!important;border-style:solid!important;width:50px!important;height:50px!important;margin:0 60px 60px 0!important;padding:0!important}#dm .p_hfcontainer nav.u_1112353738{top:0!important;left:0!important;width:calc(100% - 0px)!important;height:auto!important;justify-content:flex-start!important;align-items:stretch!important;min-width:25px!important;text-align:start!important;padding:0!important;margin:0!important}#dm .dmBody div.u_1243667655,#dm .p_hfcontainer div.u_1011018909{float:none!important;top:0!important;left:0!important;position:relative!important;max-width:100%!important;min-width:0!important;text-align:center!important}#dm .p_hfcontainer div.u_1246161842,#dm .p_hfcontainer div.u_1677919435{padding:0 15px!important;margin:0!important}#dm .p_hfcontainer div.u_1011018909{width:187px!important;display:block!important;height:auto!important;padding:0!important;margin:15px 0 20px auto!important}a.u_1559903397{margin:0 0 40px!important}#dm .dmBody .u_1243667655:before{opacity:.5!important;background-color:#fff!important}#dm .dmBody div.u_1243667655:before{background-color:rgba(0,0,0,1)!important;opacity:.2!important}#dm .d-page-1716942098 DIV.dmInner{background-repeat:no-repeat!important;background-size:cover!important;background-attachment:fixed!important;background-position:50% 50%!important}#dm .dmBody div.u_1620106714{margin:0!important;padding:40px!important}#dm .dmBody div.u_1647840443{background-color:rgba(0,0,0,.6)!important;margin:0!important;padding:120px 60px 100px!important}#dm .dmBody div.u_1275463448{margin:0 0 40px!important;padding:0!important}#dm .dmBody div.u_1663864603{margin:0 0 5px!important;padding:0!important}#dm .dmBody div.u_1324985601{margin:0 0 35px!important;padding:0!important}#dm .dmBody div.u_1846037807{width:auto!important;margin:0!important;padding:80px 30px 60px!important}#dm .dmBody .u_1125456263 .photoGalleryThumbs .image-container a{padding-top:642px!important}#dm .dmBody a.u_1817788641{width:158px!important;height:52px!important}#dm .dmBody div.u_1243667655{background-repeat:no-repeat!important;background-image:url(https://le-de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/opt/oo1+%2820%29-1920w.jpg),url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9TpUUqHSwo4pChOlkQFemoVShChVArtOpgcukXNGlIUlwcBdeCgx+LVQcXZ10dXAVB8APEzc1J0UVK/F9aaBHjwXE/3t173L0DhEaFaVbPBKDptplOJsRsblUMvEJAGEEMIi4zy5iTpBQ8x9c9fHy9i/Es73N/jn41bzHAJxLPMsO0iTeIZzZtg/M+cYSVZJX4nHjcpAsSP3JdafEb56LLAs+MmJn0PHGEWCx2sdLFrGRqxNPEUVXTKV/ItljlvMVZq9RY+578haG8vrLMdZojSGIRS5AgQkENZVRgI0arToqFNO0nPPzDrl8il0KuMhg5FlCFBtn1g//B726twtRkKymUAHpfHOdjFAjsAs2643wfO07zBPA/A1d6x19tAPFP0usdLXoEhLeBi+uOpuwBlzvA0JMhm7Ir+WkKhQLwfkbflAMGboG+tVZv7X2cPgAZ6ip1AxwcAmNFyl73eHewu7d/z7T7+wFwJnKmZ9+MiwAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+UCDwksLkLIPkkAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAC0lEQVQI12NgAAIAAAUAAeImBZsAAAAASUVORK5CYII=)!important;width:auto!important;height:auto!important;background-attachment:fixed!important;background-size:cover!important;min-height:auto!important;margin:0!important;padding:195px 30px 95px!important}.font-size-28,.size-28{font-size:28px!important} #dm .dmPhotoGallery.newPhotoGallery .dmPhotoGalleryHolder:not(.photo-gallery-done) {display: none;} @media (max-width:767px){ [data-hidden-on-mobile] {display:none!important}}
+    .dmDesktopBody [data-anim-desktop]:not([data-anim-desktop='none']) {
+      visibility: hidden;
+    }
+
+    
+</style>
+
+
+
+<style id="fontFallbacks">
+    @font-face {
+  font-family: "Roboto Fallback";
+  src: local('Arial');
+  ascent-override: 92.6709%;
+  descent-override: 24.3871%;
+  size-adjust: 100.1106%;
+  line-gap-override: 0%;
+ }@font-face {
+  font-family: "Montserrat Fallback";
+  src: local('Arial');
+  ascent-override: 84.9466%;
+  descent-override: 22.0264%;
+  size-adjust: 113.954%;
+  line-gap-override: 0%;
+ }@font-face {
+  font-family: "Poppins Fallback";
+  src: local('Arial');
+  ascent-override: 92.326%;
+  descent-override: 30.7753%;
+  line-gap-override: 8.793%;
+  size-adjust: 113.7274%;
+}@font-face {
+  font-family: "Rufina Fallback";
+  src: local('Arial');
+  ascent-override: 89.8985%;
+  descent-override: 27.5879%;
+  size-adjust: 105.1186%;
+  line-gap-override: 0%;
+ }@font-face {
+  font-family: "Arial Fallback";
+  src: local('Arial');
+  line-gap-override: 0%;
+ }
+</style>
+
+
+<!-- End render the required css and JS in the head section -->
+
+
+
+
+
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.restaurant-pizzeria-la-gioconda.ch/">
+<script type="application/ld+json">
+    {
+        "@context" : "https://schema.org",
+        "@type" : "WebSite",
+        "name" : "NICAREST SA",
+        "url" : "https://www.restaurant-pizzeria-la-gioconda.ch/"
+    }
+</script>
+  <title>
+    La Gioconda - Votre restaurant Napolitain à Cointrin
+  </title>
+  <meta name="description" content="Bienvenue sur le site internet de la société La Gioconda-Nicarest SA située à Cointrin. Un restaurant authentique à la cuisine fraîche et maison."/>
+
+  <meta name="twitter:card" content="summary"/>
+  <meta name="twitter:title" content="La Gioconda - Votre restaurant Napolitain à Cointrin"/>
+  <meta name="twitter:description" content="Bienvenue sur le site internet de la société La Gioconda-Nicarest SA située à Cointrin. Un restaurant authentique à la cuisine fraîche et maison."/>
+  <meta property="og:description" content="Bienvenue sur le site internet de la société La Gioconda-Nicarest SA située à Cointrin. Un restaurant authentique à la cuisine fraîche et maison."/>
+  <meta property="og:title" content="La Gioconda - Votre restaurant Napolitain à Cointrin"/>
+
+
+
+
+<!-- SYS- RVVfUFJPRFVDVElPTg== -->
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<body id="dmRoot" data-page-alias="home"  class="dmRoot dmDesktopBody fix-mobile-scrolling addCanvasBorder dmResellerSite dmLargeBody "
+      style="padding:0;margin:0;"
+      
+    >
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- ========= Site Content ========= -->
+<div id="dm" class='dmwr'>
+    
+    <div class="dm_wrapper standard-var5 widgetStyle-3 standard">
+         <div dmwrapped="true" id="1901957768" class="dm-home-page" themewaschanged="true"> <div dmtemplateid="StandardLayoutMultiD" class="standardHeaderLayout dm-bfs dm-layout-home hasAnimations rows-1200 hide-back-to-top hamburger-reverse dmPageBody d-page-1716942098 inputs-css-clean dmFreeHeader" id="dm-outer-wrapper" data-page-class="1716942098" data-soch="true" data-background-parallax-selector=".dmHomeSection1, .dmSectionParallex"> <div id="dmStyle_outerContainer" class="dmOuter"> <div id="dmStyle_innerContainer" class="dmInner"> <div class="dmLayoutWrapper standard-var dmStandardDesktop"> <div> <div id="iscrollBody"> <div id="site_content"> <div class="dmHeaderContainer fHeader d-header-wrapper"> <div id="hcontainer" class="u_hcontainer dmHeader p_hfcontainer" freeheader="true" headerlayout="b58ba5b5703b4cd7b5f5f7951565dc87===horizontal-layout-5" layout="78f5c343822e4eb3aac27f4ad5d13812===header"> <div dm:templateorder="85" class="dmHeaderResp dmHeaderStack noSwitch" id="1709005236"> <div class="dmRespRow dmDefaultListContentRow u_1861705244 fullBleedChanged fullBleedMode" style="text-align:center" id="1861705244"> <div class="dmRespColsWrapper" id="1914255413"> <div class="u_1677919435 small-12 dmRespCol large-4 medium-4" id="1677919435"> <div class="u_1011018909 imageWidget align-center" data-widget-type="image" id="1011018909" data-element-type="image"> <a href="/" id="1253925820"><img src="https://le-de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/opt/oo1+%2819%29-1920w.jpg" id="1456770677" class="" data-dm-image-path="https://de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/oo1+%2819%29.jpg" width="255" height="256" alt="logo - restaurant la Gioconda" onerror="handleImageLoadError(this)"/></a> 
+</div> 
+</div> 
+ <div class="u_1246161842 dmRespCol small-12 large-8 medium-8" id="1246161842"> <span id="1630001966"></span> 
+ <nav class="u_1112353738 effect-text-color main-navigation unifiednav dmLinksMenu" role="navigation" layout-main="horizontal_nav_layout_2" layout-sub="submenu_horizontal_2" data-show-vertical-sub-items="HOVER" id="1112353738" dmle_extension="onelinksmenu" data-element-type="onelinksmenu" wr="true" icon="true" surround="true" adwords="" navigation-id="unifiedNav"> <ul role="menubar" class="unifiednav__container unav-top  " data-auto="navigation-pages"> <li role="menuitem" class=" unifiednav__item-wrap " data-auto="more-pages" data-depth="0"> <a href="/" class="unifiednav__item unav-item unav-top-item  dmNavItemSelected  dmUDNavigationItem_00  " target="" data-target-page-alias="" aria-current="page" data-auto="selected-page"> <span class="nav-item-text " data-link-text="
+         ACCUEIL
+        " data-auto="page-text-style">ACCUEIL<span class="icon icon-angle-down"></span> 
+</span> 
+</a> 
+</li> 
+ <li role="menuitem" class=" unifiednav__item-wrap " data-auto="more-pages" data-depth="0"> <a href="/notre-cuisine-italienne-de-la-gioconda" class="unifiednav__item unav-item unav-top-item  dmUDNavigationItem_010101436714  " target="" data-target-page-alias=""> <span class="nav-item-text " data-link-text="
+         NOTRE CUISINE
+        " data-auto="page-text-style">NOTRE CUISINE<span class="icon icon-angle-down"></span> 
+</span> 
+</a> 
+</li> 
+ <li role="menuitem" class=" unifiednav__item-wrap " data-auto="more-pages" data-depth="0"> <a href="/menu" class="unifiednav__item unav-item unav-top-item  dmUDNavigationItem_010101752261  " target="" data-target-page-alias=""> <span class="nav-item-text " data-link-text="
+         MENU
+        " data-auto="page-text-style">MENU<span class="icon icon-angle-down"></span> 
+</span> 
+</a> 
+</li> 
+ <li role="menuitem" class=" unifiednav__item-wrap " data-auto="more-pages" data-depth="0"> <a href="/presentation-restaurant-gioconda" class="unifiednav__item unav-item unav-top-item  dmUDNavigationItem_010101641478  " target="" data-target-page-alias=""> <span class="nav-item-text " data-link-text="
+         PRÉSENTATION
+        " data-auto="page-text-style">PR&Eacute;SENTATION<span class="icon icon-angle-down"></span> 
+</span> 
+</a> 
+</li> 
+ <li role="menuitem" aria-haspopup="true" data-sub-nav-menu="true" class=" unifiednav__item-wrap " data-auto="more-pages" data-depth="0"> <a href="#" class="unifiednav__item unav-item unav-top-item  dmUDNavigationItem_010101815917  unifiednav__item_has-sub-nav" target="" data-target-page-alias=""> <span class="nav-item-text " data-link-text="
+         GALERIE
+        " data-auto="page-text-style">GALERIE<span class="icon icon-angle-down"></span> 
+</span> 
+</a> 
+ <ul role="menu" aria-expanded="false" class="unifiednav__container unifiednav__container_sub-nav unav-sub" data-depth="0" data-auto="sub-pages"> <li role="menuitem" class=" unifiednav__item-wrap " data-auto="more-pages" data-depth="1"> <a href="/galerie/galerie-photos-interieur-du-restaurant" class="unifiednav__item unav-item   dmUDNavigationItem_010101340774  " target="" data-target-page-alias=""> <span class="nav-item-text " data-link-text="
+           GALERIE PHOTOS
+          " data-auto="page-text-style">GALERIE PHOTOS<span class="icon icon-angle-right"></span> 
+</span> 
+</a> 
+</li> 
+ <li role="menuitem" class=" unifiednav__item-wrap " data-auto="more-pages" data-depth="1"> <a href="/galerie/panorama-360-video-du-restaurant" class="unifiednav__item unav-item   dmUDNavigationItem_010101763090  " target="" data-target-page-alias=""> <span class="nav-item-text " data-link-text="
+           PANORAMA 360°
+          " data-auto="page-text-style">PANORAMA 360&deg;<span class="icon icon-angle-right"></span> 
+</span> 
+</a> 
+</li> 
+</ul> 
+</li> 
+ <li role="menuitem" class=" unifiednav__item-wrap " data-auto="more-pages" data-depth="0"> <a href="/nous-contacter-reservation-de-table" class="unifiednav__item unav-item unav-top-item  dmUDNavigationItem_010101375723  " target="" data-target-page-alias=""> <span class="nav-item-text " data-link-text="
+         NOUS CONTACTER
+        " data-auto="page-text-style">NOUS CONTACTER<span class="icon icon-angle-down"></span> 
+</span> 
+</a> 
+</li> 
+</ul> 
+</nav> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div class="dmRespRow dmRespRowStable dmRespRowNoPadding dmPageTitleRow "> <div class="dmRespColsWrapper"> <div class="large-12 dmRespCol"> <div id="innerBar" class="innerBar lineInnerBar dmDisplay_None"> <div class="titleLine display_None"><hr/></div> 
+<!-- Page title is hidden in css for new responsive sites. It is left here only so we don't break old sites. Don't copy it to new layouts --> <div id="pageTitleText"></div> 
+ <div class="titleLine display_None"><hr/></div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div dmwrapped="true" id="dmFirstContainer" class="dmBody u_dmStyle_template_home dm-home-page" themewaschanged="true"> <div id="allWrapper" class="allWrapper"><!-- navigation placeholders --> <div id="dm_content" class="dmContent" role="main"> <div dm:templateorder="170" class="dmHomeRespTmpl mainBorder dmRespRowsWrapper dmFullRowRespTmpl" id="1716942098"> <div class="u_1243667655 dmRespRow hasBackgroundOverlay dmSectionParallaxNew" style="text-align: center;" id="1243667655"> <div class="dmRespColsWrapper" id="1173148036"> <div class="u_1620106714 dmRespCol small-12 large-4 medium-4 hide-for-small empty-column" id="1620106714"></div> 
+ <div class="u_1647840443 dmRespCol small-12 large-8 medium-8" id="1647840443"> <div class="dmNewParagraph u_1663864603" data-element-type="paragraph" data-version="5" id="1663864603" style="transition: opacity 1s ease-in-out 0s;"> <h1 class="text-align-center" style="line-height: 1.1em;"><span style="font-weight: inherit; display: unset;">Restaurant la Gioconda</span><span style="display: initial;"><br/></span></h1> 
+</div> 
+ <div class="dmNewParagraph u_1324985601" data-element-type="paragraph" data-version="5" id="1324985601" style="transition: opacity 1s ease-in-out 0s;"><p class="text-align-center size-28 m-size-20" style="line-height: 1.2em;"><span class="font-size-28 m-font-size-20" style="color: rgb(255, 255, 255); font-weight: inherit; display: unset;" m-font-size-set="true">R&eacute;servation conseill&eacute;e</span></p></div> 
+ <div class="dmNewParagraph u_1275463448" data-element-type="paragraph" data-version="5" id="1275463448" style="transition: opacity 1s ease-in-out 0s;"> <h2 class="text-align-center size-28 m-size-20"><span class="font-size-28 m-font-size-20" style="color: rgb(255, 255, 255); display: unset;" m-font-size-set="true">Pizzas &agrave; l'emporter d&egrave;s CHF 10.-</span></h2> 
+</div> 
+ <a data-display-type="block" class="u_1817788641 align-center dmButtonLink dmWidget dmWwr default dmOnlyButton dmDefaultGradient" file="false" href="tel:+41227989605" data-element-type="dButtonLinkId" id="1817788641"> <span class="iconBg" aria-hidden="true" id="1688954698"> <span class="icon hasFontIcon icon-star" id="1990051202"></span> 
+</span> 
+ <span class="text" id="1950514884">Appelez-nous</span> 
+</a> 
+</div> 
+</div> 
+</div> 
+ <div class="dmRespRow u_1846037807" id="1846037807"> <div class="dmRespColsWrapper" id="1359697091"> <div class="dmRespCol large-12 medium-12 small-12 u_1895703838" id="1895703838"> <div class="dmNewParagraph u_1412067347" data-element-type="paragraph" data-version="5" id="1412067347" style="transition: opacity 1s ease-in-out 0s;"> <h2 class="text-align-center size-32 m-size-28"><span class="font-size-32 m-font-size-28" style="color: rgb(158, 5, 61); display: unset;" m-font-size-set="true">DA GIOCONDA - VOTRE RESTAURANT NAPOLITAIN &Agrave; COINTRIN</span></h2> 
+</div> 
+ <div class="dmNewParagraph u_1815892149" data-element-type="paragraph" data-version="5" id="1815892149" style="transition: opacity 1s ease-in-out 0s;"><p class="text-align-center" style="line-height: 1.6em;"><span style="font-weight: inherit; display: unset;">Situ&eacute;e &agrave; Cointrin, la Gioconda se trouve &ecirc;tre un petit bout de Naples perdu dans le canton de Gen&egrave;ve.</span></p></div> 
+ <div class="dmNewParagraph" data-element-type="paragraph" data-version="5" id="1839517517" style="transition: opacity 1s ease-in-out;"> <h2 class="text-align-center"><span style="display: unset;">D&eacute;couvrez notre menu de P&acirc;ques 2026</span></h2> 
+</div> 
+ <div class="u_1867458108 imageWidget align-center" data-element-type="image" data-widget-type="image" id="1867458108"><img src="https://le-de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/opt/Image--282-29-1920w.png" alt="Un menu sur le thème des fleurs pour Pâques 2024 « La Gioconda », proposant un repas italien au prix de 65 CHF." id="1791546206" class="" width="1084" height="1504" data-dm-image-path="https://de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/Image--282-29.png" onerror="handleImageLoadError(this)"/></div> 
+</div> 
+</div> 
+</div> 
+ <div class="dmRespRow u_1922601585" id="1922601585"> <div class="dmRespColsWrapper" id="1901586193"> <div class="dmRespCol large-12 medium-12 small-12 u_1634537656" id="1634537656"> <div class="u_1239269463 dmDividerWrapper clearfix" data-element-type="dDividerId" data-layout="divider-style-1" data-widget-version="2" id="1239269463"><hr class="dmDivider" style="border-width:2px; border-top-style:solid; color:grey;" id="1050914981"/></div> 
+</div> 
+</div> 
+</div> 
+ <div class="dmRespRow u_1880234947" id="1880234947"> <div class="dmRespColsWrapper" id="1461081059"> <div class="dmRespCol large-12 medium-12 small-12 u_1722121022" id="1722121022"> <div class="dmNewParagraph u_1593117891" data-element-type="paragraph" data-version="5" id="1593117891" style="transition: opacity 1s ease-in-out 0s;"><p class="text-align-center size-32 m-size-28" style="line-height: 1.2em;"><span class="font-size-32 m-font-size-28" style="color: rgb(255, 255, 255); display: unset;" m-font-size-set="true">NOTRE CUISINE</span><span style="display: initial;"><br/></span></p></div> 
+ <div class="dmNewParagraph u_1960296773" data-element-type="paragraph" data-version="5" id="1960296773" style="transition: opacity 1s ease-in-out 0s;"><p class="text-align-center size-26 m-size-24" style="line-height: 1.2em;"><span class="font-size-26 m-font-size-24" style="color: rgb(255, 255, 255); font-weight: inherit; display: unset;" m-font-size-set="true">Une cuisine typiquement italienne qui saura satisfaire toutes les papilles.</span></p></div> 
+ <div class="dmPhotoGallery newPhotoGallery dmPhotoGalleryResp u_1125456263 photo-gallery-done text-layout-over captionAlignment-center_center photoGallery" galleryoptionsparams="{thumbnailsPerRow: 3, rowsToShow: 3, imageScaleMethod: true}" data-desktop-layout="square" data-desktop-columns="1" data-element-type="dPhotoGalleryId" data-desktop-text-layout="over" id="1125456263" data-placeholder="false" data-rows-to-show="1"> <div class="dmPhotoGalleryHolder clearfix gallery shadowEffectToChildren gallery4inArow" id="1362986591"></div> 
+ <div class="layout-container square"> <div class="photogallery-row " data-index=""> <div class="photogallery-column column-1" data-index="0"> <div index="0" class="photoGalleryThumbs animated  " data-index="0"> <div class="thumbnailInnerWrapper" style="opacity: 1;"> <div class="image-container revealed"> <a data-dm-multisize-attr="temp" aria-label="La Gioconda - Cointrin" data-dm-force-device="mobile" class="u_1318650743" data-image-url="https://de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/oo1+%2821%29.jpg" style="background-image: url('https://le-de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/opt/oo1+%2821%29-640w.jpg');"><img id="1410587803" data-src="https://le-de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/opt/oo1+%2821%29-1920w.jpg" alt="La Gioconda - Cointrin" aria-label="La Gioconda - Cointrin" onerror="handleImageLoadError(this)"/></a> 
+</div> 
+ <div id="1738272406" class="caption-container u_1738272406" style="display:none"> <span class="caption-inner"> <a id="1256285976" class="caption-button dmWidget  clearfix u_1256285976" href="" style=""> <span class="iconBg"> <span class="icon hasFontIcon "></span> 
+</span> 
+ <span class="text">Button</span> 
+</a> 
+</span> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div class="photogallery-row  photogallery-hidden-row " data-index=""> <div class="photogallery-column column-1" data-index="1"> <div index="1" class="photoGalleryThumbs animated  " data-index="1"> <div class="thumbnailInnerWrapper" style="opacity: 1;"> <div class="image-container revealed"> <a data-dm-multisize-attr="temp" aria-label="La Gioconda - Cointrin" data-dm-force-device="mobile" class="u_1487306672" data-image-url="https://de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/oo2+%2811%29.jpg" style="background-image: url('https://le-de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/opt/oo2+%2811%29-640w.jpg');"><img id="1473190876" data-src="https://le-de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/opt/oo2+%2811%29-1920w.jpg" alt="La Gioconda - Cointrin" aria-label="La Gioconda - Cointrin" onerror="handleImageLoadError(this)"/></a> 
+</div> 
+ <div id="1518794256" class="caption-container u_1518794256" style="display:none"> <span class="caption-inner"> <a id="1617301697" class="caption-button dmWidget  clearfix u_1617301697" href="" style=""> <span class="iconBg"> <span class="icon hasFontIcon "></span> 
+</span> 
+ <span class="text">Button</span> 
+</a> 
+</span> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div class="photogallery-row  photogallery-hidden-row " data-index=""> <div class="photogallery-column column-1" data-index="2"> <div index="2" class="photoGalleryThumbs animated  " data-index="2"> <div class="thumbnailInnerWrapper" style="opacity: 1;"> <div class="image-container revealed"> <a data-dm-multisize-attr="temp" aria-label="La Gioconda - Cointrin" data-dm-force-device="mobile" class="u_1287435480" data-image-url="https://de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/oo1+%2822%29.jpg" style="background-image: url('https://le-de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/opt/oo1+%2822%29-640w.jpg');"><img id="1089616720" data-src="https://le-de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/dms3rep/multi/opt/oo1+%2822%29-1920w.jpg" alt="La Gioconda - Cointrin" aria-label="La Gioconda - Cointrin" onerror="handleImageLoadError(this)"/></a> 
+</div> 
+ <div id="1385105107" class="caption-container u_1385105107" style="display:none"> <span class="caption-inner"> <a id="1094188623" class="caption-button dmWidget  clearfix u_1094188623" href="" style=""> <span class="iconBg"> <span class="icon hasFontIcon "></span> 
+</span> 
+ <span class="text">Button</span> 
+</a> 
+</span> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div class="photoGalleryViewAll link" isall="true" data-viewall="Afficher davantage" data-viewless="Voir moins">Afficher davantage</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div class="dmRespRow u_1955459064" id="1955459064"> <div class="dmRespColsWrapper" id="1215628546"> <div class="u_1341918344 dmRespCol empty-column small-12 large-1 medium-1 hide-for-small" id="1341918344"></div> 
+ <div class="u_1900283950 dmRespCol small-12 large-10 medium-10" id="1900283950"> <div class="dmNewParagraph u_1332612857" data-element-type="paragraph" data-version="5" id="1332612857" style="transition: opacity 1s ease-in-out 0s;"><p class="text-align-center size-32 m-size-28" style="line-height: 1.2em;"><span class="font-size-32 m-font-size-28" style="color: rgb(158, 5, 61); display: initial;" m-font-size-set="true">&Agrave; COINTRIN, TOUTE L'ITALIE EST L&Agrave;...</span><span style="display: initial;"><br/></span></p></div> 
+ <div class="dmNewParagraph u_1105482030" data-element-type="paragraph" data-version="5" id="1105482030" style="transition: opacity 1s ease-in-out 0s;"><p style="line-height: 1.6em;" class="text-align-center"><span style="display: unset; font-weight: inherit;">Dans ce restaurant familial, la convivialit&eacute; est le ma&icirc;tre mot!</span><span style="display: initial;"><span class="ql-cursor">﻿</span></span></p></div> 
+ <a data-display-type="block" class="u_1162960824 align-center dmButtonLink dmWidget dmWwr default dmOnlyButton dmDefaultGradient" file="false" href="/presentation-restaurant-gioconda" data-element-type="dButtonLinkId" id="1162960824"> <span class="iconBg" aria-hidden="true" id="1637447725"> <span class="icon hasFontIcon icon-star" id="1728566994"></span> 
+</span> 
+ <span class="text" id="1492355588">En apprendre plus sur nous</span> 
+</a> 
+ <div class="u_1776294553 dmDividerWrapper clearfix" data-element-type="dDividerId" data-layout="divider-style-1" data-widget-version="2" id="1776294553"><hr class="dmDivider" style="border-width:2px; border-top-style:solid; color:grey;" id="1368779923"/></div> 
+ <div class="dmNewParagraph u_1647512193" data-element-type="paragraph" data-version="5" id="1647512193" data-styletopreserve="{" background-image":""}"=""> <h3 class="text-align-center size-26 m-size-24"><span class="font-size-26 m-font-size-24" style="color:rgb(0, 0, 0);display:unset;font-family:Rufina, 'Rufina Fallback';" m-font-size-set="true">Les points forts de La Gioconda</span></h3> 
+</div> 
+ <div class="dmRespRow u_1275631836" id="1275631836"> <div class="dmRespColsWrapper" id="1084650106"> <div class="dmRespCol large-6 medium-6 small-12" id="1200925395"> <div class="dmNewParagraph u_1566067956" data-element-type="paragraph" data-version="5" id="1566067956" style="transition: opacity 1s ease-in-out 0s;"><p class="m-size-16"><span class="m-font-size-16" m-font-size-set="true" style="display: initial; color: rgb(158, 5, 61);">Nous servo</span><span class="m-font-size-16" m-font-size-set="true" style="display: unset; color: rgb(158, 5, 61);">ns le risotto &agrave; la minute dans une meule de parmesan...</span><span style="display: initial;"><br/></span></p></div> 
+ <div class="dmNewParagraph u_1596823825" data-element-type="paragraph" data-version="5" id="1596823825" style="transition: opacity 1s ease-in-out 0s;"><p class="m-size-12 size-14"><span class="m-font-size-12 font-size-14" m-font-size-set="true" style="display: unset; font-weight: inherit;">Excellent et pr&eacute;par&eacute; sous vos yeux, le risotto au parmesan, un vrai r&eacute;gal!</span></p></div> 
+ <div class="dmNewParagraph u_1327917715" data-element-type="paragraph" data-version="5" id="1327917715" style="transition: opacity 1s ease-in-out 0s;"><p class="m-size-16"><span class="m-font-size-16" m-font-size-set="true" style="color: rgb(158, 5, 61); display: initial;">Cuisine du lundi au dimanche</span></p></div> 
+ <div class="dmNewParagraph u_1592491902" data-element-type="paragraph" data-version="5" id="1592491902" style="transition: opacity 1s ease-in-out 0s;"><p class="size-14 m-size-11"><span class="font-size-14 m-font-size-11" m-font-size-set="true" style="display: unset; font-weight: inherit;">11:30 - 14:00 18:30 - 23:30</span><span style="display: initial;"><span class="ql-cursor">﻿</span></span></p></div> 
+</div> 
+ <div class="dmRespCol large-6 medium-6 small-12" id="1521334605"> <div class="dmNewParagraph u_1842397040" data-element-type="paragraph" data-version="5" id="1842397040" style="transition: opacity 1s ease-in-out 0s;"><p class="m-size-16"><span style="display: initial; color: rgb(158, 5, 61);" m-font-size-set="true" class="m-font-size-16">Venez d&eacute;couvrir au Bar &agrave; vins</span><span style="display: initial;"><span class="ql-cursor">﻿</span></span></p></div> 
+ <div class="dmNewParagraph u_1424461835" data-element-type="paragraph" data-version="5" id="1424461835" style="" data-styletopreserve="{"background-image":""}"><p class="size-14 m-size-11"><span style="display: initial; font-weight: inherit;" class="font-size-14 m-font-size-11">Notre s&eacute;lection de crus Italiens, Fran&ccedil;ais et Genevois</span><span style="display: initial;"><span class="ql-cursor">﻿</span></span></p></div> 
+ <div class="dmNewParagraph u_1804292415" data-element-type="paragraph" data-version="5" id="1804292415" style="transition: none 0s ease 0s; text-align: left; display: block;"><p class="m-size-16"><span class="m-font-size-16" m-font-size-set="true" style="color: rgb(158, 5, 61); font-weight: inherit; display: initial;">Nos p&acirc;tes sont fra&icirc;ches, sp&eacute;cialit&eacute; de la maison, pr&eacute;par&eacute;es &agrave; la minute!</span><span style="display: initial;"><br/></span></p></div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div class="u_1525064162 dmRespCol empty-column small-12 large-1 medium-1 hide-for-small" id="1525064162"></div> 
+</div> 
+</div> 
+ <div class="dmRespRow u_1243370355" id="1243370355"> <div class="dmRespColsWrapper" id="1139445331"> <div class="u_1844340511 dmRespCol empty-column small-12 large-1 medium-1 hide-for-small" id="1844340511"></div> 
+ <div class="u_1304184926 dmRespCol small-12 large-10 medium-10" id="1304184926"> <div class="dmNewParagraph u_1858196046" data-element-type="paragraph" data-version="5" id="1858196046" style="transition: opacity 1s ease-in-out 0s;"><p class="text-align-center size-32 m-size-28" style="line-height: 1.2em; letter-spacing: 0em;"><span class="font-size-32 m-font-size-28" style="color: rgb(158, 5, 61); font-weight: inherit; display: unset;" m-font-size-set="true">NOS DIFF&Eacute;RENTES CARTES</span></p></div> 
+ <a data-display-type="block" class="u_1594277744 align-center dmButtonLink dmWidget dmWwr default dmOnlyButton dmDefaultGradient" file="false" href="/menu" data-element-type="dButtonLinkId" id="1594277744"> <span class="iconBg" aria-hidden="true" id="1163072301"> <span class="icon hasFontIcon icon-star" id="1666998712"></span> 
+</span> 
+ <span class="text" id="1871999160">Nos cartes</span> 
+</a> 
+</div> 
+ <div class="u_1790733437 dmRespCol empty-column small-12 large-1 medium-1 hide-for-small" id="1790733437"></div> 
+</div> 
+</div> 
+ <div class="dmRespRow u_1586309518" id="1586309518"> <div class="dmRespColsWrapper" id="1828498645"> <div class="dmRespCol large-12 medium-12 small-12 u_1160769154" id="1160769154"> <div class="u_1977372127 dmNewParagraph" data-element-type="paragraph" data-version="5" id="1977372127" style="transition: opacity 1s ease-in-out 0s;"><p class="m-size-20 text-align-center size-28" style="line-height: 1.2em;"><span class="m-font-size-20 font-size-28" m-font-size-set="true" style="display: unset; font-weight: inherit;">Appelez-nous maintenant:&nbsp;</span><a href="tel:+41227989605" m-font-size-set="true" class="m-font-size-20 font-size-28" style="display: unset; font-weight: inherit; color: rgb(135, 0, 36); text-decoration: none;" runtime_url="tel:+41227989605" type="call">+41 22 798 96 05</a></p></div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div class="sticky-widgets-container-global" id="1137107964"> <div class="graphicWidget u_1256868770 scrolltotop sticky-desktop-position-bottom-right sticky-mobile-position-bottom-right" data-element-type="graphic" data-widget-type="graphic" id="1256868770" data-layout="graphic-style-2"> <a id="1397353780" class="" href="#dm" file="false" aria-label="ar-arrow_drop_up"> <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 70 70" id="1248729806" class="svg u_1248729806" data-hover-effect="opacity" data-icon-name="ar-arrow_drop_up"> <polygon points="17.4,45.7 15.1,43.3 35,24.3 54.9,43.3 52.6,45.7 35,28.8 "></polygon> 
+</svg> 
+</a> 
+</div> 
+ <a data-display-type="block" class="align-center dmButtonLink dmWidget dmWwr default dmOnlyButton dmDefaultGradient sticky-mobile-position-bottom-right u_1559903397 sticky-desktop-position-bottom" file="false" href="https://mylocalina.ch/widget/?id=3c23b9b5-0c9c-4fd0-b27c-87be6bcb25b1" data-element-type="dButtonLinkId" id="1559903397" target="_blank"> <span class="iconBg" aria-hidden="true" id="1748464918"> <span class="icon hasFontIcon icon-star" id="1669264454"></span> 
+</span> 
+ <span class="text" id="1461585789">R&eacute;servation en ligne</span> 
+</a> 
+</div> 
+ <div class="dmFooterContainer"> <div id="fcontainer" class="u_fcontainer f_hcontainer dmFooter p_hfcontainer"> <div dm:templateorder="250" class="dmFooterResp generalFooter" id="1943048428"> <div class="u_1880541616 dmRespRow" id="1880541616"> <div class="dmRespColsWrapper" id="1089038323"> <div class="u_1592698893 dmRespCol small-12 large-3 medium-3" id="1592698893"> <div class="dmNewParagraph u_1622906509" data-element-type="paragraph" data-version="5" id="1622906509" style="transition: opacity 1s ease-in-out 0s;"><p class="size-13 m-size-13"><span class="font-size-13 m-font-size-13" style="display: initial; font-weight: bold; color: rgb(27, 27, 27);" m-font-size-set="true">Adresse</span><span class="font-size-13 m-font-size-13" style="display: initial; color: rgb(27, 27, 27);" m-font-size-set="true"><br/></span><span class="font-size-13 m-font-size-13" style="display: initial; color: rgb(27, 27, 27); font-weight: 800;" m-font-size-set="true">La Gioconda</span><span class="font-size-13 m-font-size-13" style="display: initial; color: rgb(27, 27, 27);" m-font-size-set="true"><br/></span><span class="font-size-13 m-font-size-13" style="display: initial; color: rgb(27, 27, 27); font-weight: 800;" m-font-size-set="true">Avenue Louis-Casa&iuml; 81</span><span class="font-size-13 m-font-size-13" style="display: initial; color: rgb(27, 27, 27);" m-font-size-set="true"><br/></span><span class="font-size-13 m-font-size-13" style="display: initial; color: rgb(27, 27, 27); font-weight: 800;" m-font-size-set="true">1216 Cointrin</span></p></div> 
+</div> 
+ <div class="u_1158211325 dmRespCol small-12 large-3 medium-3" id="1158211325"> <div class="dmNewParagraph u_1274429177" data-element-type="paragraph" data-version="5" id="1274429177" style="transition: opacity 1s ease-in-out 0s;"><p class="m-size-13 size-13" style="line-height: 1.6em;"><span class="m-font-size-13 font-size-13" m-font-size-set="true" style="font-weight: 800; display: initial; color: rgb(27, 27, 27);">T&eacute;l&eacute;phone&nbsp;</span><a href="tel:+41227989605" target="_blank" class="m-font-size-13 font-size-13" m-font-size-set="true" style="color: rgb(27, 27, 27); display: initial; font-weight: 800;"><br/></a><a href="tel:+41227989605" target="_blank" class="m-font-size-13 font-size-13" m-font-size-set="true" style="color: rgb(158, 5, 61); display: initial; font-weight: 800; text-decoration: none;">+41 22 798 96 05</a></p><p class="m-size-13 size-13" style="line-height: 1.6em;"><span class="m-font-size-13 font-size-13" m-font-size-set="true" style="display: initial; font-weight: 800;">E-mail&nbsp;</span><a href="mailto:nicola.cassella@gmail.com" target="_blank" class="m-font-size-13 font-size-13" m-font-size-set="true" style="color:rgb(158, 5, 61);font-weight:700;display:initial;font-family:Rufina, 'Rufina Fallback';"><br/></a><a href="mailto:nicola.cassella@gmail.com" target="_blank" class="m-font-size-13 font-size-13" m-font-size-set="true" style="color:rgb(158, 5, 61);font-weight:700;display:initial;text-decoration:none;font-family:Rufina, 'Rufina Fallback';">nicola.cassella@gmail.com</a></p></div> 
+</div> 
+ <div class="u_1021735304 dmRespCol small-12 large-6 medium-6" id="1021735304"> <div class="dmRespRow u_1082288825" id="1082288825"> <div class="dmRespColsWrapper" id="1961426939"> <div class="u_1573428326 dmRespCol small-12 large-4 medium-4" id="1573428326"> <div class="dmNewParagraph u_1977856468" data-element-type="paragraph" data-version="5" id="1977856468" style="transition: opacity 1s ease-in-out 0s;"><p class="size-13 m-size-13" style="line-height: 1.6em;"><span class="font-size-13 m-font-size-13" style="color: rgb(27, 27, 27); display: initial; font-weight: bold;" m-font-size-set="true">Horaires</span><span style="display: initial;"><br/></span></p></div> 
+ <div class="u_1094789980 default dmHoursOfOperation" id="1094789980" dmle_extension="open_hours" data-element-type="open_hours" time_format="24" wr="true" lang="" displaytitle="false" forcedisplay="false" icon="true" surround="true" adwords=""> <dl class="open-hours-data"> <div class="open-hours-item"> <dt day="0">Lun - Dim</dt> 
+ <dd> <span class="splitHours"> <time>11:30</time> 
+- <time>14:00</time> 
+</span> 
+ <span class="splitHours"> <time>18:30</time> 
+- <time>23:30</time> 
+</span> 
+</dd> 
+</div> 
+</dl> 
+</div> 
+ <div class="dmNewParagraph u_1700002296" data-element-type="paragraph" data-version="5" id="1700002296" style="transition: opacity 1s ease-in-out 0s;"><p class="m-size-13 size-13"><a href="/mentions-legales" runtime_url="/mentions-légales" type="page" class="m-font-size-13 font-size-13" m-font-size-set="true" style="color: rgb(158, 5, 61); display: initial; text-decoration: none; font-weight: bold;">Mentions l&eacute;gales</a></p></div> 
+</div> 
+ <div class="u_1371080783 dmRespCol small-12 large-4 medium-4" id="1371080783"> <div class="align-center text-align-center u_1806626038 dmSocialHub gapSpacing" id="1806626038" dmle_extension="social_hub" data-element-type="social_hub" wr="true" networks="" icon="true" surround="true" adwords=""> <div class="socialHubWrapper"> <div class="socialHubInnerDiv "> <a href="https://www.facebook.com/lagioconda1216/?eid=ARDzF4x4Atvsu60AOTj9yrYF3Q-U0Rj0WRKTgQK-MVhmi_oo2G6EkV_cmQJxW1OK2nwtUktXUN2073Ib" target="_blank" dm_dont_rewrite_url="true" aria-label="facebook" onclick="dm_gaq_push_event &amp;&amp; dm_gaq_push_event(&apos;socialLink&apos;, &apos;click&apos;, &apos;Facebook&apos;)"> <span class="dmSocialFacebook dm-social-icons-facebook oneIcon socialHubIcon style3" aria-hidden="true" data-hover-effect=""></span> 
+</a> 
+ <a href="https://www.instagram.com/restaurant_pizzeria_gioconda/" target="_blank" dm_dont_rewrite_url="true" aria-label="instagram" onclick="dm_gaq_push_event &amp;&amp; dm_gaq_push_event(&apos;socialLink&apos;, &apos;click&apos;, &apos;Instagram&apos;)"> <span class="dmSocialInstagram dm-social-icons-instagram oneIcon socialHubIcon style3" aria-hidden="true" data-hover-effect=""></span> 
+</a> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div class="dmRespCol large-4 medium-4 small-12 u_1554443352" id="1554443352"> <div class="dmNewParagraph u_1213722359" data-element-type="paragraph" data-version="5" id="1213722359" style="transition: opacity 1s ease-in-out 0s;"><p style="line-height: 1.6em;" class="m-size-13 size-13"><strong class="font-size-13 m-font-size-13" m-font-size-set="true" style="font-weight: 800; display: initial;">Liens utiles</strong><a href="https://www.restaurant-pizzeria-italia-geneve.ch/" rel="noopener" target="_blank" runtime_url="https://www.restaurant-pizzeria-italia-geneve.ch/" class="font-size-13 m-font-size-13" m-font-size-set="true" style="color: rgb(158, 5, 61); font-weight: 800; display: initial;"><strong><br/></strong></a><a href="https://www.restaurant-pizzeria-italia-geneve.ch/" target="_blank" runtime_url="https://www.restaurant-pizzeria-italia-geneve.ch/" class="font-size-13 m-font-size-13" m-font-size-set="true" style="color: rgb(158, 5, 61); font-weight: 800; display: initial; text-decoration: none;" type="url"><strong>Restaurant pizzeria Italia</strong></a><span style="display: initial;"><span class="ql-cursor">﻿</span></span></p></div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div class="u_1632218240 dmRespRow" style="text-align: center;" id="1632218240" data-page-element-id="1005183406" data-page-element-type="section"> <div class="dmRespColsWrapper" id="1115151000"> <div class="dmRespCol small-12 medium-12 large-12 u_1163515984" id="1163515984"> <span id="1798523528"></span> 
+ <div class="dmNewParagraph" data-element-type="paragraph" data-version="5" id="1878049253" style="transition: opacity 1s ease-in-out 0s;"><p><a href="/privacy" runtime_url="/privacy" type="page" style="text-decoration: none; color: rgb(221, 221, 221); display: initial; font-weight: normal;">D&eacute;claration relative &agrave; la protection des donn&eacute;es</a></p></div> 
+</div> 
+</div> 
+</div> 
+</div> 
+ <div id="1236746004" dmle_extension="powered_by" data-element-type="powered_by" icon="true" surround="false"></div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+</div> 
+
+    </div>
+</div>
+<!--  Add full CSS and Javascript before the close tag of the body if needed -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Google Fonts Include -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- loadCSS function fonts.jsp-->
+
+
+
+<link rel="preload" href="https://de.cdn-website.com/fonts/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Rufina:ital,wght@0,400;0,700&amp;subset=latin-ext&amp;display=swap"  as="style" fetchpriority="low" onload="loadCSS(this)" />
+
+
+
+
+
+<!-- RT CSS Include d-css-runtime-desktop-one-package-structured-global-->
+<link rel="preload" as="style" fetchpriority="low" onload="loadCSS(this)" href="https://static.cdn-website.com/mnlt/production/6455/_dm/s/rt/dist/css/d-css-runtime-desktop-one-package-structured-global.min.css" />
+
+<!-- End of RT CSS Include -->
+
+<link rel="preload" href="https://de.cdn-website.com/WIDGET_CSS/bfddcc58558ea44a1a47b013bf3ea473.css" id="widgetCSS" as="style" fetchpriority="low" onload="loadCSS(this)" />
+
+<!-- Support `img` size attributes -->
+<style>img[width][height] {
+  height: auto;
+}</style>
+
+<!-- Support showing sticky element on page only -->
+<style>
+  body[data-page-alias="home"] #dm [data-show-on-page-only="home"] {
+    display: block !important;
+  }
+</style>
+
+<!-- This is populated in Ajax navigation -->
+<style id="pageAdditionalWidgetsCss" type="text/css">
+</style>
+
+
+
+
+<!-- Site CSS -->
+<link rel="preload" href="https://de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/files/7132478fee9f4672a01b86d09a2a064c_withFlex_1.min.css?v=50" id="siteGlobalCss" as="style" fetchpriority="low" onload="loadCSS(this)" />
+
+
+
+<style id="customWidgetStyle" type="text/css">
+    
+</style>
+<style id="innerPagesStyle" type="text/css">
+    
+</style>
+
+
+<style
+        id="additionalGlobalCss" type="text/css"
+>
+</style>
+
+<!-- Page CSS -->
+<link rel="preload" href="https://de.cdn-website.com/7132478fee9f4672a01b86d09a2a064c/files/7132478fee9f4672a01b86d09a2a064c_home_withFlex_1.min.css?v=50" id="homeCssLink" as="style" fetchpriority="low" onload="loadCSS(this)" />
+
+<style id="pagestyle" type="text/css">
+    
+</style>
+
+<style id="pagestyleDevice" type="text/css">
+    
+</style>
+
+<!-- Flex Sections CSS -->
+
+
+
+
+
+<style id="globalFontSizeStyle" type="text/css">
+    .font-size-28, .size-28, .size-28 > font { font-size: 28px !important; }.font-size-32, .size-32, .size-32 > font { font-size: 32px !important; }.font-size-26, .size-26, .size-26 > font { font-size: 26px !important; }.font-size-14, .size-14, .size-14 > font { font-size: 14px !important; }.font-size-13, .size-13, .size-13 > font { font-size: 13px !important; }
+</style>
+<style id="pageFontSizeStyle" type="text/css">
+</style>
+
+<!-- ========= JS Section ========= -->
+<script>
+    var isWLR = true;
+
+    window.customWidgetsFunctions = {};
+    window.customWidgetsStrings = {};
+    window.collections = {};
+    window.currentLanguage = "FRENCH"
+    window.isSitePreview = false;
+</script>
+<script type="text/javascript">
+
+    var d_version = "production_6455";
+    var build = "2026-05-14T12_48_35";
+    window['v' + 'ersion'] = d_version;
+
+    function buildEditorParent() {
+        window.isMultiScreen = true;
+        window.editorParent = {};
+        window.previewParent = {};
+        window.assetsCacheQueryParam = "?version=2026-05-14T12_48_35";
+        try {
+            var _p = window.parent;
+            if (_p && _p.document && _p.$ && _p.$.dmfw) {
+                window.editorParent = _p;
+            } else if (_p.isSitePreview) {
+                window.previewParent = _p;
+            }
+        } catch (e) {
+
+        }
+    }
+
+    buildEditorParent();
+</script>
+
+<!-- Load jQuery -->
+<script type="text/javascript" id='d-js-jquery'
+        src="https://static.cdn-website.com/libs/jquery/jquery-3.7.0.min.js"></script>
+<!-- End Load jQuery -->
+<!-- Injecting site-wide before scripts -->
+<script id="d-js-ecwid-cb-glue" data-swh-uuid="7900fd7113d149f69fe8cf1889da9ebe">
+
+window.ec=window.ec||{},window.ec.config=ec.config||{},window.ec.config.tracking=ec.config.tracking||{},window.ec.config.tracking.ask_consent=!0;let _ecwidLoadedForCb=!1;function _acceptConsentForEcwid(e){e.preferences&&e.statistics&&!e.marketing?Ecwid.setTrackingConsent("ANALYTICS_ONLY"):!e.preferences||e.statistics||e.marketing?Ecwid.setTrackingConsent("ACCEPT"):Ecwid.setTrackingConsent("PERSONALIZATION_ONLY")}function _onEcwidLoadedCb(){Cookiebot&&Cookiebot.consented?"function"==typeof Ecwid.setTrackingConsent?_acceptConsentForEcwid(Cookiebot.consent):window.Ecwid.OnAPILoaded.add(function(){_acceptConsentForEcwid(Cookiebot.consent)}):Cookiebot&&Cookiebot.declined?Ecwid.setTrackingConsent("DECLINE"):_ecwidLoadedForCb=!0}window.addEventListener("message",e=>{"ecwid-script-loaded"===e.data.type&&_onEcwidLoadedCb()}),window.addEventListener("CookiebotOnAccept",async()=>{_ecwidLoadedForCb&&_acceptConsentForEcwid(Cookiebot.consent)},!1),window.addEventListener("CookiebotOnDecline",async()=>{_ecwidLoadedForCb&&Ecwid.setTrackingConsent("DECLINE")},!1);
+
+</script>
+<script id="CookiebotConfiguration" type="application/json" data-cookieconsent="ignore" data-swh-uuid="7900fd7113d149f69fe8cf1889da9ebe">
+
+{"TagConfiguration":[{"id":"d-js-core","ignore":true},{"id":"d-js-params","ignore":true},{"id":"d-js-jquery","ignore":true},{"id":"d-js-load-css","ignore":true},{"id":"d-js-dmapi","ignore":true},{"id":"d-js-datalayer-optimization","ignore":true}]}
+
+</script>
+<script data-cookieconsent="ignore" data-swh-uuid="7900fd7113d149f69fe8cf1889da9ebe">
+
+function _cbSetGtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],_cbSetGtag("consent","default",{"ad_personalization":"denied","ad_storage":"denied","ad_user_data":"denied","analytics_storage":"denied","functionality_storage":"denied","personalization_storage":"denied","security_storage":"denied","wait_for_update":500}),_cbSetGtag("set","ads_data_redaction",!0),_cbSetGtag("set","url_passthrough",!0)
+
+</script>
+<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="0a3a5f19-d829-473c-bb43-df2700a3e588" data-blockingmode="auto" type="text/javascript" data-swh-uuid="7900fd7113d149f69fe8cf1889da9ebe">
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="d_track_campaign">
+    (function() {
+        if (!window.location.search) {
+            return;
+        }
+        const cleanParams = window.location.search.substring(1); // Strip ?
+        const queryParams = cleanParams.split('&');
+
+        const expires = 'expires=' + new Date().getTime() + 24 * 60 * 60 * 1000;
+        const domain = 'domain=' + window.location.hostname;
+        const path = "path=/";
+
+        queryParams.forEach((param) => {
+            const [key, value = ''] = param.split('=');
+            if (key.startsWith('utm_')) {
+                const cookieName = "_dm_rt_" + key.substring(4);
+                const cookie = cookieName + "=" + value;
+                const joined = [cookie, expires, domain, path].join(";");
+                document.cookie = joined;
+            }
+        });
+    }());
+</script>
+<script type="text/javascript" >
+    var _dm_gaq = {};
+    var _gaq = _gaq || [];
+    var _dm_insite = [];
+</script>
+
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-60605173-48"></script>
+
+<script type="text/javascript" id="d_track_ga">
+    window.dataLayer = window.dataLayer || [];
+    _dm_gaq.siteAlias = '7132478fee9f4672a01b86d09a2a064c';
+    _dm_gaq.externalGaqID = 'non-empty';
+
+    function gtag() { dataLayer.push(arguments); }
+
+    function pushInsiteImpressions(id) {
+        _dm_insite.forEach((rule) => {
+            _dm_gaq.pushEvent(id, 'insite_impression', 'insite', rule.ruleType + '__' + rule.ruleId);
+        });
+    }
+
+    _dm_gaq.pushEvent = function(trackingId, event, category, label, value, additionalParams = {}) {
+        const eventProps = {
+            event_category: category,
+            event_label: label,
+            value,
+            ...additionalParams
+        };
+        gtag('event', event, eventProps);
+    }
+
+    gtag('js', new Date())
+
+    
+gtag('set', 'developer_id.dMDU5Nj', true);
+gtag('config', 'UA-60605173-48', {
+    'send_page_view': false,
+    'linker': {
+        'domains': ['www.restaurant-pizzeria-la-gioconda.ch']
+    }
+});
+
+    _dm_gaq.pushEvent('', 'page_view');
+
+    pushInsiteImpressions(_dm_gaq.externalGaqID);
+</script>
+
+
+<!-- End Injecting site-wide to the head -->
+
+
+<script>
+    var _jquery = window.$;
+
+    var jqueryAliases = ['$', 'jquery', 'jQuery'];
+
+    jqueryAliases.forEach((alias) => {
+        Object.defineProperty(window, alias, {
+            get() {
+                return _jquery;
+            },
+            set() {
+                console.warn("Trying to over-write the global jquery object!");
+            }
+        });
+    });
+    window.jQuery.migrateMute = true;
+</script>
+<script>
+    window.cookiesNotificationMarkupPreview = 'null';
+</script>
+
+<!-- HEAD RT JS Include -->
+<script id='d-js-params'>
+    window.INSITE = window.INSITE || {};
+    window.INSITE.device = "desktop";
+
+    window.rtCommonProps = {};
+    rtCommonProps["rt.ajax.ajaxScriptsFix"] =true;
+    rtCommonProps["rt.pushnotifs.sslframe.encoded"] = 'aHR0cHM6Ly97c3ViZG9tYWlufS5wdXNoLW5vdGlmcy5jb20=';
+    rtCommonProps["runtimecollector.url"] = 'https://rtc.eu-multiscreensite.com';
+    rtCommonProps["performance.tabletPreview.removeScroll"] = 'false';
+    rtCommonProps["inlineEditGrid.snap"] =true;
+    rtCommonProps["popup.insite.cookie.ttl"] = '0.5';
+    rtCommonProps["rt.pushnotifs.force.button"] =true;
+    rtCommonProps["common.mapbox.token"] = 'pk.eyJ1IjoiZGFubnliMTIzIiwiYSI6ImNqMGljZ256dzAwMDAycXBkdWxwbDgzeXYifQ.Ck5P-0NKPVKAZ6SH98gxxw';
+    rtCommonProps["common.mapbox.js.override"] =false;
+    rtCommonProps["common.here.appId"] = 'iYvDjIQ2quyEu0rg0hLo';
+    rtCommonProps["common.here.appCode"] = '1hcIxLJcbybmtBYTD9Z1UA';
+    rtCommonProps["isCoverage.test"] =false;
+    rtCommonProps["ecommerce.ecwid.script"] = 'https://app.multiscreenstore.com/script.js';
+    rtCommonProps["common.resources.dist.cdn"] =true;
+    rtCommonProps["common.build.dist.folder"] = 'production/6455';
+    rtCommonProps["common.resources.cdn.host"] = 'https://static.cdn-website.com';
+    rtCommonProps["common.resources.folder"] = 'https://static.cdn-website.com/mnlt/production/6455';
+    rtCommonProps["feature.flag.runtime.backgroundSlider.preload.slowly"] =true;
+    rtCommonProps["feature.flag.runtime.newAnimation.enabled"] =true;
+    rtCommonProps["feature.flag.runtime.newAnimation.jitAnimation.enabled"] =true;
+    rtCommonProps["feature.flag.sites.google.analytics.gtag"] =true;
+    rtCommonProps["feature.flag.runOnReadyNewTask"] =true;
+    rtCommonProps["isAutomation.test"] =false;
+    rtCommonProps["booking.cal.api.domain"] = 'api.cal.eu';
+
+    
+    rtCommonProps['common.mapsProvider'] = 'mapbox';
+    
+    rtCommonProps['common.mapsProvider.version'] = '0.52.0';
+    rtCommonProps['common.geocodeProvider'] = 'mapbox';
+    rtCommonProps['server.for.resources'] = '';
+    rtCommonProps['feature.flag.lazy.widgets'] = true;
+    rtCommonProps['feature.flag.single.wow'] = false;
+    rtCommonProps['feature.flag.disallowPopupsInEditor'] = true;
+    rtCommonProps['feature.flag.mark.anchors'] = true;
+    rtCommonProps['captcha.public.key'] = '6LffcBsUAAAAAMU-MYacU-6QHY4iDtUEYv_Ppwlz';
+    rtCommonProps['captcha.invisible.public.key'] = '6LeiWB8UAAAAAHYnVJM7_-7ap6bXCUNGiv7bBPME';
+    rtCommonProps["images.sizes.small"] =160;
+    rtCommonProps["images.sizes.mobile"] =640;
+    rtCommonProps["images.sizes.tablet"] =1280;
+    rtCommonProps["images.sizes.desktop"] =1920;
+    rtCommonProps["modules.resources.cdn"] =true;
+    rtCommonProps["import.images.storage.imageCDN"] = 'https://le-de.cdn-website.com/';
+    rtCommonProps["feature.flag.runtime.inp.threshold"] =150;
+    rtCommonProps["feature.flag.performance.logs"] =false;
+    rtCommonProps["site.widget.form.captcha.type"] = 'g_recaptcha';
+    rtCommonProps["friendly.captcha.site.key"] = 'FCMGSQG9GVNMFS8K';
+    rtCommonProps["cookiebot.mapbox.consent.category"] = 'marketing';
+    rtCommonProps["termly.mapbox.consent.category"] = 'performance';
+    // feature flags that's used out of runtime module (in  legacy files)
+    rtCommonProps["platform.monolith.personalization.dateTimeCondition.popupMsgAction.moveToclient.enabled"] =true;
+
+    window.rtFlags = {};
+    rtFlags["unsuspendEcwidStoreOnRuntime.enabled"] =false;
+    rtFlags["scripts.widgetCount.enabled"] =true;
+    rtFlags["fnb.animations.tracking.enabled"] =true;
+    rtFlags["ecom.ecwidNewUrlStructure.enabled"] = false;
+    rtFlags["ecom.ecwid.accountPage.emptyBaseUrl.enabled"] = true;
+    rtFlags["ecom.ecwid.pages.links.disable.listeners"] = true;
+    rtFlags["ecom.ecwid.storefrontV3.enabled"] = false;
+    rtFlags["ecom.ecwid.old.store.fix.facebook.share"] = true;
+    rtFlags["feature.flag.photo.gallery.exact.size"] =true;
+    rtFlags["geocode.search.localize"] =false;
+    rtFlags["feature.flag.runtime.newAnimation.asyncInit.setTimeout.enabled"] =false;
+    rtFlags["twitter.heightLimit.enabled"] = true;
+    rtFlags["runtime.lottieOverflow"] =false;
+    rtFlags["runtime.monitoring.sentry.ignoreErrors"] = "";
+    rtFlags["streamline.monolith.personalization.supportMultipleConditions.enabled"] =false;
+    rtFlags["flex.animation.design.panel.layout"] =true;
+    rtFlags["runtime.cwv.report.cls.enabled"] =false;
+    rtFlags["runtime.cwv.report.lcp.enabled"] =false;
+    rtFlags["contact.form.useActiveForm"] =true;
+    rtFlags["contact.form.custom.errors.enabled"] =false;
+    rtFlags["runtime.ssr.productStore.internal.observer"] =true;
+    rtFlags["runtime.ssr.productCustomizations"] =true;
+    rtFlags["runtime.ssr.runtime.filter-sort.newFilterSortWidgetWithOptions.enabled"] =true;
+    rtFlags["runtime.ssr.ssrSlider.jumpThreshold.enabled"] =true;
+</script>
+<script src="https://static.cdn-website.com/mnlt/production/6455/_dm/s/rt/dist/scripts/d-js-one-runtime-unified-desktop.min.js"  id="d-js-core"></script>
+<!-- End of HEAD RT JS Include -->
+<script src="https://static.cdn-website.com/mnlt/production/6455/_dm/s/rt/dist/scripts/d-js-jquery-migrate.min.js" ></script>
+<script>
+    
+    $(window).bind("orientationchange", function (e) {
+        $.layoutManager.initLayout();
+        
+    });
+    $(document).resize(function () {
+        
+    });
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="d_track_sp">
+    ;(function(p,l,o,w,i,n,g){if(!p[i]){p.GlobalSnowplowNamespace=p.GlobalSnowplowNamespace||[];
+        p.GlobalSnowplowNamespace.push(i);p[i]=function(){(p[i].q=p[i].q||[]).push(arguments)
+        };p[i].q=p[i].q||[];n=l.createElement(o);g=l.getElementsByTagName(o)[0];n.async=1;
+        n.src=w;g.parentNode.insertBefore(n,g)}}(window,document,"script","//d3uzsv7k2lpopp.cloudfront.net/sp-2.0.0-dm-0.1.min.js","snowplow"));
+    window.dmsnowplow  = window.snowplow;
+
+    dmsnowplow('newTracker', 'cf', 'd3uzsv7k2lpopp.cloudfront.net', { // Initialise a tracker
+        appId: '7132478fee9f4672a01b86d09a2a064c'
+    });
+
+    // snowplow queries element styles so we wait until CSS calculations are done.
+    requestAnimationFrame(() => {
+        dmsnowplow('trackPageView');
+        _dm_insite.forEach((rule) => {
+            // Specifically in popup only the client knows if it is shown or not so we don't always want to track its impression here
+            // the tracking is in popup.js
+            if (rule.actionName !== "popup") {
+                dmsnowplow('trackStructEvent', 'insite', 'impression', rule.ruleType, rule.ruleId);
+            }
+            window?.waitForDeferred?.('dmAjax', () => {
+                $.DM.events.trigger('event-ruleTriggered', {value: rule});
+            });
+        });
+    });
+</script>
+
+
+
+<div style="display:none;" id="P6iryBW0Wu"></div>
+
+<!-- photoswipe markup -->
+
+
+
+
+
+
+
+
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Fermer (Echap)"></button>
+
+                <button class="pswp__button pswp__button--share" title="Partager"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Passer en mode plein écran"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom avant / arrière"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Précédent (flèche gauche)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Suivant (flèche droite)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<div id="fb-root"
+        data-locale="fr_FR"></div>
+<!-- Alias: 7132478fee9f4672a01b86d09a2a064c -->
+<div class="dmPopupMask" id="dmPopupMask"></div>
+<div id="dmPopup" class="dmPopup">
+	<div class="dmPopupCloseWrapper"> <div class="dmPopupClose dm-common-icons-close oneIcon" onclick="dmHidePopup(event);"></div> </div>
+ 	<div class="dmPopupTitle"> <span></span> Share by:</div> 
+	<div class="data"></div>
+</div><script id="d_track_personalization">
+	window?.waitForDeferred?.('dmAjax', () => {
+		// Collects client data and updates cookies used by smart sites
+		window.expireDays = 365;
+		window.visitLength = 30 * 60000;
+		$.setCookie("dm_timezone_offset", (new Date()).getTimezoneOffset(), window.expireDays);
+			setSmartSiteCookiesInternal("dm_this_page_view","dm_last_page_view","dm_total_visits","dm_last_visit");
+	});
+</script>
+<script type="text/javascript">
+    
+    Parameters.NavigationAreaParams.MoreButtonText = 'MORE';
+    
+    Parameters.NavigationAreaParams.LessButtonText = 'LESS';
+    Parameters.HomeLinkText = 'Home';
+    </script>
+<!--  End Script tags -->
+<!--  Begin Body End Markup -->
+<script>    
+jQuery(window).on('scroll',function(){ let scroll = jQuery(window).scrollTop(); if (scroll>100) { jQuery(".scrolltotop").fadeIn(); } else { jQuery(".scrolltotop").fadeOut(); } });
+</script> 
+<!--  End Body End Markup -->
+<!--  Site Wide Html Markup -->
+<div id="swh-9abaa29d118045419a4b22347f84fd36"><script src="https://cdn.displaycloud.com/lt/ipromote_event_tracker.js" type="text/javascript"></script>
+<script src="https://cdn.displaycloud.com/lt/event_selectors.js"></script></div><!--  Site Wide Html Markup -->
+</body>
+</html>
