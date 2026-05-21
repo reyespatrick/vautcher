@@ -76,7 +76,10 @@ function openClient() {
               type="button"
               :class="{ on: locale === l }"
               @click="setLocale(l)"
-            >{{ t('lang.' + l) }}</button>
+            >
+              <span>{{ t('lang.' + l) }}</span>
+              <span v-if="locale === l" class="pm-check" aria-hidden="true">✓</span>
+            </button>
           </div>
         </div>
 
@@ -165,27 +168,25 @@ function openClient() {
   color: var(--mut);
   margin-top: 8px;
 }
-.pm-langs {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.pm-langs { display: flex; flex-direction: column; }
 .pm-langs button {
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
   color: var(--ink);
+  font-family: inherit;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   text-align: left;
   cursor: pointer;
 }
-.pm-langs button.on {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
+.pm-langs button:last-child { border-bottom: 0; }
+.pm-langs button.on { color: var(--accent); font-weight: 700; }
+.pm-check { color: var(--accent); font-weight: 700; font-size: 0.95rem; }
 .pm-seg {
   display: flex;
   border: 1px solid var(--line);
