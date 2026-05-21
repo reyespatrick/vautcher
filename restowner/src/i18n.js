@@ -15,7 +15,7 @@ const fr = {
   },
   login: {
     title: 'Connexion', subtitle: 'Recevez un code à usage unique par e-mail.',
-    email: 'Adresse e-mail', emailPlaceholder: 'vous@restaurant.ch',
+    email: 'Adresse e-mail', emailPlaceholder: "vous{'@'}restaurant.ch",
     sendCode: 'Recevoir le code', sending: 'Envoi…',
     codeTitle: 'Code de vérification',
     codeSentTo: 'Saisissez le code envoyé à {email}.',
@@ -92,7 +92,7 @@ const de = {
   },
   login: {
     title: 'Anmeldung', subtitle: 'Erhalten Sie einen Einmalcode per E-Mail.',
-    email: 'E-Mail-Adresse', emailPlaceholder: 'sie@restaurant.ch',
+    email: 'E-Mail-Adresse', emailPlaceholder: "sie{'@'}restaurant.ch",
     sendCode: 'Code erhalten', sending: 'Wird gesendet…',
     codeTitle: 'Bestätigungscode',
     codeSentTo: 'Geben Sie den an {email} gesendeten Code ein.',
@@ -169,7 +169,7 @@ const it = {
   },
   login: {
     title: 'Accesso', subtitle: 'Ricevi un codice monouso via e-mail.',
-    email: 'Indirizzo e-mail', emailPlaceholder: 'tu@ristorante.ch',
+    email: 'Indirizzo e-mail', emailPlaceholder: "tu{'@'}ristorante.ch",
     sendCode: 'Ricevi il codice', sending: 'Invio…',
     codeTitle: 'Codice di verifica',
     codeSentTo: 'Inserisci il codice inviato a {email}.',
