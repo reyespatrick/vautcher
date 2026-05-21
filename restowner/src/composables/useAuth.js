@@ -13,6 +13,12 @@ const ready = ref(false)
 let resolveInit
 const initPromise = new Promise((r) => { resolveInit = r })
 
+// Safety net: the router awaits whenAuthReady() before rendering anything.
+// If Supabase's getSession() ever hangs (a known auth-lock issue), the app
+// would show a permanent white screen. Force the gate open after 3.5s —
+// resolveInit is idempotent, so the real auth init resolving it is harmless.
+setTimeout(() => { ready.value = true; resolveInit() }, 3500)
+
 async function loadOwner() {
   if (!session.value) {
     owner.value = null
