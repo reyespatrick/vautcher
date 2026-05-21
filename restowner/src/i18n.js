@@ -13,6 +13,12 @@ const fr = {
     preparing: 'Préparation…',
     hint: 'Idéal sur vos tables, votre vitrine ou vos affiches.'
   },
+  viewAs: {
+    label: 'Voir en tant que',
+    moderator: 'Modérateur',
+    owner: 'Propriétaire',
+    client: 'Client (app diner)'
+  },
   app: { tagline: 'Console restaurateur' },
   common: {
     loading: 'Chargement…', save: 'Enregistrer', cancel: 'Annuler',
@@ -125,6 +131,12 @@ const de = {
     preparing: 'Wird vorbereitet…',
     hint: 'Ideal für Ihre Tische, Ihr Schaufenster oder Ihre Plakate.'
   },
+  viewAs: {
+    label: 'Anzeigen als',
+    moderator: 'Moderator',
+    owner: 'Inhaber',
+    client: 'Kunde (Gäste-App)'
+  },
   app: { tagline: 'Gastronomen-Konsole' },
   common: {
     loading: 'Wird geladen…', save: 'Speichern', cancel: 'Abbrechen',
@@ -236,6 +248,12 @@ const it = {
     download: 'Scarica il codice QR',
     preparing: 'Preparazione…',
     hint: 'Perfetto su tavoli, vetrina o manifesti.'
+  },
+  viewAs: {
+    label: 'Visualizza come',
+    moderator: 'Moderatore',
+    owner: 'Proprietario',
+    client: 'Cliente (app)'
   },
   app: { tagline: 'Console ristoratore' },
   common: {

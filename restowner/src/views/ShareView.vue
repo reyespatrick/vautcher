@@ -3,10 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import QRCode from 'qrcode'
-
-// The customer-facing diner app (La Gioconda PWA). Scanning the QR
-// opens this URL in the visitor's browser.
-const APP_URL = 'https://la-gioconda.pages.dev'
+import { DINER_APP_URL } from '../lib/config'
 
 const { restaurant } = useAuth()
 const { t } = useI18n()
@@ -16,7 +13,7 @@ const error = ref('')
 
 onMounted(async () => {
   try {
-    qrUrl.value = await QRCode.toDataURL(APP_URL, {
+    qrUrl.value = await QRCode.toDataURL(DINER_APP_URL, {
       width: 720,
       margin: 1,
       errorCorrectionLevel: 'M',

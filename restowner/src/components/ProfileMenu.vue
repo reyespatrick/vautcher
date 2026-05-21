@@ -2,15 +2,26 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiPrefs } from '../composables/usePrefs'
+import { useViewAs } from '../composables/useViewAs'
+import { DINER_APP_URL } from '../lib/config'
 import { SUPPORTED_LOCALES } from '../i18n'
 
-defineProps({ restaurant: { type: Object, default: null } })
+defineProps({
+  restaurant: { type: Object, default: null },
+  isModerator: { type: Boolean, default: false }
+})
 const emit = defineEmits(['signout'])
 
 const { t } = useI18n()
 const { fontScale, locale, larger, smaller, resetSize, setLocale } = useUiPrefs()
+const { asOwner } = useViewAs()
 const open = ref(false)
 const version = __APP_VERSION__ // from package.json — bump it on every release
+
+// "View as client" — open the customer-facing diner app in a new tab.
+function openClient() {
+  window.open(DINER_APP_URL, '_blank', 'noopener')
+}
 </script>
 
 <template>
@@ -28,6 +39,22 @@ const version = __APP_VERSION__ // from package.json — bump it on every releas
         <div class="pm-head">
           <strong>{{ restaurant ? restaurant.name : t('profile.title') }}</strong>
           <span>{{ t('app.tagline') }}</span>
+        </div>
+
+        <!-- Moderator-only: preview the app as an owner, or open the client app -->
+        <div v-if="isModerator" class="pm-section">
+          <span class="pm-label">{{ t('viewAs.label') }}</span>
+          <div class="pm-seg">
+            <button type="button" :class="{ on: !asOwner }" @click="asOwner = false">
+              {{ t('viewAs.moderator') }}
+            </button>
+            <button type="button" :class="{ on: asOwner }" @click="asOwner = true">
+              {{ t('viewAs.owner') }}
+            </button>
+          </div>
+          <button type="button" class="pm-viewclient" @click="openClient">
+            {{ t('viewAs.client') }} ↗
+          </button>
         </div>
 
         <div class="pm-section">
@@ -159,6 +186,40 @@ const version = __APP_VERSION__ // from package.json — bump it on every releas
   border-color: var(--accent);
   color: #fff;
 }
+.pm-seg {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.pm-seg button {
+  flex: 1;
+  padding: 9px 0;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.pm-seg button + button { border-left: 1px solid var(--line); }
+.pm-seg button.on { background: var(--accent); color: #fff; }
+.pm-viewclient {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+.pm-viewclient:active { background: #faf4ea; }
 .pm-signout {
   width: 100%;
   padding: 14px;

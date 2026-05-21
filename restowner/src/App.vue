@@ -4,9 +4,11 @@ import { RouterView, RouterLink, useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from './composables/useAuth'
 import { fontScale, useUiPrefs } from './composables/usePrefs'
+import { useViewAs } from './composables/useViewAs'
 import ProfileMenu from './components/ProfileMenu.vue'
 
 const { owner, restaurant, isModerator, signOut } = useAuth()
+const { asOwner } = useViewAs()
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
@@ -46,7 +48,12 @@ async function doSignOut() {
         </RouterLink>
         <div class="hdr-right">
           <span v-if="restaurant" class="who">{{ restaurant.name }}</span>
-          <ProfileMenu v-if="owner" :restaurant="restaurant" @signout="doSignOut" />
+          <ProfileMenu
+            v-if="owner"
+            :restaurant="restaurant"
+            :is-moderator="isModerator"
+            @signout="doSignOut"
+          />
         </div>
       </header>
 
@@ -95,7 +102,7 @@ async function doSignOut() {
           {{ t('nav.share') }}
         </RouterLink>
         <RouterLink
-          v-if="isModerator"
+          v-if="isModerator && !asOwner"
           :to="{ name: 'approve' }"
           :class="{ on: activeTab === 'approve' }"
         >
