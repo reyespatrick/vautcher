@@ -15,8 +15,15 @@ const { t } = useI18n()
 
 const editingId = computed(() => (route.name === 'event-edit' ? route.params.id : null))
 
+// Local today as YYYY-MM-DD (the <input type="date"> format) — offset-corrected
+// so it doesn't roll to yesterday/tomorrow in non-UTC timezones.
+function todayStr() {
+  const d = new Date()
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+}
+
 const form = ref({
-  title: '', description: '', event_date: '', event_time: '',
+  title: '', description: '', event_date: todayStr(), event_time: '',
   location: '', price: '', image_url: '/assets/photo1.jpg',
   age_min: null, age_max: null, points_min: null, points_max: null,
   notify_days_before: 3,
@@ -104,8 +111,8 @@ onMounted(async () => {
     if (data) {
       fillFrom(data)
       if (!editingId.value) {
-        // Duplicating from history — owner picks a fresh date.
-        form.value.event_date = ''
+        // Duplicating from history — default to today; owner can still change it.
+        form.value.event_date = todayStr()
         form.value.status = 'active'
       }
     }
