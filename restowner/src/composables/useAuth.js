@@ -13,24 +13,51 @@ const ready = ref(false)
 let resolveInit
 const initPromise = new Promise((r) => { resolveInit = r })
 
+// Tracks which user owner/restaurant/isModerator currently reflect (or are
+// mid-load for). Repeat auth events — INITIAL_SESSION, SIGNED_IN,
+// TOKEN_REFRESHED — all fire for the same signed-in user; without this guard
+// each one re-runs the owner queries and reassigns `restaurant` to a fresh
+// object, which retriggers every watch(restaurant, …) — e.g. the dashboard
+// event list refetching on a loop.
+let loadedFor = null
+let loadInFlight = null
+
 // Safety net: the router awaits whenAuthReady() before rendering anything.
 // If Supabase's getSession() ever hangs (a known auth-lock issue), the app
-// would show a permanent white screen. Force the gate open after 3.5s —
-// resolveInit is idempotent, so the real auth init resolving it is harmless.
-setTimeout(() => {
+// would show a permanent white screen. Force the gate open after 3.5s.
+// openGate() clears this timer, so it never fires after a clean boot.
+const safetyNet = setTimeout(() => {
   console.warn('[boot] auth: SAFETY-NET timeout fired — getSession() likely hung')
-  ready.value = true
-  resolveInit()
+  openGate()
 }, 3500)
 
-async function loadOwner() {
-  if (!session.value) {
+// Idempotent — the real auth init and the safety net both call it; whichever
+// runs first opens the gate, the other is a no-op.
+function openGate() {
+  clearTimeout(safetyNet)
+  ready.value = true
+  resolveInit()
+}
+
+// Public entry point — deduped by user identity so the owner queries run
+// exactly once per real sign-in, no matter how many auth events fire.
+function loadOwner() {
+  const email = session.value
+    ? (session.value.user.email || '').toLowerCase()
+    : null
+  if (email === loadedFor) return loadInFlight || Promise.resolve()
+  loadedFor = email
+  loadInFlight = applyOwner(email).finally(() => { loadInFlight = null })
+  return loadInFlight
+}
+
+async function applyOwner(email) {
+  if (!email) {
     owner.value = null
     restaurant.value = null
     isModerator.value = false
     return
   }
-  const email = (session.value.user.email || '').toLowerCase()
   console.log('[boot] auth: loadOwner — querying vautcher_owners')
   // select('*') so pref_lang / pref_font_scale are picked up once the
   // prefs migration has run — and tolerated before it has.
@@ -84,8 +111,7 @@ supabase.auth.getSession()
   .catch((e) => console.error('[boot] auth: getSession failed', e))
   .finally(() => {
     console.log('[boot] auth: init finished — opening the gate')
-    ready.value = true
-    resolveInit()
+    openGate()
   })
 
 supabase.auth.onAuthStateChange((_event, s) => {

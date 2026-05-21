@@ -10,6 +10,7 @@ const emit = defineEmits(['signout'])
 const { t } = useI18n()
 const { fontScale, locale, larger, smaller, resetSize, setLocale } = useUiPrefs()
 const open = ref(false)
+const version = __APP_VERSION__ // from package.json — bump it on every release
 </script>
 
 <template>
@@ -55,6 +56,8 @@ const open = ref(false)
         <button class="pm-signout" type="button" @click="open = false; emit('signout')">
           {{ t('common.signOut') }}
         </button>
+
+        <div class="pm-version">v{{ version }}</div>
       </div>
     </div>
   </Teleport>
@@ -168,4 +171,12 @@ const open = ref(false)
   cursor: pointer;
 }
 .pm-signout:active { background: #faf4ea; }
+.pm-version {
+  padding: 9px 18px 11px;
+  text-align: center;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--mut);
+  border-top: 1px solid var(--line);
+}
 </style>
