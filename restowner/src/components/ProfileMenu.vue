@@ -176,7 +176,7 @@ const version = __APP_VERSION__ // from package.json — bump it on every releas
   text-align: center;
   font-size: 0.62rem;
   letter-spacing: 0.08em;
-  color: var(--mut);
+  color: var(--ink);
   border-top: 1px solid var(--line);
 }
 </style>
