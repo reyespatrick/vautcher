@@ -160,7 +160,12 @@ async function save() {
         ? (Number(form.value.rebate_first_n) || null)
         : null,
       published: true,
-      status: form.value.status
+      status: form.value.status,
+      // Creating or editing an event (re-)enters the moderation queue:
+      // a refused event the owner has fixed returns to 'pending' for
+      // review, and any stale refusal reason is cleared.
+      moderation_status: 'pending',
+      refusal_reason: null
     }
 
     const res = editingId.value
@@ -337,6 +342,8 @@ async function onCancelEvent() {
         <span class="opt-help">{{ t('editor.rebateHint') }}</span>
       </div>
 
+      <p v-if="editingId" class="resubmit-note">{{ t('editor.resubmitNote') }}</p>
+
       <p v-if="error" class="err">{{ error }}</p>
 
       <div class="editor-actions">
@@ -508,10 +515,16 @@ async function onCancelEvent() {
   font-size: 0.85rem;
   margin: 14px 0 0;
 }
+.resubmit-note {
+  font-size: 0.78rem;
+  color: var(--mut);
+  line-height: 1.45;
+  margin: 16px 0 0;
+}
 .editor-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 14px;
 }
 </style>
