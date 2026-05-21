@@ -40,7 +40,8 @@ const fr = {
   event: {
     edit: 'Modifier', cancel: 'Annuler',
     published: 'Publié', draft: 'Brouillon', cancelled: 'Annulé',
-    pending: 'En attente', approved: 'Approuvé', refused: 'Refusé',
+    pending: 'En attente d’approbation', approved: 'Approuvé', refused: 'Refusé',
+    refusedReason: 'Motif du refus : {reason}',
     allAges: 'Tous âges', ageRange: '{min}–{max} ans',
     ageMinOnly: '{min} ans et +', ageMaxOnly: 'jusqu’à {max} ans',
     confirmCancel: 'Annuler définitivement « {title} » ?'
@@ -139,7 +140,8 @@ const de = {
   event: {
     edit: 'Bearbeiten', cancel: 'Absagen',
     published: 'Veröffentlicht', draft: 'Entwurf', cancelled: 'Abgesagt',
-    pending: 'Ausstehend', approved: 'Genehmigt', refused: 'Abgelehnt',
+    pending: 'Warten auf Freigabe', approved: 'Genehmigt', refused: 'Abgelehnt',
+    refusedReason: 'Ablehnungsgrund: {reason}',
     allAges: 'Alle Altersgruppen', ageRange: '{min}–{max} Jahre',
     ageMinOnly: 'ab {min} Jahren', ageMaxOnly: 'bis {max} Jahre',
     confirmCancel: '« {title} » endgültig absagen?'
@@ -238,7 +240,8 @@ const it = {
   event: {
     edit: 'Modifica', cancel: 'Annulla',
     published: 'Pubblicato', draft: 'Bozza', cancelled: 'Annullato',
-    pending: 'In attesa', approved: 'Approvato', refused: 'Rifiutato',
+    pending: 'In attesa di approvazione', approved: 'Approvato', refused: 'Rifiutato',
+    refusedReason: 'Motivo del rifiuto: {reason}',
     allAges: 'Tutte le età', ageRange: '{min}–{max} anni',
     ageMinOnly: 'da {min} anni', ageMaxOnly: 'fino a {max} anni',
     confirmCancel: 'Annullare definitivamente « {title} »?'

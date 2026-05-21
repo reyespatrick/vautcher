@@ -46,6 +46,8 @@ const pointsBadge = computed(() => {
       <div class="ev-titleline">
         <h3>{{ event.title }}</h3>
         <span v-if="event.status === 'cancelled'" class="badge badge--cancel">{{ t('event.cancelled') }}</span>
+        <span v-else-if="event.moderation_status === 'refused'" class="badge badge--cancel">{{ t('event.refused') }}</span>
+        <span v-else-if="event.moderation_status === 'pending'" class="badge badge--pending">{{ t('event.pending') }}</span>
         <span v-else-if="event.published" class="badge badge--ok">{{ t('event.published') }}</span>
         <span v-else class="badge badge--off">{{ t('event.draft') }}</span>
         <span v-if="ageText" class="badge badge--age">{{ ageText }}</span>
@@ -55,6 +57,10 @@ const pointsBadge = computed(() => {
       <p class="ev-meta">
         {{ dateText }}<template v-if="event.event_time"> · {{ event.event_time }}</template><template v-if="event.location"> · {{ event.location }}</template>
       </p>
+      <p
+        v-if="event.moderation_status === 'refused' && event.refusal_reason"
+        class="ev-refused"
+      >{{ t('event.refusedReason', { reason: event.refusal_reason }) }}</p>
     </div>
 
     <div class="ev-actions"><slot /></div>
@@ -80,6 +86,13 @@ const pointsBadge = computed(() => {
 .ev-titleline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .ev-titleline h3 { font-size: 1.02rem; color: var(--ink); }
 .ev-meta { color: var(--mut); font-size: 0.8rem; margin-top: 3px; }
+.ev-refused {
+  margin-top: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--danger);
+  line-height: 1.4;
+}
 .ev-actions {
   display: flex;
   gap: 8px;

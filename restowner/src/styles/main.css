@@ -187,6 +187,7 @@ textarea { resize: vertical; }
 .badge--cancel { background: rgba(192, 57, 43, 0.13); color: var(--danger); }
 .badge--age { background: rgba(158, 5, 61, 0.1); color: var(--accent); }
 .badge--rebate { background: rgba(184, 144, 47, 0.18); color: #8a6a16; }
+.badge--pending { background: rgba(214, 124, 20, 0.16); color: #b5680f; }
 
 /* ---- Utility ---- */
 .container { width: 100%; }      /* width is constrained by .app-root now */
