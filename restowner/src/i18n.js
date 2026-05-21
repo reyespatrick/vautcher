@@ -42,6 +42,8 @@ const fr = {
     published: 'Publié', draft: 'Brouillon', cancelled: 'Annulé',
     pending: 'En attente d’approbation', approved: 'Approuvé', refused: 'Refusé',
     refusedReason: 'Motif du refus : {reason}',
+    age: 'Âge ciblé', loyaltyPoints: 'Points fidélité', rebate: 'Rabais',
+    attendees: 'Inscrits', rebateFirstN: '{badge} · {n} premiers',
     allAges: 'Tous âges', ageRange: '{min}–{max} ans',
     ageMinOnly: '{min} ans et +', ageMaxOnly: 'jusqu’à {max} ans',
     confirmCancel: 'Annuler définitivement « {title} » ?'
@@ -143,6 +145,8 @@ const de = {
     published: 'Veröffentlicht', draft: 'Entwurf', cancelled: 'Abgesagt',
     pending: 'Warten auf Freigabe', approved: 'Genehmigt', refused: 'Abgelehnt',
     refusedReason: 'Ablehnungsgrund: {reason}',
+    age: 'Zielalter', loyaltyPoints: 'Treuepunkte', rebate: 'Rabatt',
+    attendees: 'Angemeldet', rebateFirstN: '{badge} · erste {n}',
     allAges: 'Alle Altersgruppen', ageRange: '{min}–{max} Jahre',
     ageMinOnly: 'ab {min} Jahren', ageMaxOnly: 'bis {max} Jahre',
     confirmCancel: '« {title} » endgültig absagen?'
@@ -244,6 +248,8 @@ const it = {
     published: 'Pubblicato', draft: 'Bozza', cancelled: 'Annullato',
     pending: 'In attesa di approvazione', approved: 'Approvato', refused: 'Rifiutato',
     refusedReason: 'Motivo del rifiuto: {reason}',
+    age: 'Età target', loyaltyPoints: 'Punti fedeltà', rebate: 'Sconto',
+    attendees: 'Iscritti', rebateFirstN: '{badge} · primi {n}',
     allAges: 'Tutte le età', ageRange: '{min}–{max} anni',
     ageMinOnly: 'da {min} anni', ageMaxOnly: 'fino a {max} anni',
     confirmCancel: 'Annullare definitivamente « {title} »?'

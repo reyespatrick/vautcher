@@ -125,3 +125,16 @@ export async function refuseEvent(id, reason) {
     .eq('id', id)
   return { error }
 }
+
+/**
+ * Per-event attendee (RSVP) counts for the owner's own restaurant.
+ * Returns a map { [eventId]: count }. Empty map if the stats function
+ * isn't deployed yet — callers treat a missing entry as 0.
+ */
+export async function listEventStats() {
+  const { data, error } = await supabase.rpc('vautcher_owner_event_stats')
+  if (error || !data) return {}
+  const map = {}
+  for (const row of data) map[row.event_id] = Number(row.attendees) || 0
+  return map
+}

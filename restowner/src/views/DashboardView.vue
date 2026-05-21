@@ -3,13 +3,14 @@ import { ref, watch, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
-import { listEvents, cancelEvent } from '../lib/events'
+import { listEvents, listEventStats, cancelEvent } from '../lib/events'
 import { today } from '../lib/format'
 import EventRow from '../components/EventRow.vue'
 
 const { restaurant } = useAuth()
 const { t } = useI18n()
 const events = ref([])
+const stats = ref({})        // { [eventId]: attendee count }
 const loading = ref(true)
 const loadError = ref(false)
 
@@ -25,6 +26,8 @@ async function load() {
       const { data, error } = await listEvents(restaurant.value.id)
       if (error) throw error
       events.value = data
+      // Attendee counts are best-effort — never block the list on them.
+      stats.value = await listEventStats()
     }
   } catch (e) {
     loadError.value = true
@@ -37,10 +40,11 @@ async function load() {
 watch(restaurant, load, { immediate: true })
 
 // Upcoming = today or later. Past events live in History.
+// Latest event first.
 const upcoming = computed(() =>
   events.value
     .filter((e) => e.event_date >= today())
-    .sort((a, b) => a.event_date.localeCompare(b.event_date))
+    .sort((a, b) => b.event_date.localeCompare(a.event_date))
 )
 
 async function onCancel(ev) {
@@ -73,7 +77,7 @@ async function onCancel(ev) {
     </p>
 
     <div v-else class="ev-list">
-      <EventRow v-for="ev in upcoming" :key="ev.id" :event="ev">
+      <EventRow v-for="ev in upcoming" :key="ev.id" :event="ev" :attendees="stats[ev.id] || 0">
         <RouterLink :to="`/event/${ev.id}`" class="btn btn--plain btn--sm">{{ t('event.edit') }}</RouterLink>
         <button
           v-if="ev.status !== 'cancelled'"
