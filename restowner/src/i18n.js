@@ -3,7 +3,16 @@ import { createI18n } from 'vue-i18n'
 
 const fr = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Événements', scan: 'Scanner', history: 'Historique', approve: 'À approuver' },
+  nav: { events: 'Événements', scan: 'Scanner', history: 'Historique', share: 'Code QR', approve: 'À approuver' },
+  share: {
+    title: 'Code QR de l’application',
+    subtitle: 'Affichez ou imprimez ce code. Vos clients le scannent pour ouvrir l’application La Gioconda dans leur navigateur.',
+    caption: 'Nos événements & votre fidélité',
+    scanLine: 'Scannez avec l’appareil photo',
+    download: 'Télécharger le code QR',
+    preparing: 'Préparation…',
+    hint: 'Idéal sur vos tables, votre vitrine ou vos affiches.'
+  },
   app: { tagline: 'Console restaurateur' },
   common: {
     loading: 'Chargement…', save: 'Enregistrer', cancel: 'Annuler',
@@ -106,7 +115,16 @@ const fr = {
 
 const de = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Veranstaltungen', scan: 'Scannen', history: 'Verlauf', approve: 'Zu prüfen' },
+  nav: { events: 'Veranstaltungen', scan: 'Scannen', history: 'Verlauf', share: 'QR-Code', approve: 'Zu prüfen' },
+  share: {
+    title: 'QR-Code der App',
+    subtitle: 'Zeigen Sie diesen Code an oder drucken Sie ihn aus. Ihre Gäste scannen ihn, um die La-Gioconda-App im Browser zu öffnen.',
+    caption: 'Unsere Events & Ihre Treuepunkte',
+    scanLine: 'Mit der Kamera scannen',
+    download: 'QR-Code herunterladen',
+    preparing: 'Wird vorbereitet…',
+    hint: 'Ideal für Ihre Tische, Ihr Schaufenster oder Ihre Plakate.'
+  },
   app: { tagline: 'Gastronomen-Konsole' },
   common: {
     loading: 'Wird geladen…', save: 'Speichern', cancel: 'Abbrechen',
@@ -209,7 +227,16 @@ const de = {
 
 const it = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Eventi', scan: 'Scansiona', history: 'Cronologia', approve: 'Da approvare' },
+  nav: { events: 'Eventi', scan: 'Scansiona', history: 'Cronologia', share: 'Codice QR', approve: 'Da approvare' },
+  share: {
+    title: 'Codice QR dell’app',
+    subtitle: 'Mostra o stampa questo codice. I tuoi clienti lo scansionano per aprire l’app La Gioconda nel browser.',
+    caption: 'I nostri eventi & la tua fedeltà',
+    scanLine: 'Inquadra con la fotocamera',
+    download: 'Scarica il codice QR',
+    preparing: 'Preparazione…',
+    hint: 'Perfetto su tavoli, vetrina o manifesti.'
+  },
   app: { tagline: 'Console ristoratore' },
   common: {
     loading: 'Caricamento…', save: 'Salva', cancel: 'Annulla',

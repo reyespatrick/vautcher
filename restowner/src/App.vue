@@ -19,6 +19,7 @@ const showShell = computed(() => route.name && route.name !== 'login')
 const activeTab = computed(() => {
   if (route.name === 'scan') return 'scan'
   if (route.name === 'history') return 'history'
+  if (route.name === 'share') return 'share'
   if (route.name === 'approve') return 'approve'
   return 'dashboard'
 })
@@ -82,6 +83,16 @@ async function doSignOut() {
             <path d="M12 8v4.5l3 2" />
           </svg>
           {{ t('nav.history') }}
+        </RouterLink>
+        <RouterLink :to="{ name: 'share' }" :class="{ on: activeTab === 'share' }">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <path d="M14 14h3.5v3.5M21 21v-3.5M14 21h3.5" />
+          </svg>
+          {{ t('nav.share') }}
         </RouterLink>
         <RouterLink
           v-if="isModerator"

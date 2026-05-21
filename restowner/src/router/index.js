@@ -6,6 +6,7 @@ import DashboardView from '../views/DashboardView.vue'
 import EventEditorView from '../views/EventEditorView.vue'
 import HistoryView from '../views/HistoryView.vue'
 import ScanView from '../views/ScanView.vue'
+import ShareView from '../views/ShareView.vue'
 import ApprovalQueueView from '../views/ApprovalQueueView.vue'
 
 const routes = [
@@ -15,6 +16,7 @@ const routes = [
   { path: '/event/:id', name: 'event-edit', component: EventEditorView },
   { path: '/history', name: 'history', component: HistoryView },
   { path: '/scan', name: 'scan', component: ScanView },
+  { path: '/share', name: 'share', component: ShareView },
   { path: '/approve', name: 'approve', component: ApprovalQueueView },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
