@@ -24,18 +24,23 @@ async function handleCode(text) {
   busy.value = true
   await stopScanner()
 
-  const { data, error } = await supabase.rpc('vautcher_add_stamp', {
-    p_profile_id: m[1]
-  })
-  if (error) {
-    result.value = { ok: false, error: error.message }
-  } else {
-    const row = Array.isArray(data) ? data[0] : data
-    result.value = row && row.name
-      ? { ok: true, name: row.name, stamps: row.stamps }
-      : { ok: false, error: t('scan.notFound') }
+  try {
+    const { data, error } = await supabase.rpc('vautcher_add_stamp', {
+      p_profile_id: m[1]
+    })
+    if (error) {
+      result.value = { ok: false, error: error.message }
+    } else {
+      const row = Array.isArray(data) ? data[0] : data
+      result.value = row && row.name
+        ? { ok: true, name: row.name, stamps: row.stamps }
+        : { ok: false, error: t('scan.notFound') }
+    }
+  } catch (e) {
+    result.value = { ok: false, error: (e && e.message) || String(e) }
+  } finally {
+    busy.value = false
   }
-  busy.value = false
 }
 
 async function start() {

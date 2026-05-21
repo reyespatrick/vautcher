@@ -6,6 +6,7 @@ import DashboardView from '../views/DashboardView.vue'
 import EventEditorView from '../views/EventEditorView.vue'
 import HistoryView from '../views/HistoryView.vue'
 import ScanView from '../views/ScanView.vue'
+import ApprovalQueueView from '../views/ApprovalQueueView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -14,6 +15,7 @@ const routes = [
   { path: '/event/:id', name: 'event-edit', component: EventEditorView },
   { path: '/history', name: 'history', component: HistoryView },
   { path: '/scan', name: 'scan', component: ScanView },
+  { path: '/approve', name: 'approve', component: ApprovalQueueView },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
@@ -25,15 +27,17 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   await whenAuthReady()
-  const { session, owner } = useAuth()
+  const { session, owner, isModerator } = useAuth()
+  // Access = signed in AND a recognised owner OR moderator.
+  const access = !!session.value && (!!owner.value || isModerator.value)
 
-  // Public routes (login) — bounce to dashboard if already an owner.
   if (to.meta.public) {
-    if (session.value && owner.value) return { name: 'dashboard' }
+    if (access) return { name: owner.value ? 'dashboard' : 'approve' }
     return true
   }
-  // Protected: needs a session AND a recognised owner account.
-  if (!session.value || !owner.value) return { name: 'login' }
+  if (!access) return { name: 'login' }
+  // The approval queue is moderator-only.
+  if (to.name === 'approve' && !isModerator.value) return { name: 'dashboard' }
   return true
 })
 

@@ -34,13 +34,18 @@ async function submit() {
   if (!valid.value || saving.value) return
   saving.value = true
   error.value = ''
-  const res = await createReservation(form.value)
-  saving.value = false
-  if (!res.ok) {
+  try {
+    const res = await createReservation(form.value)
+    if (!res.ok) {
+      error.value = 'Une erreur est survenue. Réessayez ou appelez-nous directement.'
+      return
+    }
+    submitted.value = true
+  } catch (e) {
     error.value = 'Une erreur est survenue. Réessayez ou appelez-nous directement.'
-    return
+  } finally {
+    saving.value = false
   }
-  submitted.value = true
 }
 
 function reset() {

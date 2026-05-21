@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 
-const { session, owner, sendOtp, verifyOtp, signOut } = useAuth()
+const { session, owner, isModerator, sendOtp, verifyOtp, signOut } = useAuth()
 const router = useRouter()
 const { t } = useI18n()
 const version = __APP_VERSION__
@@ -15,27 +15,39 @@ const code = ref('')
 const error = ref('')
 const busy = ref(false)
 
-watch([session, owner], () => {
-  if (session.value && owner.value) router.push({ name: 'dashboard' })
+watch([session, owner, isModerator], () => {
+  if (session.value && (owner.value || isModerator.value)) {
+    router.push({ name: owner.value ? 'dashboard' : 'approve' })
+  }
 })
 
 async function onSendOtp() {
   if (!email.value.trim()) return
   busy.value = true
   error.value = ''
-  const { error: e } = await sendOtp(email.value)
-  busy.value = false
-  if (e) { error.value = e.message; return }
-  step.value = 'code'
+  try {
+    const { error: e } = await sendOtp(email.value)
+    if (e) { error.value = e.message; return }
+    step.value = 'code'
+  } catch (e) {
+    error.value = (e && e.message) || String(e)
+  } finally {
+    busy.value = false
+  }
 }
 
 async function onVerify() {
   if (!code.value.trim()) return
   busy.value = true
   error.value = ''
-  const { error: e } = await verifyOtp(email.value, code.value)
-  busy.value = false
-  if (e) { error.value = t('login.codeInvalid'); return }
+  try {
+    const { error: e } = await verifyOtp(email.value, code.value)
+    if (e) { error.value = t('login.codeInvalid'); return }
+  } catch (e) {
+    error.value = t('login.codeInvalid')
+  } finally {
+    busy.value = false
+  }
 }
 
 async function backToEmail() {

@@ -11,29 +11,44 @@ const loading = ref(true)
 const busyId = ref(null)
 
 onMounted(async () => {
-  const { events: list } = await fetchEvents(profile.value?.id)
-  events.value = list
-  loading.value = false
+  try {
+    const { events: list } = await fetchEvents(profile.value?.id)
+    events.value = list
+  } catch (e) {
+    /* leave events empty — the empty state will show */
+  } finally {
+    loading.value = false
+  }
 })
 
 async function onJoin(ev) {
   busyId.value = ev.id
-  const res = await joinEvent(ev.id, profile.value?.id)
-  if (res.ok) {
-    ev.joined = true
-    ev.attendees = (ev.attendees || 0) + 1
+  try {
+    const res = await joinEvent(ev.id, profile.value?.id)
+    if (res.ok) {
+      ev.joined = true
+      ev.attendees = (ev.attendees || 0) + 1
+    }
+  } catch (e) {
+    /* ignore — leave the event state unchanged */
+  } finally {
+    busyId.value = null
   }
-  busyId.value = null
 }
 
 async function onLeave(ev) {
   busyId.value = ev.id
-  const res = await leaveEvent(ev.id, profile.value?.id)
-  if (res.ok) {
-    ev.joined = false
-    ev.attendees = Math.max(0, (ev.attendees || 0) - 1)
+  try {
+    const res = await leaveEvent(ev.id, profile.value?.id)
+    if (res.ok) {
+      ev.joined = false
+      ev.attendees = Math.max(0, (ev.attendees || 0) - 1)
+    }
+  } catch (e) {
+    /* ignore — leave the event state unchanged */
+  } finally {
+    busyId.value = null
   }
-  busyId.value = null
 }
 </script>
 

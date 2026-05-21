@@ -28,11 +28,17 @@ const passUrl = computed(() => {
 })
 
 onMounted(async () => {
-  const v = await fetchVoucher(profile.value?.id)
-  stamps.value = v.stamps || []
-  required.value = v.required || 10
-  reward.value = v.reward || 'Une récompense'
-  loading.value = false
+  try {
+    const v = await fetchVoucher(profile.value?.id)
+    stamps.value = v.stamps || []
+    required.value = v.required || 10
+    reward.value = v.reward || 'Une récompense'
+  } catch (e) {
+    /* keep the default empty card — reward falls back below */
+    if (!reward.value) reward.value = 'Une récompense'
+  } finally {
+    loading.value = false
+  }
 })
 
 const collected = computed(() => stamps.value.length)

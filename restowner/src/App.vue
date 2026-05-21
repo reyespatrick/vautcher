@@ -6,7 +6,7 @@ import { useAuth } from './composables/useAuth'
 import { fontScale, useUiPrefs } from './composables/usePrefs'
 import ProfileMenu from './components/ProfileMenu.vue'
 
-const { owner, restaurant, signOut } = useAuth()
+const { owner, restaurant, isModerator, signOut } = useAuth()
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
@@ -19,6 +19,7 @@ const showShell = computed(() => route.name && route.name !== 'login')
 const activeTab = computed(() => {
   if (route.name === 'scan') return 'scan'
   if (route.name === 'history') return 'history'
+  if (route.name === 'approve') return 'approve'
   return 'dashboard'
 })
 
@@ -81,6 +82,18 @@ async function doSignOut() {
             <path d="M12 8v4.5l3 2" />
           </svg>
           {{ t('nav.history') }}
+        </RouterLink>
+        <RouterLink
+          v-if="isModerator"
+          :to="{ name: 'approve' }"
+          :class="{ on: activeTab === 'approve' }"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 12.5l2.2 2.2L15.5 10" />
+            <path d="M12 3.2l7 3v5.3c0 4.5-3 7.8-7 9.3-4-1.5-7-4.8-7-9.3V6.2z" />
+          </svg>
+          {{ t('nav.approve') }}
         </RouterLink>
       </nav>
     </template>

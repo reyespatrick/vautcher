@@ -14,14 +14,18 @@ const RESERVATION_TABLE = 'vautcher_reservations'
 export async function saveProfile(profile) {
   if (!supabase) return { ok: true, source: 'local' }
 
-  const { error } = await supabase.rpc('vautcher_save_profile', {
-    p_id: profile.id,
-    p_name: profile.name.trim(),
-    p_birth_date: profile.birthDate
-  })
+  try {
+    const { error } = await supabase.rpc('vautcher_save_profile', {
+      p_id: profile.id,
+      p_name: profile.name.trim(),
+      p_birth_date: profile.birthDate
+    })
 
-  if (error) return { ok: false, error: error.message }
-  return { ok: true, source: 'supabase' }
+    if (error) return { ok: false, error: error.message }
+    return { ok: true, source: 'supabase' }
+  } catch (e) {
+    return { ok: false, error: e?.message || String(e) }
+  }
 }
 
 // Demo data so the voucher card looks alive when there is no backend.
@@ -41,24 +45,28 @@ const DEMO_VOUCHER = {
 export async function fetchVoucher(profileId) {
   if (!supabase) return { ...DEMO_VOUCHER, source: 'local' }
 
-  let required = 10
-  let reward = 'Une récompense offerte'
-  const { data: cfg } = await supabase
-    .from('vautcher_config')
-    .select('stamps_required, reward')
-    .limit(1)
-    .maybeSingle()
-  if (cfg) {
-    required = cfg.stamps_required ?? required
-    reward = cfg.reward ?? reward
-  }
+  try {
+    let required = 10
+    let reward = 'Une récompense offerte'
+    const { data: cfg } = await supabase
+      .from('vautcher_config')
+      .select('stamps_required, reward')
+      .limit(1)
+      .maybeSingle()
+    if (cfg) {
+      required = cfg.stamps_required ?? required
+      reward = cfg.reward ?? reward
+    }
 
-  let stamps = []
-  if (profileId) {
-    const { data } = await supabase.rpc('vautcher_get_stamps', { p_profile_id: profileId })
-    if (Array.isArray(data)) stamps = data.map((r) => r.stamp_date)
+    let stamps = []
+    if (profileId) {
+      const { data } = await supabase.rpc('vautcher_get_stamps', { p_profile_id: profileId })
+      if (Array.isArray(data)) stamps = data.map((r) => r.stamp_date)
+    }
+    return { stamps, required, reward, source: 'supabase' }
+  } catch (e) {
+    return { ...DEMO_VOUCHER, source: 'local' }
   }
-  return { stamps, required, reward, source: 'supabase' }
 }
 
 // Demo events so the section looks alive when there is no backend.
@@ -87,31 +95,43 @@ const DEMO_EVENTS = [
  */
 export async function fetchEvents(profileId) {
   if (!supabase) return { events: DEMO_EVENTS, source: 'local' }
-  const { data, error } = await supabase.rpc('vautcher_upcoming_events', {
-    p_profile_id: profileId || null
-  })
-  if (error || !Array.isArray(data)) return { events: DEMO_EVENTS, source: 'local' }
-  return { events: data, source: 'supabase' }
+  try {
+    const { data, error } = await supabase.rpc('vautcher_upcoming_events', {
+      p_profile_id: profileId || null
+    })
+    if (error || !Array.isArray(data)) return { events: DEMO_EVENTS, source: 'local' }
+    return { events: data, source: 'supabase' }
+  } catch (e) {
+    return { events: DEMO_EVENTS, source: 'local' }
+  }
 }
 
 /** Signals the visitor will join an event. */
 export async function joinEvent(eventId, profileId) {
   if (!supabase) return { ok: true, source: 'local' }
-  const { error } = await supabase.rpc('vautcher_join_event', {
-    p_event_id: eventId, p_profile_id: profileId
-  })
-  if (error) return { ok: false, error: error.message }
-  return { ok: true }
+  try {
+    const { error } = await supabase.rpc('vautcher_join_event', {
+      p_event_id: eventId, p_profile_id: profileId
+    })
+    if (error) return { ok: false, error: error.message }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e?.message || String(e) }
+  }
 }
 
 /** Cancels the visitor's participation in an event. */
 export async function leaveEvent(eventId, profileId) {
   if (!supabase) return { ok: true, source: 'local' }
-  const { error } = await supabase.rpc('vautcher_leave_event', {
-    p_event_id: eventId, p_profile_id: profileId
-  })
-  if (error) return { ok: false, error: error.message }
-  return { ok: true }
+  try {
+    const { error } = await supabase.rpc('vautcher_leave_event', {
+      p_event_id: eventId, p_profile_id: profileId
+    })
+    if (error) return { ok: false, error: error.message }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e?.message || String(e) }
+  }
 }
 
 /** Inserts a reservation. Returns { ok, source } or { ok:false, error }. */
@@ -120,14 +140,18 @@ export async function createReservation(form) {
     // No backend configured — simulate success.
     return { ok: true, source: 'local' }
   }
-  const { error } = await supabase.from(RESERVATION_TABLE).insert({
-    res_date: form.date,
-    res_time: form.time,
-    guests: form.guests,
-    name: form.name.trim(),
-    phone: form.phone.trim(),
-    notes: form.notes?.trim() || null
-  })
-  if (error) return { ok: false, error: error.message }
-  return { ok: true, source: 'supabase' }
+  try {
+    const { error } = await supabase.from(RESERVATION_TABLE).insert({
+      res_date: form.date,
+      res_time: form.time,
+      guests: form.guests,
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      notes: form.notes?.trim() || null
+    })
+    if (error) return { ok: false, error: error.message }
+    return { ok: true, source: 'supabase' }
+  } catch (e) {
+    return { ok: false, error: e?.message || String(e) }
+  }
 }

@@ -19,8 +19,12 @@ function eventDate(d) {
 }
 
 onMounted(async () => {
-  const { events: list } = await fetchEvents()
-  events.value = list.slice(0, 3)
+  try {
+    const { events: list } = await fetchEvents()
+    events.value = list.slice(0, 3)
+  } catch (e) {
+    /* leave events empty — the empty state will show */
+  }
 })
 </script>
 

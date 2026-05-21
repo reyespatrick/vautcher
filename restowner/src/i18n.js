@@ -3,7 +3,7 @@ import { createI18n } from 'vue-i18n'
 
 const fr = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Événements', scan: 'Scanner', history: 'Historique' },
+  nav: { events: 'Événements', scan: 'Scanner', history: 'Historique', approve: 'À approuver' },
   app: { tagline: 'Console restaurateur' },
   common: {
     loading: 'Chargement…', save: 'Enregistrer', cancel: 'Annuler',
@@ -40,6 +40,7 @@ const fr = {
   event: {
     edit: 'Modifier', cancel: 'Annuler',
     published: 'Publié', draft: 'Brouillon', cancelled: 'Annulé',
+    pending: 'En attente', approved: 'Approuvé', refused: 'Refusé',
     allAges: 'Tous âges', ageRange: '{min}–{max} ans',
     ageMinOnly: '{min} ans et +', ageMaxOnly: 'jusqu’à {max} ans',
     confirmCancel: 'Annuler définitivement « {title} » ?'
@@ -81,12 +82,27 @@ const fr = {
     start: 'Démarrer le scan', startAgain: 'Scanner un autre code', stop: 'Arrêter',
     stampAdded: 'Tampon ajouté pour {name}.', stampTotal: '{n} tampon(s) au total',
     notFound: 'Client introuvable.', cameraError: 'Caméra inaccessible : {msg}'
+  },
+  approve: {
+    title: 'Événements à approuver', empty: 'Aucun événement en attente.',
+    at: 'chez', approveBtn: 'Approuver', refuseBtn: 'Refuser'
+  },
+  refuse: {
+    title: 'Refuser l’événement',
+    intro: 'Indiquez la ou les raisons du refus :',
+    r1: 'Texte ou description inappropriés',
+    r2: 'Image inappropriée ou de mauvaise qualité',
+    r3: 'Informations incomplètes',
+    r4: 'Date ou lieu incorrects',
+    r5: 'Non conforme aux règles de la plateforme',
+    other: 'Autre raison', otherPlaceholder: 'Précisez…',
+    confirm: 'Confirmer le refus'
   }
 }
 
 const de = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Veranstaltungen', scan: 'Scannen', history: 'Verlauf' },
+  nav: { events: 'Veranstaltungen', scan: 'Scannen', history: 'Verlauf', approve: 'Zu prüfen' },
   app: { tagline: 'Gastronomen-Konsole' },
   common: {
     loading: 'Wird geladen…', save: 'Speichern', cancel: 'Abbrechen',
@@ -123,6 +139,7 @@ const de = {
   event: {
     edit: 'Bearbeiten', cancel: 'Absagen',
     published: 'Veröffentlicht', draft: 'Entwurf', cancelled: 'Abgesagt',
+    pending: 'Ausstehend', approved: 'Genehmigt', refused: 'Abgelehnt',
     allAges: 'Alle Altersgruppen', ageRange: '{min}–{max} Jahre',
     ageMinOnly: 'ab {min} Jahren', ageMaxOnly: 'bis {max} Jahre',
     confirmCancel: '« {title} » endgültig absagen?'
@@ -164,12 +181,27 @@ const de = {
     start: 'Scan starten', startAgain: 'Weiteren Code scannen', stop: 'Stoppen',
     stampAdded: 'Stempel hinzugefügt für {name}.', stampTotal: 'Insgesamt {n} Stempel',
     notFound: 'Kunde nicht gefunden.', cameraError: 'Kamera nicht verfügbar: {msg}'
+  },
+  approve: {
+    title: 'Zu prüfende Veranstaltungen', empty: 'Keine ausstehenden Veranstaltungen.',
+    at: 'bei', approveBtn: 'Genehmigen', refuseBtn: 'Ablehnen'
+  },
+  refuse: {
+    title: 'Veranstaltung ablehnen',
+    intro: 'Geben Sie den oder die Ablehnungsgründe an:',
+    r1: 'Unangemessener Text oder Beschreibung',
+    r2: 'Unangemessenes oder schlechtes Bild',
+    r3: 'Unvollständige Informationen',
+    r4: 'Falsches Datum oder falscher Ort',
+    r5: 'Verstößt gegen die Plattformregeln',
+    other: 'Anderer Grund', otherPlaceholder: 'Bitte angeben…',
+    confirm: 'Ablehnung bestätigen'
   }
 }
 
 const it = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Eventi', scan: 'Scansiona', history: 'Cronologia' },
+  nav: { events: 'Eventi', scan: 'Scansiona', history: 'Cronologia', approve: 'Da approvare' },
   app: { tagline: 'Console ristoratore' },
   common: {
     loading: 'Caricamento…', save: 'Salva', cancel: 'Annulla',
@@ -206,6 +238,7 @@ const it = {
   event: {
     edit: 'Modifica', cancel: 'Annulla',
     published: 'Pubblicato', draft: 'Bozza', cancelled: 'Annullato',
+    pending: 'In attesa', approved: 'Approvato', refused: 'Rifiutato',
     allAges: 'Tutte le età', ageRange: '{min}–{max} anni',
     ageMinOnly: 'da {min} anni', ageMaxOnly: 'fino a {max} anni',
     confirmCancel: 'Annullare definitivamente « {title} »?'
@@ -247,6 +280,21 @@ const it = {
     start: 'Avvia la scansione', startAgain: 'Scansiona un altro codice', stop: 'Ferma',
     stampAdded: 'Timbro aggiunto per {name}.', stampTotal: '{n} timbri in totale',
     notFound: 'Cliente non trovato.', cameraError: 'Fotocamera non disponibile: {msg}'
+  },
+  approve: {
+    title: 'Eventi da approvare', empty: 'Nessun evento in attesa.',
+    at: 'presso', approveBtn: 'Approva', refuseBtn: 'Rifiuta'
+  },
+  refuse: {
+    title: 'Rifiuta l’evento',
+    intro: 'Indica il motivo o i motivi del rifiuto:',
+    r1: 'Testo o descrizione inappropriati',
+    r2: 'Immagine inappropriata o di bassa qualità',
+    r3: 'Informazioni incomplete',
+    r4: 'Data o luogo errati',
+    r5: 'Non conforme alle regole della piattaforma',
+    other: 'Altro motivo', otherPlaceholder: 'Specifica…',
+    confirm: 'Conferma il rifiuto'
   }
 }
 

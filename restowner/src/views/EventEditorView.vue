@@ -65,11 +65,16 @@ async function onPickFile(e) {
   if (!file || !restaurant.value) return
   uploading.value = true
   error.value = ''
-  const { url, path, error: e2 } = await uploadEventImage(restaurant.value.id, file)
-  uploading.value = false
-  if (e2) { error.value = t('editor.uploadFailed'); return }
-  uploadedImages.value.unshift({ url, path })
-  form.value.image_url = url
+  try {
+    const { url, path, error: e2 } = await uploadEventImage(restaurant.value.id, file)
+    if (e2) { error.value = t('editor.uploadFailed'); return }
+    uploadedImages.value.unshift({ url, path })
+    form.value.image_url = url
+  } catch (err) {
+    error.value = t('editor.uploadFailed')
+  } finally {
+    uploading.value = false
+  }
 }
 
 async function onDeleteImage(img) {

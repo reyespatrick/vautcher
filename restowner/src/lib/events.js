@@ -95,3 +95,33 @@ export async function deleteEventImage(path) {
   const { error } = await supabase.storage.from(IMAGE_BUCKET).remove([path])
   return { error }
 }
+
+// ---- Moderation (root / moderator) ----
+
+/** Pending events awaiting moderation, oldest first, with restaurant name. */
+export async function listPendingEvents() {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*, restaurant:vautcher_restaurants(name)')
+    .eq('moderation_status', 'pending')
+    .order('submitted_at', { ascending: true })
+  return { data: data || [], error }
+}
+
+/** Approve an event — it becomes visible to diners. */
+export async function approveEvent(id) {
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ moderation_status: 'approved', refusal_reason: null })
+    .eq('id', id)
+  return { error }
+}
+
+/** Refuse an event with a reason shown to the owner. */
+export async function refuseEvent(id, reason) {
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ moderation_status: 'refused', refusal_reason: reason })
+    .eq('id', id)
+  return { error }
+}
