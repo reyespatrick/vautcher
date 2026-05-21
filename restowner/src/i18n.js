@@ -7,7 +7,8 @@ const fr = {
   app: { tagline: 'Console restaurateur' },
   common: {
     loading: 'Chargement…', save: 'Enregistrer', cancel: 'Annuler',
-    retry: 'Réessayer', signOut: 'Déconnexion'
+    retry: 'Réessayer', loadError: 'Impossible de charger les événements.',
+    signOut: 'Déconnexion'
   },
   profile: {
     title: 'Profil', textSize: 'Taille du texte', language: 'Langue',
@@ -65,6 +66,7 @@ const fr = {
     confirmCancel: 'Annuler cet événement ? Il ne sera plus visible par les clients.',
     loadFailed: 'Le chargement a échoué. Vérifiez votre connexion et réessayez.',
     loadError: 'Impossible de charger l’événement.',
+    saveFailed: 'L’enregistrement a échoué. Réessayez.',
     uploadFailed: 'Échec de l’envoi de l’image. Réessayez.',
     confirmDeleteImage: 'Supprimer cette image ?'
   },
@@ -84,7 +86,8 @@ const de = {
   app: { tagline: 'Gastronomen-Konsole' },
   common: {
     loading: 'Wird geladen…', save: 'Speichern', cancel: 'Abbrechen',
-    retry: 'Erneut versuchen', signOut: 'Abmelden'
+    retry: 'Erneut versuchen', loadError: 'Veranstaltungen konnten nicht geladen werden.',
+    signOut: 'Abmelden'
   },
   profile: {
     title: 'Profil', textSize: 'Textgröße', language: 'Sprache',
@@ -142,6 +145,7 @@ const de = {
     confirmCancel: 'Diese Veranstaltung absagen? Sie wird für Kunden nicht mehr sichtbar sein.',
     loadFailed: 'Laden fehlgeschlagen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.',
     loadError: 'Veranstaltung konnte nicht geladen werden.',
+    saveFailed: 'Speichern fehlgeschlagen. Bitte erneut versuchen.',
     uploadFailed: 'Bild-Upload fehlgeschlagen. Bitte erneut versuchen.',
     confirmDeleteImage: 'Dieses Bild löschen?'
   },
@@ -161,7 +165,8 @@ const it = {
   app: { tagline: 'Console ristoratore' },
   common: {
     loading: 'Caricamento…', save: 'Salva', cancel: 'Annulla',
-    retry: 'Riprova', signOut: 'Disconnetti'
+    retry: 'Riprova', loadError: 'Impossibile caricare gli eventi.',
+    signOut: 'Disconnetti'
   },
   profile: {
     title: 'Profilo', textSize: 'Dimensione del testo', language: 'Lingua',
@@ -219,6 +224,7 @@ const it = {
     confirmCancel: 'Annullare questo evento? Non sarà più visibile ai clienti.',
     loadFailed: 'Caricamento non riuscito. Controlla la connessione e riprova.',
     loadError: 'Impossibile caricare l’evento.',
+    saveFailed: 'Salvataggio non riuscito. Riprova.',
     uploadFailed: 'Caricamento dell’immagine non riuscito. Riprova.',
     confirmDeleteImage: 'Eliminare questa immagine?'
   },

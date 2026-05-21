@@ -115,36 +115,47 @@ async function save() {
   saving.value = true
   error.value = ''
 
-  const payload = {
-    restaurant_id: restaurant.value.id,
-    title: form.value.title.trim(),
-    description: form.value.description.trim(),
-    event_date: form.value.event_date,
-    event_time: form.value.event_time.trim() || null,
-    location: form.value.location.trim() || null,
-    price: form.value.price.trim() || null,
-    image_url: form.value.image_url,
-    age_min: ageTargeted.value ? (Number(form.value.age_min) || null) : null,
-    age_max: ageTargeted.value ? (Number(form.value.age_max) || null) : null,
-    notify_days_before: null,
-    rebate_value: rebateOn.value ? (Number(form.value.rebate_value) || null) : null,
-    rebate_unit: form.value.rebate_unit,
-    rebate_first_n: (rebateOn.value && rebateLimited.value)
-      ? (Number(form.value.rebate_first_n) || null)
-      : null,
-    published: true,
-    status: form.value.status
-  }
+  // Watchdog — never leave the button stuck on "Enregistrement…".
+  const watchdog = setTimeout(() => {
+    if (saving.value) {
+      saving.value = false
+      error.value = t('editor.saveFailed')
+    }
+  }, 12000)
 
-  let err
-  if (editingId.value) {
-    err = (await updateEvent(editingId.value, payload)).error
-  } else {
-    err = (await createEvent(payload)).error
+  try {
+    const payload = {
+      restaurant_id: restaurant.value.id,
+      title: form.value.title.trim(),
+      description: form.value.description.trim(),
+      event_date: form.value.event_date,
+      event_time: form.value.event_time.trim() || null,
+      location: form.value.location.trim() || null,
+      price: form.value.price.trim() || null,
+      image_url: form.value.image_url,
+      age_min: ageTargeted.value ? (Number(form.value.age_min) || null) : null,
+      age_max: ageTargeted.value ? (Number(form.value.age_max) || null) : null,
+      notify_days_before: null,
+      rebate_value: rebateOn.value ? (Number(form.value.rebate_value) || null) : null,
+      rebate_unit: form.value.rebate_unit,
+      rebate_first_n: (rebateOn.value && rebateLimited.value)
+        ? (Number(form.value.rebate_first_n) || null)
+        : null,
+      published: true,
+      status: form.value.status
+    }
+
+    const res = editingId.value
+      ? await updateEvent(editingId.value, payload)
+      : await createEvent(payload)
+    if (res.error) { error.value = res.error.message; return }
+    router.push({ name: 'dashboard' })
+  } catch (e) {
+    error.value = (e && e.message) || String(e)
+  } finally {
+    clearTimeout(watchdog)
+    saving.value = false
   }
-  saving.value = false
-  if (err) { error.value = err.message; return }
-  router.push({ name: 'dashboard' })
 }
 
 async function onCancelEvent() {

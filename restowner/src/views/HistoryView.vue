@@ -11,14 +11,26 @@ const { restaurant } = useAuth()
 const { t } = useI18n()
 const events = ref([])
 const loading = ref(true)
+const loadError = ref(false)
 
 async function load() {
   loading.value = true
-  if (restaurant.value) {
-    const { data } = await listEvents(restaurant.value.id)
-    events.value = data
+  loadError.value = false
+  const watchdog = setTimeout(() => {
+    if (loading.value) { loading.value = false; loadError.value = true }
+  }, 9000)
+  try {
+    if (restaurant.value) {
+      const { data, error } = await listEvents(restaurant.value.id)
+      if (error) throw error
+      events.value = data
+    }
+  } catch (e) {
+    loadError.value = true
+  } finally {
+    clearTimeout(watchdog)
+    loading.value = false
   }
-  loading.value = false
 }
 // Runs now and again if `restaurant` resolves after this view mounts.
 watch(restaurant, load, { immediate: true })
@@ -40,6 +52,11 @@ const past = computed(() =>
 
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 
+    <div v-else-if="loadError" class="empty">
+      {{ t('common.loadError') }}
+      <button class="btn btn--plain btn--sm retry" @click="load">{{ t('common.retry') }}</button>
+    </div>
+
     <p v-else-if="!past.length" class="empty">{{ t('history.empty') }}</p>
 
     <div v-else class="ev-list">
@@ -54,4 +71,5 @@ const past = computed(() =>
 
 <style scoped>
 .ev-list { display: flex; flex-direction: column; gap: 12px; }
+.retry { display: block; margin: 14px auto 0; }
 </style>

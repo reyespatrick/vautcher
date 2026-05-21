@@ -11,14 +11,27 @@ const { restaurant } = useAuth()
 const { t } = useI18n()
 const events = ref([])
 const loading = ref(true)
+const loadError = ref(false)
 
 async function load() {
   loading.value = true
-  if (restaurant.value) {
-    const { data } = await listEvents(restaurant.value.id)
-    events.value = data
+  loadError.value = false
+  // Watchdog — never leave the screen stuck on "Chargement…".
+  const watchdog = setTimeout(() => {
+    if (loading.value) { loading.value = false; loadError.value = true }
+  }, 9000)
+  try {
+    if (restaurant.value) {
+      const { data, error } = await listEvents(restaurant.value.id)
+      if (error) throw error
+      events.value = data
+    }
+  } catch (e) {
+    loadError.value = true
+  } finally {
+    clearTimeout(watchdog)
+    loading.value = false
   }
-  loading.value = false
 }
 // Runs now and again if `restaurant` resolves after this view mounts.
 watch(restaurant, load, { immediate: true })
@@ -50,6 +63,11 @@ async function onCancel(ev) {
 
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 
+    <div v-else-if="loadError" class="empty">
+      {{ t('common.loadError') }}
+      <button class="btn btn--plain btn--sm retry" @click="load">{{ t('common.retry') }}</button>
+    </div>
+
     <p v-else-if="!upcoming.length" class="empty">
       {{ t('dashboard.empty') }}<br />{{ t('dashboard.emptyHint') }}
     </p>
@@ -71,4 +89,5 @@ async function onCancel(ev) {
 .create-btn { margin-bottom: 22px; }
 .plus { font-size: 1.15rem; font-weight: 700; line-height: 0; }
 .ev-list { display: flex; flex-direction: column; gap: 12px; }
+.retry { display: block; margin: 14px auto 0; }
 </style>
