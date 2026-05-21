@@ -174,9 +174,10 @@ const version = __APP_VERSION__ // from package.json — bump it on every releas
 .pm-version {
   padding: 9px 18px 11px;
   text-align: center;
-  font-size: 0.62rem;
+  font-size: 0.78rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
-  color: var(--ink);
+  color: #000;
   border-top: 1px solid var(--line);
 }
 </style>
