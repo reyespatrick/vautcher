@@ -58,6 +58,10 @@ jobs:
         working-directory: restowner
       - run: npm run build
         working-directory: restowner
+        # .env is gitignored, so Vite gets its public Supabase config here.
+        env:
+          VITE_SUPABASE_URL: https://yfyfoqrautdogivalimb.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_CucZIIP9fzY-AN5ChPQGlQ_vWfmeTAR
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
@@ -78,6 +82,10 @@ jobs:
         working-directory: app
       - run: npm run build
         working-directory: app
+        # .env is gitignored, so Vite gets its public Supabase config here.
+        env:
+          VITE_SUPABASE_URL: https://yfyfoqrautdogivalimb.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_CucZIIP9fzY-AN5ChPQGlQ_vWfmeTAR
       - name: Deploy to Cloudflare Pages (la-gioconda)
         uses: cloudflare/wrangler-action@v3
         with:
