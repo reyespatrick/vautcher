@@ -1,12 +1,14 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import { listEvents, cancelEvent } from '../lib/events'
 import { today } from '../lib/format'
 import EventRow from '../components/EventRow.vue'
 
 const { restaurant } = useAuth()
+const { t } = useI18n()
 const events = ref([])
 const loading = ref(true)
 
@@ -29,7 +31,7 @@ const upcoming = computed(() =>
 )
 
 async function onCancel(ev) {
-  if (!confirm(`Annuler définitivement « ${ev.title} » ?`)) return
+  if (!confirm(t('event.confirmCancel', { title: ev.title }))) return
   await cancelEvent(ev.id)
   load()
 }
@@ -38,28 +40,28 @@ async function onCancel(ev) {
 <template>
   <div class="page">
     <div class="page-head">
-      <h1>Événements à venir</h1>
+      <h1>{{ t('dashboard.title') }}</h1>
       <p>{{ restaurant ? restaurant.name : '' }}</p>
     </div>
 
     <RouterLink to="/event/new" class="btn btn--full create-btn">
-      <span class="plus">+</span> Créer un événement
+      <span class="plus">+</span> {{ t('dashboard.create') }}
     </RouterLink>
 
-    <p v-if="loading" class="spinner-note">Chargement…</p>
+    <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 
     <p v-else-if="!upcoming.length" class="empty">
-      Aucun événement à venir.<br />Créez-en un pour qu’il apparaisse dans l’app cliente.
+      {{ t('dashboard.empty') }}<br />{{ t('dashboard.emptyHint') }}
     </p>
 
     <div v-else class="ev-list">
       <EventRow v-for="ev in upcoming" :key="ev.id" :event="ev">
-        <RouterLink :to="`/event/${ev.id}`" class="btn btn--plain btn--sm">Modifier</RouterLink>
+        <RouterLink :to="`/event/${ev.id}`" class="btn btn--plain btn--sm">{{ t('event.edit') }}</RouterLink>
         <button
           v-if="ev.status !== 'cancelled'"
           class="btn btn--danger btn--sm"
           @click="onCancel(ev)"
-        >Annuler</button>
+        >{{ t('event.cancel') }}</button>
       </EventRow>
     </div>
   </div>

@@ -8,8 +8,8 @@ cd "$(cd "$(dirname "$0")" && pwd)"
 TOKEN=$(grep '^SUPABASE_ACCESS_TOKEN=' .env | head -1 | cut -d= -f2-)
 REF=$(grep '^SUPABASE_PROJECT_REF=' .env | head -1 | cut -d= -f2-)
 
-echo "==> 1/3  Applying DB migrations (storage + rebate)"
-for f in restowner/supabase/storage.sql restowner/supabase/rebate-schema.sql; do
+echo "==> 1/3  Applying DB migrations (storage + rebate + prefs)"
+for f in restowner/supabase/storage.sql restowner/supabase/rebate-schema.sql restowner/supabase/prefs-schema.sql; do
   jq -Rs '{query: .}' "$f" \
     | curl -sS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
         -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" --data @- \

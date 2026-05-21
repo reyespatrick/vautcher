@@ -19,9 +19,11 @@ async function loadOwner() {
     return
   }
   const email = (session.value.user.email || '').toLowerCase()
+  // select('*') so pref_lang / pref_font_scale are picked up once the
+  // prefs migration has run — and tolerated before it has.
   const { data: o } = await supabase
     .from('vautcher_owners')
-    .select('email, restaurant_id, name')
+    .select('*')
     .eq('email', email)
     .maybeSingle()
 

@@ -1,9 +1,25 @@
 <script setup>
 import { computed } from 'vue'
-import { formatDate, ageLabel } from '../lib/format'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({ event: { type: Object, required: true } })
-const isAgeTargeted = computed(() => props.event.age_min || props.event.age_max)
+const { t, locale } = useI18n()
+
+const dateText = computed(() => {
+  if (!props.event.event_date) return ''
+  return new Intl.DateTimeFormat(locale.value, {
+    day: 'numeric', month: 'long', year: 'numeric'
+  }).format(new Date(props.event.event_date + 'T00:00:00'))
+})
+
+const ageText = computed(() => {
+  const { age_min, age_max } = props.event
+  if (age_min && age_max) return t('event.ageRange', { min: age_min, max: age_max })
+  if (age_min) return t('event.ageMinOnly', { min: age_min })
+  if (age_max) return t('event.ageMaxOnly', { max: age_max })
+  return ''
+})
+
 const rebateBadge = computed(() => {
   const v = props.event.rebate_value
   if (!v) return ''
@@ -21,17 +37,14 @@ const rebateBadge = computed(() => {
     <div class="ev-info">
       <div class="ev-titleline">
         <h3>{{ event.title }}</h3>
-        <span v-if="event.status === 'cancelled'" class="badge badge--cancel">Annulé</span>
-        <span v-else-if="event.published" class="badge badge--ok">Publié</span>
-        <span v-else class="badge badge--off">Brouillon</span>
-        <span v-if="isAgeTargeted" class="badge badge--age">{{ ageLabel(event) }}</span>
+        <span v-if="event.status === 'cancelled'" class="badge badge--cancel">{{ t('event.cancelled') }}</span>
+        <span v-else-if="event.published" class="badge badge--ok">{{ t('event.published') }}</span>
+        <span v-else class="badge badge--off">{{ t('event.draft') }}</span>
+        <span v-if="ageText" class="badge badge--age">{{ ageText }}</span>
         <span v-if="rebateBadge" class="badge badge--rebate">{{ rebateBadge }}</span>
       </div>
       <p class="ev-meta">
-        {{ formatDate(event.event_date) }}<template v-if="event.event_time"> · {{ event.event_time }}</template><template v-if="event.location"> · {{ event.location }}</template>
-      </p>
-      <p v-if="event.notify_days_before" class="ev-notify">
-        🔔 Notification programmée {{ event.notify_days_before }} j avant
+        {{ dateText }}<template v-if="event.event_time"> · {{ event.event_time }}</template><template v-if="event.location"> · {{ event.location }}</template>
       </p>
     </div>
 
@@ -58,7 +71,6 @@ const rebateBadge = computed(() => {
 .ev-titleline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .ev-titleline h3 { font-size: 1.02rem; color: var(--ink); }
 .ev-meta { color: var(--mut); font-size: 0.8rem; margin-top: 3px; }
-.ev-notify { color: var(--accent); font-size: 0.74rem; font-weight: 700; margin-top: 5px; }
 .ev-actions {
   display: flex;
   gap: 8px;

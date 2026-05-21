@@ -1,11 +1,16 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { RouterView, RouterLink, useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from './composables/useAuth'
+import { fontScale, useUiPrefs } from './composables/usePrefs'
+import ProfileMenu from './components/ProfileMenu.vue'
 
 const { owner, restaurant, signOut } = useAuth()
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
+const { hydrateFromOwner } = useUiPrefs()
 
 // Shell (header + tab bar) shows everywhere except the login screen.
 const showShell = computed(() => route.name && route.name !== 'login')
@@ -16,6 +21,9 @@ const activeTab = computed(() => {
   if (route.name === 'history') return 'history'
   return 'dashboard'
 })
+
+// Pull the owner's saved language / text size once they're known.
+watch(owner, (o) => { if (o) hydrateFromOwner(o) }, { immediate: true })
 
 async function doSignOut() {
   await signOut()
@@ -31,23 +39,21 @@ async function doSignOut() {
           <img src="/assets/logo.jpg" alt="" />
           <span>
             <b>restowner</b>
-            <small>Console restaurateur</small>
+            <small>{{ t('app.tagline') }}</small>
           </span>
         </RouterLink>
         <div class="hdr-right">
           <span v-if="restaurant" class="who">{{ restaurant.name }}</span>
-          <button v-if="owner" class="icon-btn" aria-label="Déconnexion" @click="doSignOut">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15 17v1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1" />
-              <path d="M10 12h11M18 9l3 3-3 3" />
-            </svg>
-          </button>
+          <ProfileMenu v-if="owner" :restaurant="restaurant" @signout="doSignOut" />
         </div>
       </header>
 
       <main class="viewport">
-        <RouterView />
+        <!-- Inner wrapper carries the text-size zoom so the header/tab bar
+             stay fixed and the content simply scrolls. -->
+        <div class="vp-zoom" :style="{ zoom: fontScale }">
+          <RouterView />
+        </div>
       </main>
 
       <nav class="tabbar">
@@ -57,7 +63,7 @@ async function doSignOut() {
             <rect x="3" y="4.5" width="18" height="17" rx="2.5" />
             <path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
           </svg>
-          Événements
+          {{ t('nav.events') }}
         </RouterLink>
         <RouterLink :to="{ name: 'scan' }" :class="{ on: activeTab === 'scan' }">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -65,7 +71,7 @@ async function doSignOut() {
             <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" />
             <path d="M4 12h16" />
           </svg>
-          Scanner
+          {{ t('nav.scan') }}
         </RouterLink>
         <RouterLink :to="{ name: 'history' }" :class="{ on: activeTab === 'history' }">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -74,7 +80,7 @@ async function doSignOut() {
             <path d="M3.5 19v-5h5" />
             <path d="M12 8v4.5l3 2" />
           </svg>
-          Historique
+          {{ t('nav.history') }}
         </RouterLink>
       </nav>
     </template>

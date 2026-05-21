@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import {
   getEvent, createEvent, updateEvent, cancelEvent, IMAGE_OPTIONS,
@@ -10,6 +11,7 @@ import {
 const route = useRoute()
 const router = useRouter()
 const { restaurant } = useAuth()
+const { t } = useI18n()
 
 const editingId = computed(() => (route.name === 'event-edit' ? route.params.id : null))
 
@@ -61,13 +63,13 @@ async function onPickFile(e) {
   error.value = ''
   const { url, path, error: e2 } = await uploadEventImage(restaurant.value.id, file)
   uploading.value = false
-  if (e2) { error.value = 'Échec de l’envoi de l’image. Réessayez.'; return }
+  if (e2) { error.value = t('editor.uploadFailed'); return }
   uploadedImages.value.unshift({ url, path })
   form.value.image_url = url
 }
 
 async function onDeleteImage(img) {
-  if (!confirm('Supprimer cette image ?')) return
+  if (!confirm(t('editor.confirmDeleteImage'))) return
   await deleteEventImage(img.path)
   uploadedImages.value = uploadedImages.value.filter((i) => i.path !== img.path)
   if (form.value.image_url === img.url) form.value.image_url = IMAGE_OPTIONS[0].url
@@ -79,13 +81,11 @@ onMounted(async () => {
   const sourceId = editingId.value || route.query.from
   if (!sourceId) { loading.value = false; return } // brand-new event
 
-  // Watchdog — never leave the screen stuck on "Chargement…".
+  // Watchdog — never leave the screen stuck on "loading".
   const watchdog = setTimeout(() => {
     if (loading.value) {
       loading.value = false
-      if (!form.value.title) {
-        error.value = 'Le chargement a échoué. Vérifiez votre connexion et réessayez.'
-      }
+      if (!form.value.title) error.value = t('editor.loadFailed')
     }
   }, 8000)
 
@@ -101,7 +101,7 @@ onMounted(async () => {
       }
     }
   } catch (err) {
-    error.value = 'Impossible de charger l’événement.'
+    error.value = t('editor.loadError')
   } finally {
     clearTimeout(watchdog)
     loading.value = false
@@ -148,7 +148,7 @@ async function save() {
 }
 
 async function onCancelEvent() {
-  if (!confirm('Annuler cet événement ? Il ne sera plus visible par les clients.')) return
+  if (!confirm(t('editor.confirmCancel'))) return
   await cancelEvent(editingId.value)
   router.push({ name: 'dashboard' })
 }
@@ -156,52 +156,51 @@ async function onCancelEvent() {
 
 <template>
   <div class="page">
-    <RouterLink to="/" class="back-link">‹ Événements</RouterLink>
+    <RouterLink to="/" class="back-link">‹ {{ t('nav.events') }}</RouterLink>
     <div class="page-head">
-      <h1>{{ editingId ? 'Modifier l’événement' : 'Nouvel événement' }}</h1>
+      <h1>{{ editingId ? t('editor.editTitle') : t('editor.newTitle') }}</h1>
     </div>
 
-    <p v-if="loading" class="spinner-note">Chargement…</p>
+    <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 
     <form v-else class="card editor" @submit.prevent="save">
       <div class="field">
-        <label>Titre *</label>
-        <input v-model="form.title" type="text" placeholder="Soirée dégustation…" required />
+        <label>{{ t('editor.title') }} *</label>
+        <input v-model="form.title" type="text" :placeholder="t('editor.titlePlaceholder')" required />
       </div>
 
       <div class="field">
-        <label>Description</label>
+        <label>{{ t('editor.description') }}</label>
         <textarea v-model="form.description" rows="4"
-          placeholder="Tout ce que le client doit savoir sur l’événement…"></textarea>
+          :placeholder="t('editor.descriptionPlaceholder')"></textarea>
       </div>
 
       <div class="row2">
         <div class="field">
-          <label>Date *</label>
+          <label>{{ t('editor.date') }} *</label>
           <input v-model="form.event_date" type="date" required />
         </div>
         <div class="field">
-          <label>Heure</label>
-          <input v-model="form.event_time" type="text" placeholder="19h00" />
+          <label>{{ t('editor.time') }}</label>
+          <input v-model="form.event_time" type="text" :placeholder="t('editor.timePlaceholder')" />
         </div>
       </div>
 
       <div class="row2">
         <div class="field">
-          <label>Lieu</label>
-          <input v-model="form.location" type="text" placeholder="La Terrasse" />
+          <label>{{ t('editor.place') }}</label>
+          <input v-model="form.location" type="text" :placeholder="t('editor.placePlaceholder')" />
         </div>
         <div class="field">
-          <label>Prix</label>
-          <input v-model="form.price" type="text" placeholder="45 CHF — ou « Entrée libre »" />
+          <label>{{ t('editor.price') }}</label>
+          <input v-model="form.price" type="text" :placeholder="t('editor.pricePlaceholder')" />
         </div>
       </div>
 
       <div class="field">
-        <label>Visuel</label>
-        <!-- Large preview of the chosen image -->
+        <label>{{ t('editor.visual') }}</label>
         <div class="img-preview" :style="{ backgroundImage: `url(${form.image_url})` }">
-          <span class="img-preview-tag">Aperçu</span>
+          <span class="img-preview-tag">{{ t('editor.preview') }}</span>
         </div>
         <div class="img-picker">
           <button type="button" class="img-add" :disabled="uploading"
@@ -212,7 +211,7 @@ async function onCancelEvent() {
                    stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 5v14M5 12h14" />
               </svg>
-              <small>Ajouter</small>
+              <small>{{ t('editor.addImage') }}</small>
             </template>
           </button>
           <input ref="fileInput" type="file" accept="image/*" hidden @change="onPickFile" />
@@ -225,7 +224,7 @@ async function onCancelEvent() {
               :style="{ backgroundImage: `url(${img.url})` }"
               @click="form.image_url = img.url"
             ></button>
-            <button type="button" class="img-del" aria-label="Supprimer"
+            <button type="button" class="img-del" aria-label="×"
               @click="onDeleteImage(img)">×</button>
           </div>
 
@@ -236,14 +235,10 @@ async function onCancelEvent() {
             class="img-opt"
             :class="{ on: form.image_url === img.url }"
             :style="{ backgroundImage: `url(${img.url})` }"
-            :title="img.label"
             @click="form.image_url = img.url"
           ></button>
         </div>
-        <span class="opt-help" style="margin-left:0">
-          Touchez une image pour la choisir. « Ajouter » téléverse votre photo ;
-          le × la supprime.
-        </span>
+        <span class="opt-help" style="margin-left:0">{{ t('editor.imageHint') }}</span>
       </div>
 
       <!-- Age targeting -->
@@ -251,13 +246,13 @@ async function onCancelEvent() {
         <label class="toggle">
           <input type="checkbox" v-model="ageTargeted" />
           <span class="track"></span>
-          <span class="tg-text">Cibler une tranche d’âge</span>
+          <span class="tg-text">{{ t('editor.ageTarget') }}</span>
         </label>
         <div v-if="ageTargeted" class="row2 opt-body">
-          <input v-model="form.age_min" type="number" min="0" max="120" placeholder="Âge min." />
-          <input v-model="form.age_max" type="number" min="0" max="120" placeholder="Âge max." />
+          <input v-model="form.age_min" type="number" min="0" max="120" :placeholder="t('editor.ageMin')" />
+          <input v-model="form.age_max" type="number" min="0" max="120" :placeholder="t('editor.ageMax')" />
         </div>
-        <span v-else class="opt-help">Ouvert à tous les âges.</span>
+        <span v-else class="opt-help">{{ t('editor.ageOpen') }}</span>
       </div>
 
       <!-- Rebate -->
@@ -265,11 +260,11 @@ async function onCancelEvent() {
         <label class="toggle">
           <input type="checkbox" v-model="rebateOn" />
           <span class="track"></span>
-          <span class="tg-text">Offrir un rabais</span>
+          <span class="tg-text">{{ t('editor.rebate') }}</span>
         </label>
         <div v-if="rebateOn" class="opt-body rebate-body">
           <div class="rebate-line">
-            <span>Rabais de</span>
+            <span>{{ t('editor.rebateOf') }}</span>
             <input v-model="form.rebate_value" type="number" min="0" step="any"
               class="rb-val" placeholder="20" />
             <select v-model="form.rebate_unit" class="rb-unit">
@@ -281,31 +276,31 @@ async function onCancelEvent() {
           <label class="toggle sub">
             <input type="checkbox" v-model="rebateLimited" />
             <span class="track"></span>
-            <span class="tg-text">Limiter aux premiers inscrits</span>
+            <span class="tg-text">{{ t('editor.rebateLimit') }}</span>
           </label>
           <div v-if="rebateLimited" class="rebate-line">
-            <span>Pour les</span>
+            <span>{{ t('editor.rebateForFirst') }}</span>
             <input v-model="form.rebate_first_n" type="number" min="1"
               class="rb-val" placeholder="30" />
-            <span>premiers.</span>
+            <span>{{ t('editor.rebateFirstSuffix') }}</span>
           </div>
-          <span v-else class="rebate-note">Valable pour tous les inscrits, sans limite.</span>
+          <span v-else class="rebate-note">{{ t('editor.rebateNoLimit') }}</span>
         </div>
-        <span class="opt-help">Affiché sur l’événement dans l’app cliente.</span>
+        <span class="opt-help">{{ t('editor.rebateHint') }}</span>
       </div>
 
       <p v-if="error" class="err">{{ error }}</p>
 
       <div class="editor-actions">
         <button class="btn btn--full" type="submit" :disabled="!valid || saving">
-          {{ saving ? 'Enregistrement…' : (editingId ? 'Enregistrer' : 'Créer l’événement') }}
+          {{ saving ? t('editor.saving') : (editingId ? t('editor.save') : t('editor.createBtn')) }}
         </button>
         <button
           v-if="editingId && form.status !== 'cancelled'"
           type="button"
           class="btn btn--danger btn--full"
           @click="onCancelEvent"
-        >Annuler l’événement</button>
+        >{{ t('editor.cancelEvent') }}</button>
       </div>
     </form>
   </div>
@@ -410,7 +405,6 @@ async function onCancelEvent() {
 .toggle input:focus-visible + .track { box-shadow: 0 0 0 3px rgba(158, 5, 61, 0.25); }
 .tg-text { font-weight: 600; font-size: 0.9rem; }
 
-/* Smaller sub-toggle (e.g. inside the rebate block) */
 .toggle.sub .track { width: 38px; height: 22px; }
 .toggle.sub .track::after { width: 16px; height: 16px; }
 .toggle.sub input:checked + .track::after { transform: translateX(16px); }

@@ -1,8 +1,10 @@
 <script setup>
 import { ref, nextTick, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Html5Qrcode } from 'html5-qrcode'
 import { supabase } from '../lib/supabase'
 
+const { t } = useI18n()
 const scanning = ref(false)
 const busy = ref(false)
 const result = ref(null) // { ok, name, stamps } | { ok:false, error }
@@ -31,15 +33,13 @@ async function handleCode(text) {
     const row = Array.isArray(data) ? data[0] : data
     result.value = row && row.name
       ? { ok: true, name: row.name, stamps: row.stamps }
-      : { ok: false, error: 'Client introuvable.' }
+      : { ok: false, error: t('scan.notFound') }
   }
   busy.value = false
 }
 
 async function start() {
   result.value = null
-  // Reveal #qr-reader BEFORE starting: html5-qrcode needs a visible,
-  // non-zero-size container or start() throws.
   scanning.value = true
   await nextTick()
   try {
@@ -53,7 +53,7 @@ async function start() {
   } catch (e) {
     scanning.value = false
     const msg = (e && (e.message || e.name)) || String(e)
-    result.value = { ok: false, error: `Caméra inaccessible : ${msg}` }
+    result.value = { ok: false, error: t('scan.cameraError', { msg }) }
   }
 }
 
@@ -63,8 +63,8 @@ onBeforeUnmount(stopScanner)
 <template>
   <div class="page">
     <div class="page-head">
-      <h1>Scanner</h1>
-      <p>Ajoutez un tampon de fidélité en scannant la carte Vautcher du client.</p>
+      <h1>{{ t('scan.title') }}</h1>
+      <p>{{ t('scan.subtitle') }}</p>
     </div>
 
     <div class="card scan-card">
@@ -76,24 +76,23 @@ onBeforeUnmount(stopScanner)
             <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" />
             <rect x="8.5" y="8.5" width="7" height="7" rx="1" />
           </svg>
-          <span>{{ result ? 'Prêt pour un nouveau scan' : 'Caméra prête' }}</span>
+          <span>{{ result ? t('scan.readyAgain') : t('scan.ready') }}</span>
         </div>
       </div>
 
-      <!-- Result -->
       <div v-if="result" class="result" :class="result.ok ? 'good' : 'bad'">
         <div class="big">{{ result.ok ? '✓' : '✕' }}</div>
         <template v-if="result.ok">
-          <p>Tampon ajouté pour <strong>{{ result.name }}</strong>.</p>
-          <p class="count">{{ result.stamps }} tampon(s) au total</p>
+          <p>{{ t('scan.stampAdded', { name: result.name }) }}</p>
+          <p class="count">{{ t('scan.stampTotal', { n: result.stamps }) }}</p>
         </template>
         <p v-else>{{ result.error }}</p>
       </div>
 
       <button v-if="!scanning" class="btn btn--full" @click="start">
-        {{ result ? 'Scanner un autre code' : 'Démarrer le scan' }}
+        {{ result ? t('scan.startAgain') : t('scan.start') }}
       </button>
-      <button v-else class="btn btn--plain btn--full" @click="stopScanner">Arrêter</button>
+      <button v-else class="btn btn--plain btn--full" @click="stopScanner">{{ t('scan.stop') }}</button>
     </div>
   </div>
 </template>

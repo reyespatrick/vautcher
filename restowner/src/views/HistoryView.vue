@@ -1,12 +1,14 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import { listEvents } from '../lib/events'
 import { today } from '../lib/format'
 import EventRow from '../components/EventRow.vue'
 
 const { restaurant } = useAuth()
+const { t } = useI18n()
 const events = ref([])
 const loading = ref(true)
 
@@ -32,18 +34,18 @@ const past = computed(() =>
 <template>
   <div class="page">
     <div class="page-head">
-      <h1>Historique</h1>
-      <p>Événements passés et annulés — réutilisez-les en un clic.</p>
+      <h1>{{ t('history.title') }}</h1>
+      <p>{{ t('history.subtitle') }}</p>
     </div>
 
-    <p v-if="loading" class="spinner-note">Chargement…</p>
+    <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 
-    <p v-else-if="!past.length" class="empty">Aucun événement passé.</p>
+    <p v-else-if="!past.length" class="empty">{{ t('history.empty') }}</p>
 
     <div v-else class="ev-list">
       <EventRow v-for="ev in past" :key="ev.id" :event="ev">
         <RouterLink :to="`/event/new?from=${ev.id}`" class="btn btn--ghost btn--sm">
-          Dupliquer
+          {{ t('history.duplicate') }}
         </RouterLink>
       </EventRow>
     </div>

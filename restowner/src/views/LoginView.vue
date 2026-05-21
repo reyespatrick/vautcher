@@ -1,10 +1,12 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 
 const { session, owner, sendOtp, verifyOtp, signOut } = useAuth()
 const router = useRouter()
+const { t } = useI18n()
 const version = __APP_VERSION__
 
 const step = ref('email') // 'email' | 'code'
@@ -13,7 +15,6 @@ const code = ref('')
 const error = ref('')
 const busy = ref(false)
 
-// Once a recognised owner is signed in, go to the console.
 watch([session, owner], () => {
   if (session.value && owner.value) router.push({ name: 'dashboard' })
 })
@@ -34,7 +35,7 @@ async function onVerify() {
   error.value = ''
   const { error: e } = await verifyOtp(email.value, code.value)
   busy.value = false
-  if (e) { error.value = 'Code invalide ou expiré. Réessayez.'; return }
+  if (e) { error.value = t('login.codeInvalid'); return }
 }
 
 async function backToEmail() {
@@ -58,36 +59,35 @@ async function onSignOut() {
       <div class="login-brand">
         <img src="/assets/logo.jpg" alt="" />
         <b>restowner</b>
-        <small>Console restaurateur · v{{ version }}</small>
+        <small>{{ t('app.tagline') }} · v{{ version }}</small>
       </div>
 
       <!-- Signed in but the email is not a registered owner -->
       <div v-if="session && !owner" class="denied">
-        <h2>Accès refusé</h2>
-        <p>L’adresse <strong>{{ session.user.email }}</strong> n’est pas enregistrée
-          comme propriétaire de restaurant.</p>
-        <button class="btn btn--plain full" @click="onSignOut">Utiliser une autre adresse</button>
+        <h2>{{ t('login.deniedTitle') }}</h2>
+        <p>{{ t('login.deniedBody', { email: session.user.email }) }}</p>
+        <button class="btn btn--plain full" @click="onSignOut">{{ t('login.useAnother') }}</button>
       </div>
 
       <!-- Step 1: email -->
       <form v-else-if="step === 'email'" @submit.prevent="onSendOtp">
-        <h2>Connexion</h2>
-        <p class="sub">Recevez un code à usage unique par e-mail.</p>
+        <h2>{{ t('login.title') }}</h2>
+        <p class="sub">{{ t('login.subtitle') }}</p>
         <div class="field">
-          <label>Adresse e-mail</label>
-          <input v-model="email" type="email" placeholder="vous@restaurant.ch" required />
+          <label>{{ t('login.email') }}</label>
+          <input v-model="email" type="email" :placeholder="t('login.emailPlaceholder')" required />
         </div>
         <button class="btn full" type="submit" :disabled="busy">
-          {{ busy ? 'Envoi…' : 'Recevoir le code' }}
+          {{ busy ? t('login.sending') : t('login.sendCode') }}
         </button>
       </form>
 
       <!-- Step 2: code -->
       <form v-else @submit.prevent="onVerify">
-        <h2>Code de vérification</h2>
-        <p class="sub">Saisissez le code envoyé à <strong>{{ email }}</strong>.</p>
+        <h2>{{ t('login.codeTitle') }}</h2>
+        <p class="sub">{{ t('login.codeSentTo', { email }) }}</p>
         <div class="field">
-          <label>Code reçu</label>
+          <label>{{ t('login.code') }}</label>
           <input
             v-model="code"
             type="text"
@@ -99,9 +99,9 @@ async function onSignOut() {
           />
         </div>
         <button class="btn full" type="submit" :disabled="busy">
-          {{ busy ? 'Vérification…' : 'Se connecter' }}
+          {{ busy ? t('login.verifying') : t('login.verify') }}
         </button>
-        <button type="button" class="link" @click="backToEmail">← Changer d’adresse</button>
+        <button type="button" class="link" @click="backToEmail">{{ t('login.changeEmail') }}</button>
       </form>
 
       <p v-if="error" class="err">{{ error }}</p>
