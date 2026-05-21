@@ -26,8 +26,10 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  console.log('[boot] router: guard awaiting auth for', to.path)
   await whenAuthReady()
   const { session, owner, isModerator } = useAuth()
+  console.log('[boot] router: auth gate open, deciding route for', to.path)
   // Access = signed in AND a recognised owner OR moderator.
   const access = !!session.value && (!!owner.value || isModerator.value)
 
