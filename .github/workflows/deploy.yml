@@ -39,6 +39,7 @@ jobs:
             restowner/supabase/moderation-schema.sql \
             restowner/supabase/owner-stats.sql \
             restowner/supabase/voucher-schema.sql \
+            restowner/supabase/event-capacity-schema.sql \
             app/supabase/pass-schema.sql; do
             echo "→ applying $f"
             jq -Rs '{query: .}' "$f" \

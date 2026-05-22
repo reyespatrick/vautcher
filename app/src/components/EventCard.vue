@@ -20,6 +20,8 @@ const fullDate = computed(() =>
   `${WEEKDAYS[d.value.getDay()]} ${d.value.getDate()} ${MONTHS_LONG[d.value.getMonth()]}`
 )
 const attendees = computed(() => props.event.attendees || 0)
+const max = computed(() => props.event.max_participants ?? null)
+const full = computed(() => max.value != null && attendees.value >= max.value)
 const rebateText = computed(() => {
   const v = props.event.rebate_value
   if (!v) return ''
@@ -39,6 +41,7 @@ const rebateText = computed(() => {
         <small>{{ monthShort }}</small>
       </div>
       <span v-if="event.joined" class="ev-flag">✓ Inscrit</span>
+      <span v-if="full" class="ev-full">Complet</span>
     </div>
 
     <div class="ev-body">
@@ -57,22 +60,31 @@ const rebateText = computed(() => {
 
       <div class="ev-foot">
         <span class="ev-count">
-          {{ attendees }} {{ attendees > 1 ? 'personnes intéressées' : 'personne intéressée' }}
+          <template v-if="max != null">{{ attendees }} / {{ max }} participants</template>
+          <template v-else>
+            {{ attendees }} {{ attendees > 1 ? 'personnes intéressées' : 'personne intéressée' }}
+          </template>
         </span>
         <button
-          v-if="!event.joined"
-          class="ev-act join"
-          type="button"
-          :disabled="busy"
-          @click="emit('join', event)"
-        >Je participe</button>
-        <button
-          v-else
+          v-if="event.joined"
           class="ev-act leave"
           type="button"
           :disabled="busy"
           @click="emit('leave', event)"
         >Annuler ma participation</button>
+        <button
+          v-else-if="full"
+          class="ev-act join"
+          type="button"
+          disabled
+        >Complet</button>
+        <button
+          v-else
+          class="ev-act join"
+          type="button"
+          :disabled="busy"
+          @click="emit('join', event)"
+        >Je participe</button>
       </div>
     </div>
   </article>
@@ -134,6 +146,20 @@ const rebateText = computed(() => {
   letter-spacing: 0.06em;
   padding: 5px 11px;
   border-radius: 20px;
+}
+.ev-full {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: var(--burgundy);
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
 
 .ev-body { flex: 1; padding: 20px 22px; display: flex; flex-direction: column; }

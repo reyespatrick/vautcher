@@ -28,12 +28,14 @@ const form = ref({
   age_min: null, age_max: null, points_min: null, points_max: null,
   notify_days_before: 3,
   rebate_value: null, rebate_unit: 'percent', rebate_first_n: null,
+  max_participants: null,
   published: true, status: 'active'
 })
 const ageTargeted = ref(false)
 const pointsTargeted = ref(false)
 const rebateOn = ref(false)
 const rebateLimited = ref(false)
+const capacityOn = ref(false)
 const fileInput = ref(null)
 const uploadedImages = ref([])
 const uploading = ref(false)
@@ -52,12 +54,14 @@ function fillFrom(ev) {
     notify_days_before: ev.notify_days_before ?? 3,
     rebate_value: ev.rebate_value, rebate_unit: ev.rebate_unit || 'percent',
     rebate_first_n: ev.rebate_first_n,
+    max_participants: ev.max_participants,
     published: ev.published, status: ev.status || 'active'
   }
   ageTargeted.value = !!(ev.age_min || ev.age_max)
   pointsTargeted.value = !!(ev.points_min || ev.points_max)
   rebateOn.value = ev.rebate_value != null
   rebateLimited.value = ev.rebate_first_n != null
+  capacityOn.value = ev.max_participants != null
 }
 
 async function loadUploaded() {
@@ -158,6 +162,9 @@ async function save() {
       rebate_unit: form.value.rebate_unit,
       rebate_first_n: (rebateOn.value && rebateLimited.value)
         ? (Number(form.value.rebate_first_n) || null)
+        : null,
+      max_participants: capacityOn.value
+        ? (Number(form.value.max_participants) || null)
         : null,
       published: true,
       status: form.value.status,
@@ -340,6 +347,21 @@ async function onCancelEvent() {
           <span v-else class="rebate-note">{{ t('editor.rebateNoLimit') }}</span>
         </div>
         <span class="opt-help">{{ t('editor.rebateHint') }}</span>
+      </div>
+
+      <!-- Participant cap -->
+      <div class="opt">
+        <label class="toggle">
+          <input type="checkbox" v-model="capacityOn" />
+          <span class="track"></span>
+          <span class="tg-text">{{ t('editor.capacity') }}</span>
+        </label>
+        <div v-if="capacityOn" class="opt-body rebate-line">
+          <input v-model="form.max_participants" type="number" min="1"
+            class="rb-val" placeholder="30" />
+          <span>{{ t('editor.capacitySuffix') }}</span>
+        </div>
+        <span v-else class="opt-help">{{ t('editor.capacityOpen') }}</span>
       </div>
 
       <p v-if="editingId" class="resubmit-note">{{ t('editor.resubmitNote') }}</p>
