@@ -28,9 +28,14 @@ create policy "vautcher: moderator reads self"
   to authenticated
   using (lower(email) = lower(auth.jwt() ->> 'email'));
 
--- Seed the root moderator.
+-- Seed the root moderator. preyes@dpcsolutions.com is a restaurant owner,
+-- NOT a moderator — an earlier version seeded it here by mistake, so drop
+-- that row explicitly (this file re-runs on every deploy).
+delete from public.vautcher_moderators
+  where lower(email) = 'preyes@dpcsolutions.com';
+
 insert into public.vautcher_moderators (email) values
-  ('preyes@dpcsolutions.com')
+  ('root@dpcsolutions.com')
 on conflict (email) do nothing;
 
 -- Definer helper — true if the caller is a moderator (bypasses RLS).
