@@ -114,8 +114,10 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Deploy edge function
+      - name: Deploy edge functions
         working-directory: app
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: supabase functions deploy vautcher-pass --project-ref yfyfoqrautdogivalimb
+        run: |
+          supabase functions deploy vautcher-pass --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy provision-owner --project-ref yfyfoqrautdogivalimb

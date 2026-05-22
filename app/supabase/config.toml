@@ -4,3 +4,8 @@ project_id = "yfyfoqrautdogivalimb"
 # function does its own per-route auth, so JWT verification is off.
 [functions.vautcher-pass]
 verify_jwt = false
+
+# provision-owner is called by a signed-in root user — require a JWT;
+# the function additionally checks the caller is a moderator.
+[functions.provision-owner]
+verify_jwt = true
