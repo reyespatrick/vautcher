@@ -27,6 +27,10 @@ declare
   v_max   int;
   v_count int;
 begin
+  if public.vautcher_profile_locked(p_profile_id) then
+    raise exception 'this client is locked';
+  end if;
+
   select max_participants into v_max
   from public.vautcher_events where id = p_event_id;
 

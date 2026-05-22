@@ -171,6 +171,9 @@ begin
   if v_rest is null then
     raise exception 'caller is not a restaurant owner';
   end if;
+  if public.vautcher_profile_locked(p_profile_id) then
+    raise exception 'this client is locked';
+  end if;
 
   -- The diner's active card for this restaurant (most recent).
   select * into v_card from public.vautcher_cards
@@ -256,6 +259,9 @@ begin
   if v_card.id is null then
     raise exception 'vautcher card not found';
   end if;
+  if public.vautcher_profile_locked(v_card.profile_id) then
+    raise exception 'this client is locked';
+  end if;
   if v_card.status = 'redeemed' then
     raise exception 'this vautcher has already been redeemed';
   end if;
@@ -295,6 +301,7 @@ security definer
 set search_path = public
 as $$
   select jsonb_build_object(
+    'locked', public.vautcher_profile_locked(p_profile_id),
     'lifetime_visits', (
       select count(*) from public.vautcher_stamps s
       where s.profile_id = p_profile_id),

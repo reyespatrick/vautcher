@@ -37,6 +37,7 @@ jobs:
             restowner/supabase/prefs-schema.sql \
             restowner/supabase/points-schema.sql \
             restowner/supabase/moderation-schema.sql \
+            restowner/supabase/root-admin-schema.sql \
             restowner/supabase/owner-stats.sql \
             restowner/supabase/voucher-schema.sql \
             restowner/supabase/event-capacity-schema.sql \
