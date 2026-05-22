@@ -38,6 +38,7 @@ const displayCard = computed(() => {
 
 const lifetime = computed(() => data.value?.lifetime_visits || 0)
 const redeemed = computed(() => data.value?.vouchers_redeemed || 0)
+const locked = computed(() => data.value?.locked === true)
 
 // QR payload: a completed card shows a redeem code (its card id);
 // the active card shows the stamp code (the profile id).
@@ -104,6 +105,12 @@ onBeforeUnmount(() => {
 
     <p v-if="loading" class="vc-loading">Chargement de votre carte…</p>
 
+    <div v-else-if="locked" class="vc-locked">
+      <span class="vc-locked-ico">🔒</span>
+      <h2>Compte bloqué</h2>
+      <p>Votre carte de fidélité est momentanément indisponible. Contactez le restaurant.</p>
+    </div>
+
     <template v-else>
       <p class="counters">
         <strong>{{ lifetime }}</strong> {{ lifetime > 1 ? 'visites' : 'visite' }}
@@ -160,6 +167,19 @@ onBeforeUnmount(() => {
 .page-head p { color: var(--grey); }
 
 .vc-loading { text-align: center; color: var(--grey); padding: 48px 0; }
+
+.vc-locked {
+  text-align: center;
+  max-width: 380px;
+  margin: 24px auto;
+  padding: 40px 28px;
+  background: #fffaf2;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+.vc-locked-ico { font-size: 2.4rem; }
+.vc-locked h2 { color: var(--burgundy); margin: 12px 0 6px; }
+.vc-locked p { color: var(--grey); font-size: 0.9rem; }
 
 /* Two counters: lifetime visits + vautchers redeemed */
 .counters {

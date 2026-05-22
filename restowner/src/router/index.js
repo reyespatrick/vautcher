@@ -10,6 +10,7 @@ import ShareView from '../views/ShareView.vue'
 import ApprovalQueueView from '../views/ApprovalQueueView.vue'
 import VouchersView from '../views/VouchersView.vue'
 import VoucherEditorView from '../views/VoucherEditorView.vue'
+import AdminView from '../views/AdminView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -23,6 +24,7 @@ const routes = [
   { path: '/voucher/new', name: 'voucher-new', component: VoucherEditorView },
   { path: '/voucher/:id', name: 'voucher-edit', component: VoucherEditorView },
   { path: '/approve', name: 'approve', component: ApprovalQueueView },
+  { path: '/admin', name: 'admin', component: AdminView },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
@@ -45,8 +47,10 @@ router.beforeEach(async (to) => {
     return true
   }
   if (!access) return { name: 'login' }
-  // The approval queue is moderator-only.
-  if (to.name === 'approve' && !isModerator.value) return { name: 'dashboard' }
+  // The approval queue and admin console are moderator-only.
+  if ((to.name === 'approve' || to.name === 'admin') && !isModerator.value) {
+    return { name: 'dashboard' }
+  }
   return true
 })
 

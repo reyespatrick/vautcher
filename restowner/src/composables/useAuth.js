@@ -68,13 +68,16 @@ async function applyOwner(email) {
     .maybeSingle()
   console.log('[boot] auth: loadOwner — vautcher_owners returned')
 
+  // A locked owner is treated as having no owner record — access revoked.
+  const activeOwner = o && !o.locked ? o : null
+
   // Load the restaurant BEFORE publishing `owner` — anything that reacts
   // to `owner` (the login redirect) then sees a fully-loaded state.
-  if (o) {
+  if (activeOwner) {
     const { data: r } = await supabase
       .from('vautcher_restaurants')
       .select('id, name, slug')
-      .eq('id', o.restaurant_id)
+      .eq('id', activeOwner.restaurant_id)
       .maybeSingle()
     restaurant.value = r || null
   } else {
@@ -91,7 +94,7 @@ async function applyOwner(email) {
   console.log('[boot] auth: loadOwner — vautcher_moderators returned')
   isModerator.value = !!mod
 
-  owner.value = o || null
+  owner.value = activeOwner
 }
 
 // Initialise once

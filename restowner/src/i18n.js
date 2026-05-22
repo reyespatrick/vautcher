@@ -3,7 +3,7 @@ import { createI18n } from 'vue-i18n'
 
 const fr = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Événements', scan: 'Scanner', vouchers: 'Vautcher', history: 'Historique', share: 'Code QR', approve: 'À approuver' },
+  nav: { events: 'Événements', scan: 'Scanner', vouchers: 'Vautcher', history: 'Historique', share: 'Code QR', approve: 'À approuver', admin: 'Admin' },
   share: {
     title: 'Code QR de l’application',
     subtitle: 'Affichez ou imprimez ce code. Vos clients le scannent pour ouvrir l’application La Gioconda dans leur navigateur.',
@@ -137,6 +137,24 @@ const fr = {
     title: 'Événements à approuver', empty: 'Aucun événement en attente.',
     at: 'chez', approveBtn: 'Approuver', refuseBtn: 'Refuser'
   },
+  admin: {
+    title: 'Administration',
+    subtitle: 'Restaurants, propriétaires et clients de la plateforme.',
+    tabRestaurants: 'Restaurants', tabClients: 'Clients',
+    newRestaurant: 'Nouveau restaurant',
+    restaurantName: 'Nom du restaurant', restaurantSlug: 'Identifiant (slug)',
+    createRestaurant: 'Créer le restaurant',
+    noOwners: 'Aucun propriétaire.', addOwner: 'Ajouter un propriétaire',
+    ownerEmail: 'E-mail du propriétaire', ownerName: 'Nom (facultatif)',
+    create: 'Créer', creating: 'Création…', cancel: 'Annuler',
+    trusted: 'Confiance', lock: 'Verrouiller', locked: 'Verrouillé',
+    provisioned: 'Propriétaire créé',
+    provisionedHint: 'Envoyez ce lien de connexion au nouveau propriétaire :',
+    copyLink: 'Copier le lien', copied: 'Copié ✓', code: 'Code',
+    stamps: '{n} tampons',
+    empty: 'Aucun restaurant.', clientsEmpty: 'Aucun client.',
+    error: 'Action impossible. Réessayez.'
+  },
   refuse: {
     title: 'Refuser l’événement',
     intro: 'Indiquez la ou les raisons du refus :',
@@ -152,7 +170,7 @@ const fr = {
 
 const de = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Veranstaltungen', scan: 'Scannen', vouchers: 'Vautcher', history: 'Verlauf', share: 'QR-Code', approve: 'Zu prüfen' },
+  nav: { events: 'Veranstaltungen', scan: 'Scannen', vouchers: 'Vautcher', history: 'Verlauf', share: 'QR-Code', approve: 'Zu prüfen', admin: 'Admin' },
   share: {
     title: 'QR-Code der App',
     subtitle: 'Zeigen Sie diesen Code an oder drucken Sie ihn aus. Ihre Gäste scannen ihn, um die La-Gioconda-App im Browser zu öffnen.',
@@ -286,6 +304,24 @@ const de = {
     title: 'Zu prüfende Veranstaltungen', empty: 'Keine ausstehenden Veranstaltungen.',
     at: 'bei', approveBtn: 'Genehmigen', refuseBtn: 'Ablehnen'
   },
+  admin: {
+    title: 'Verwaltung',
+    subtitle: 'Restaurants, Inhaber und Kunden der Plattform.',
+    tabRestaurants: 'Restaurants', tabClients: 'Kunden',
+    newRestaurant: 'Neues Restaurant',
+    restaurantName: 'Name des Restaurants', restaurantSlug: 'Kennung (Slug)',
+    createRestaurant: 'Restaurant erstellen',
+    noOwners: 'Keine Inhaber.', addOwner: 'Inhaber hinzufügen',
+    ownerEmail: 'E-Mail des Inhabers', ownerName: 'Name (optional)',
+    create: 'Erstellen', creating: 'Wird erstellt…', cancel: 'Abbrechen',
+    trusted: 'Vertrauen', lock: 'Sperren', locked: 'Gesperrt',
+    provisioned: 'Inhaber erstellt',
+    provisionedHint: 'Senden Sie diesen Anmeldelink an den neuen Inhaber:',
+    copyLink: 'Link kopieren', copied: 'Kopiert ✓', code: 'Code',
+    stamps: '{n} Stempel',
+    empty: 'Keine Restaurants.', clientsEmpty: 'Keine Kunden.',
+    error: 'Aktion nicht möglich. Bitte erneut versuchen.'
+  },
   refuse: {
     title: 'Veranstaltung ablehnen',
     intro: 'Geben Sie den oder die Ablehnungsgründe an:',
@@ -301,7 +337,7 @@ const de = {
 
 const it = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Eventi', scan: 'Scansiona', vouchers: 'Vautcher', history: 'Cronologia', share: 'Codice QR', approve: 'Da approvare' },
+  nav: { events: 'Eventi', scan: 'Scansiona', vouchers: 'Vautcher', history: 'Cronologia', share: 'Codice QR', approve: 'Da approvare', admin: 'Admin' },
   share: {
     title: 'Codice QR dell’app',
     subtitle: 'Mostra o stampa questo codice. I tuoi clienti lo scansionano per aprire l’app La Gioconda nel browser.',
@@ -434,6 +470,24 @@ const it = {
   approve: {
     title: 'Eventi da approvare', empty: 'Nessun evento in attesa.',
     at: 'presso', approveBtn: 'Approva', refuseBtn: 'Rifiuta'
+  },
+  admin: {
+    title: 'Amministrazione',
+    subtitle: 'Ristoranti, proprietari e clienti della piattaforma.',
+    tabRestaurants: 'Ristoranti', tabClients: 'Clienti',
+    newRestaurant: 'Nuovo ristorante',
+    restaurantName: 'Nome del ristorante', restaurantSlug: 'Identificativo (slug)',
+    createRestaurant: 'Crea il ristorante',
+    noOwners: 'Nessun proprietario.', addOwner: 'Aggiungi un proprietario',
+    ownerEmail: 'E-mail del proprietario', ownerName: 'Nome (facoltativo)',
+    create: 'Crea', creating: 'Creazione…', cancel: 'Annulla',
+    trusted: 'Fiducia', lock: 'Blocca', locked: 'Bloccato',
+    provisioned: 'Proprietario creato',
+    provisionedHint: 'Invia questo link di accesso al nuovo proprietario:',
+    copyLink: 'Copia il link', copied: 'Copiato ✓', code: 'Codice',
+    stamps: '{n} timbri',
+    empty: 'Nessun ristorante.', clientsEmpty: 'Nessun cliente.',
+    error: 'Azione non possibile. Riprova.'
   },
   refuse: {
     title: 'Rifiuta l’evento',

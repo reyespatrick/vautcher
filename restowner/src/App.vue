@@ -24,6 +24,7 @@ const activeTab = computed(() => {
   if (n === 'history') return 'history'
   if (n === 'share') return 'share'
   if (n === 'approve') return 'approve'
+  if (n === 'admin') return 'admin'
   if (n === 'vouchers' || n === 'voucher-new' || n === 'voucher-edit') return 'vouchers'
   return 'dashboard'
 })
@@ -122,6 +123,18 @@ async function doSignOut() {
             <path d="M12 3.2l7 3v5.3c0 4.5-3 7.8-7 9.3-4-1.5-7-4.8-7-9.3V6.2z" />
           </svg>
           {{ t('nav.approve') }}
+        </RouterLink>
+        <RouterLink
+          v-if="isModerator && !asOwner"
+          :to="{ name: 'admin' }"
+          :class="{ on: activeTab === 'admin' }"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3.2" />
+            <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+          </svg>
+          {{ t('nav.admin') }}
         </RouterLink>
       </nav>
     </template>
