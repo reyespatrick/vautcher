@@ -26,11 +26,8 @@ const tabs = [
 
 <style scoped>
 .bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--bottomnav-h);
+  flex: 0 0 auto;
+  min-height: var(--bottomnav-h);
   background: #fff;
   border-top: 1px solid var(--line);
   display: flex;

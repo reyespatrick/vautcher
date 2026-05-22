@@ -48,19 +48,17 @@ const initial = computed(() => firstName.value.charAt(0).toUpperCase() || '?')
 
 <style scoped>
 .hdr {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--header-h);
+  flex: 0 0 auto;
   background: rgba(255, 255, 255, 0.98);
   border-bottom: 1px solid var(--line);
   z-index: 100;
+  /* Clear the status bar / notch in standalone PWA mode. */
+  padding-top: env(safe-area-inset-top);
 }
 .hdr-inner {
   max-width: 1080px;
   margin: 0 auto;
-  height: 100%;
+  height: var(--header-h);
   padding: 0 16px;
   display: flex;
   align-items: center;
