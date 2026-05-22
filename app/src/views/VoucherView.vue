@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useProfile } from '../composables/useProfile'
 import { fetchVoucher } from '../lib/api'
 import QrCard from '../components/QrCard.vue'
@@ -27,18 +27,48 @@ const passUrl = computed(() => {
     : ''
 })
 
+// Loads the card. `initial` distinguishes the first paint (demo fallback
+// is welcome when there's no backend) from a background refresh (where the
+// demo/local fallback must NOT replace real stamps on a transient blip).
+async function loadVoucher({ initial = false } = {}) {
+  const v = await fetchVoucher(profile.value?.id)
+  if (!initial && v.source !== 'supabase') return
+  stamps.value = v.stamps || []
+  required.value = v.required || 10
+  reward.value = v.reward || 'Une récompense'
+}
+
 onMounted(async () => {
   try {
-    const v = await fetchVoucher(profile.value?.id)
-    stamps.value = v.stamps || []
-    required.value = v.required || 10
-    reward.value = v.reward || 'Une récompense'
+    await loadVoucher({ initial: true })
   } catch (e) {
     /* keep the default empty card — reward falls back below */
     if (!reward.value) reward.value = 'Une récompense'
   } finally {
     loading.value = false
   }
+  document.addEventListener('visibilitychange', onVisible)
+})
+
+// While the visitor is showing their QR code, the owner is about to scan
+// it — poll so the new stamp lands on the card on its own, no refresh.
+let pollTimer = null
+watch(showQr, (open) => {
+  clearInterval(pollTimer)
+  pollTimer = null
+  if (open) {
+    pollTimer = setInterval(() => { loadVoucher().catch(() => {}) }, 3000)
+  }
+})
+
+// Coming back to the app (e.g. after the owner scanned) refreshes the card.
+function onVisible() {
+  if (document.visibilityState === 'visible') loadVoucher().catch(() => {})
+}
+
+onBeforeUnmount(() => {
+  clearInterval(pollTimer)
+  document.removeEventListener('visibilitychange', onVisible)
 })
 
 const collected = computed(() => stamps.value.length)
