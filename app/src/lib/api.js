@@ -28,42 +28,44 @@ export async function saveProfile(profile) {
   }
 }
 
+// La Gioconda — the single restaurant this diner app belongs to.
+const RESTAURANT_ID = '11111111-1111-1111-1111-111111111111'
+
 // Demo data so the voucher card looks alive when there is no backend.
 const DEMO_VOUCHER = {
-  stamps: ['2026-01-12', '2026-02-03', '2026-02-25', '2026-03-14',
-           '2026-04-02', '2026-04-21', '2026-05-09'],
-  required: 10,
-  reward: 'Un dessert maison offert'
+  lifetime_visits: 7,
+  vouchers_redeemed: 1,
+  template: {
+    label: 'Carte de fidélité',
+    reward_text: 'Un dessert maison offert',
+    stamps_required: 10
+  },
+  cards: [{
+    id: 'demo-card', card_no: 2, status: 'active',
+    label: 'Carte de fidélité', reward_text: 'Un dessert maison offert',
+    stamps_required: 10,
+    stamps: ['2026-04-02', '2026-04-21', '2026-05-09',
+             '2026-05-14', '2026-05-18', '2026-05-20', '2026-05-22']
+  }]
 }
 
 /**
- * Loads the loyalty voucher: the visitor's collected stamp dates plus the
- * reward config. `stamps_required` and `reward` are set by the separate
- * owner/restaurant app — this app only reads them.
- * Returns { stamps, required, reward, source }.
+ * Loads the diner's loyalty state: the active card, any completed cards
+ * still to be redeemed, the two counters, and a template for diners with
+ * no card yet. Vautchers (stamps_required, reward) are defined by the
+ * owner console — this app only reads them.
+ * Returns { lifetime_visits, vouchers_redeemed, template, cards, source }.
  */
 export async function fetchVoucher(profileId) {
-  if (!supabase) return { ...DEMO_VOUCHER, source: 'local' }
+  if (!supabase || !profileId) return { ...DEMO_VOUCHER, source: 'local' }
 
   try {
-    let required = 10
-    let reward = 'Une récompense offerte'
-    const { data: cfg } = await supabase
-      .from('vautcher_config')
-      .select('stamps_required, reward')
-      .limit(1)
-      .maybeSingle()
-    if (cfg) {
-      required = cfg.stamps_required ?? required
-      reward = cfg.reward ?? reward
-    }
-
-    let stamps = []
-    if (profileId) {
-      const { data } = await supabase.rpc('vautcher_get_stamps', { p_profile_id: profileId })
-      if (Array.isArray(data)) stamps = data.map((r) => r.stamp_date)
-    }
-    return { stamps, required, reward, source: 'supabase' }
+    const { data, error } = await supabase.rpc('vautcher_get_voucher', {
+      p_profile_id: profileId,
+      p_restaurant_id: RESTAURANT_ID
+    })
+    if (error || !data) return { ...DEMO_VOUCHER, source: 'local' }
+    return { ...data, source: 'supabase' }
   } catch (e) {
     return { ...DEMO_VOUCHER, source: 'local' }
   }
