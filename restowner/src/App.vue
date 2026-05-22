@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterView, RouterLink, useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from './composables/useAuth'
@@ -28,6 +28,15 @@ const activeTab = computed(() => {
   if (n === 'vouchers' || n === 'voucher-new' || n === 'voucher-edit') return 'vouchers'
   return 'dashboard'
 })
+
+// Bottom nav keeps the three daily tabs; everything else lives behind
+// the "Plus" tab so the bar never gets crowded (esp. for moderators).
+const moreActive = computed(() =>
+  ['history', 'share', 'approve', 'admin'].includes(activeTab.value)
+)
+const moreOpen = ref(false)
+// Close the sheet on any navigation (item tap, back button, …).
+watch(() => route.fullPath, () => { moreOpen.value = false })
 
 // Pull the owner's saved language / text size once they're known.
 watch(owner, (o) => { if (o) hydrateFromOwner(o) }, { immediate: true })
@@ -93,52 +102,145 @@ async function doSignOut() {
           </svg>
           {{ t('nav.vouchers') }}
         </RouterLink>
-        <RouterLink :to="{ name: 'history' }" :class="{ on: activeTab === 'history' }">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3.5 12a8.5 8.5 0 1 1 2.6 6.1" />
-            <path d="M3.5 19v-5h5" />
-            <path d="M12 8v4.5l3 2" />
-          </svg>
-          {{ t('nav.history') }}
-        </RouterLink>
-        <RouterLink :to="{ name: 'share' }" :class="{ on: activeTab === 'share' }">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <path d="M14 14h3.5v3.5M21 21v-3.5M14 21h3.5" />
-          </svg>
-          {{ t('nav.share') }}
-        </RouterLink>
-        <RouterLink
-          v-if="isModerator && !asOwner"
-          :to="{ name: 'approve' }"
-          :class="{ on: activeTab === 'approve' }"
+        <button
+          type="button"
+          class="more-tab"
+          :class="{ on: moreActive || moreOpen }"
+          @click="moreOpen = true"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 12.5l2.2 2.2L15.5 10" />
-            <path d="M12 3.2l7 3v5.3c0 4.5-3 7.8-7 9.3-4-1.5-7-4.8-7-9.3V6.2z" />
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="12" r="1.7" />
+            <circle cx="12" cy="12" r="1.7" />
+            <circle cx="19" cy="12" r="1.7" />
           </svg>
-          {{ t('nav.approve') }}
-        </RouterLink>
-        <RouterLink
-          v-if="isModerator && !asOwner"
-          :to="{ name: 'admin' }"
-          :class="{ on: activeTab === 'admin' }"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3.2" />
-            <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
-          </svg>
-          {{ t('nav.admin') }}
-        </RouterLink>
+          {{ t('nav.more') }}
+        </button>
       </nav>
     </template>
 
     <RouterView v-else />
+
+    <!-- "Plus" overflow sheet -->
+    <Teleport to="body">
+      <div v-if="moreOpen" class="more-backdrop" @click.self="moreOpen = false">
+        <div class="more-sheet" role="dialog" aria-modal="true">
+          <div class="more-grab"></div>
+          <RouterLink :to="{ name: 'history' }" class="more-item"
+            :class="{ on: activeTab === 'history' }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3.5 12a8.5 8.5 0 1 1 2.6 6.1" />
+              <path d="M3.5 19v-5h5" />
+              <path d="M12 8v4.5l3 2" />
+            </svg>
+            {{ t('nav.history') }}
+          </RouterLink>
+          <RouterLink :to="{ name: 'share' }" class="more-item"
+            :class="{ on: activeTab === 'share' }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <path d="M14 14h3.5v3.5M21 21v-3.5M14 21h3.5" />
+            </svg>
+            {{ t('nav.share') }}
+          </RouterLink>
+          <RouterLink
+            v-if="isModerator && !asOwner"
+            :to="{ name: 'approve' }"
+            class="more-item"
+            :class="{ on: activeTab === 'approve' }"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 12.5l2.2 2.2L15.5 10" />
+              <path d="M12 3.2l7 3v5.3c0 4.5-3 7.8-7 9.3-4-1.5-7-4.8-7-9.3V6.2z" />
+            </svg>
+            {{ t('nav.approve') }}
+          </RouterLink>
+          <RouterLink
+            v-if="isModerator && !asOwner"
+            :to="{ name: 'admin' }"
+            class="more-item"
+            :class="{ on: activeTab === 'admin' }"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+            </svg>
+            {{ t('nav.admin') }}
+          </RouterLink>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+/* "Plus" tab — matches the .tabbar a styling from main.css. */
+.more-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 2px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--mut);
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.more-tab svg { width: 23px; height: 23px; }
+.more-tab.on { color: var(--accent); }
+
+/* Overflow sheet */
+.more-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(20, 12, 14, 0.42);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.more-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  border-radius: 18px 18px 0 0;
+  padding: 8px 0 calc(env(safe-area-inset-bottom) + 10px);
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.22);
+  animation: more-up 0.2s ease;
+}
+@keyframes more-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+.more-grab {
+  width: 38px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--line);
+  margin: 4px auto 8px;
+}
+.more-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.94rem;
+}
+.more-item svg { width: 22px; height: 22px; color: var(--mut); flex: 0 0 auto; }
+.more-item:active { background: #faf4ea; }
+.more-item.on { color: var(--accent); }
+.more-item.on svg { color: var(--accent); }
+</style>
