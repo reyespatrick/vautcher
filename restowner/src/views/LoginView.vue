@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 
-const { session, owner, isModerator, sendOtp, verifyOtp, signOut } = useAuth()
+const { session, owner, isModerator, sendOtp, verifyOtp, rootLogin, signOut } = useAuth()
 const router = useRouter()
 const { t } = useI18n()
 const version = __APP_VERSION__
@@ -22,11 +22,18 @@ watch([session, owner, isModerator], () => {
 })
 
 async function onSendOtp() {
-  if (!email.value.trim()) return
+  const entry = email.value.trim()
+  if (!entry) return
   busy.value = true
   error.value = ''
   try {
-    const { error: e } = await sendOtp(email.value)
+    // Dev-only "root" shortcut — skips the email OTP entirely.
+    if (entry.toLowerCase() === 'root') {
+      const { error: e } = await rootLogin()
+      if (e) { error.value = t('login.codeInvalid'); return }
+      return // the session watcher handles the redirect
+    }
+    const { error: e } = await sendOtp(entry)
     if (e) { error.value = e.message; return }
     step.value = 'code'
   } catch (e) {
@@ -87,7 +94,8 @@ async function onSignOut() {
         <p class="sub">{{ t('login.subtitle') }}</p>
         <div class="field">
           <label>{{ t('login.email') }}</label>
-          <input v-model="email" type="email" :placeholder="t('login.emailPlaceholder')" required />
+          <input v-model="email" type="text" inputmode="email"
+            :placeholder="t('login.emailPlaceholder')" required />
         </div>
         <button class="btn full" type="submit" :disabled="busy">
           {{ busy ? t('login.sending') : t('login.sendCode') }}

@@ -148,6 +148,16 @@ export function useAuth() {
     })
   }
 
+  // Dev-only "root" shortcut — signs straight in with the fixed
+  // password seeded by root-account-schema.sql (no email OTP).
+  // ⚠️ DEV BACKDOOR — remove before production.
+  function rootLogin() {
+    return supabase.auth.signInWithPassword({
+      email: 'root@dpcsolutions.com',
+      password: 'vautcher-root-2026'
+    })
+  }
+
   async function signOut() {
     try { await supabase.auth.signOut() } catch (e) { /* ignore */ }
     session.value = null
@@ -156,5 +166,5 @@ export function useAuth() {
     isModerator.value = false
   }
 
-  return { session, owner, restaurant, isModerator, ready, sendOtp, verifyOtp, signOut }
+  return { session, owner, restaurant, isModerator, ready, sendOtp, verifyOtp, rootLogin, signOut }
 }
