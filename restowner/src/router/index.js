@@ -8,6 +8,8 @@ import HistoryView from '../views/HistoryView.vue'
 import ScanView from '../views/ScanView.vue'
 import ShareView from '../views/ShareView.vue'
 import ApprovalQueueView from '../views/ApprovalQueueView.vue'
+import VouchersView from '../views/VouchersView.vue'
+import VoucherEditorView from '../views/VoucherEditorView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -17,6 +19,9 @@ const routes = [
   { path: '/history', name: 'history', component: HistoryView },
   { path: '/scan', name: 'scan', component: ScanView },
   { path: '/share', name: 'share', component: ShareView },
+  { path: '/vouchers', name: 'vouchers', component: VouchersView },
+  { path: '/voucher/new', name: 'voucher-new', component: VoucherEditorView },
+  { path: '/voucher/:id', name: 'voucher-edit', component: VoucherEditorView },
   { path: '/approve', name: 'approve', component: ApprovalQueueView },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]

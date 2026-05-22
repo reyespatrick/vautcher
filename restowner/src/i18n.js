@@ -3,7 +3,7 @@ import { createI18n } from 'vue-i18n'
 
 const fr = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Événements', scan: 'Scanner', history: 'Historique', share: 'Code QR', approve: 'À approuver' },
+  nav: { events: 'Événements', scan: 'Scanner', vouchers: 'Vautcher', history: 'Historique', share: 'Code QR', approve: 'À approuver' },
   share: {
     title: 'Code QR de l’application',
     subtitle: 'Affichez ou imprimez ce code. Vos clients le scannent pour ouvrir l’application La Gioconda dans leur navigateur.',
@@ -102,6 +102,32 @@ const fr = {
     stampAdded: 'Tampon ajouté pour {name}.', stampTotal: '{n} tampon(s) au total',
     notFound: 'Client introuvable.', cameraError: 'Caméra inaccessible : {msg}'
   },
+  vouchers: {
+    title: 'Vautchers',
+    subtitle: 'Vos cartes de fidélité — créez-en et suivez leur utilisation.',
+    create: 'Nouveau vautcher',
+    empty: 'Aucun vautcher pour le moment.',
+    emptyHint: 'Créez-en un : vos clients commenceront à collectionner des tampons.',
+    stampsLabel: '{n} tampons',
+    statRedeemed: 'vautchers utilisés',
+    statCompleted: '{n} complétés',
+    statRate: '{rate}% utilisés',
+    perCompleted: '{n} complétés', perRedeemed: '{n} utilisés',
+    edit: 'Modifier', moveUp: 'Monter', moveDown: 'Descendre'
+  },
+  voucherEditor: {
+    newTitle: 'Nouveau vautcher', editTitle: 'Modifier le vautcher',
+    label: 'Nom du vautcher', labelPlaceholder: 'Carte de fidélité…',
+    stamps: 'Tampons à collecter',
+    stampsHint: 'Nombre de visites pour compléter ce vautcher (1 à 100).',
+    reward: 'Récompense', rewardPlaceholder: 'Un dessert maison offert…',
+    rewardHint: 'Ce que le client reçoit lorsqu’il complète le vautcher.',
+    save: 'Enregistrer', saving: 'Enregistrement…', createBtn: 'Créer le vautcher',
+    archive: 'Archiver ce vautcher',
+    confirmArchive: 'Archiver ce vautcher ? Vos clients ne le recevront plus.',
+    loadError: 'Impossible de charger le vautcher.',
+    saveFailed: 'L’enregistrement a échoué. Réessayez.'
+  },
   approve: {
     title: 'Événements à approuver', empty: 'Aucun événement en attente.',
     at: 'chez', approveBtn: 'Approuver', refuseBtn: 'Refuser'
@@ -121,7 +147,7 @@ const fr = {
 
 const de = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Veranstaltungen', scan: 'Scannen', history: 'Verlauf', share: 'QR-Code', approve: 'Zu prüfen' },
+  nav: { events: 'Veranstaltungen', scan: 'Scannen', vouchers: 'Vautcher', history: 'Verlauf', share: 'QR-Code', approve: 'Zu prüfen' },
   share: {
     title: 'QR-Code der App',
     subtitle: 'Zeigen Sie diesen Code an oder drucken Sie ihn aus. Ihre Gäste scannen ihn, um die La-Gioconda-App im Browser zu öffnen.',
@@ -220,6 +246,32 @@ const de = {
     stampAdded: 'Stempel hinzugefügt für {name}.', stampTotal: 'Insgesamt {n} Stempel',
     notFound: 'Kunde nicht gefunden.', cameraError: 'Kamera nicht verfügbar: {msg}'
   },
+  vouchers: {
+    title: 'Vautcher',
+    subtitle: 'Ihre Treuekarten — erstellen Sie welche und verfolgen Sie ihre Nutzung.',
+    create: 'Neuer Vautcher',
+    empty: 'Noch keine Vautcher.',
+    emptyHint: 'Erstellen Sie einen: Ihre Gäste beginnen, Stempel zu sammeln.',
+    stampsLabel: '{n} Stempel',
+    statRedeemed: 'eingelöste Vautcher',
+    statCompleted: '{n} vollständig',
+    statRate: '{rate}% eingelöst',
+    perCompleted: '{n} vollständig', perRedeemed: '{n} eingelöst',
+    edit: 'Bearbeiten', moveUp: 'Nach oben', moveDown: 'Nach unten'
+  },
+  voucherEditor: {
+    newTitle: 'Neuer Vautcher', editTitle: 'Vautcher bearbeiten',
+    label: 'Name des Vautchers', labelPlaceholder: 'Treuekarte…',
+    stamps: 'Zu sammelnde Stempel',
+    stampsHint: 'Anzahl der Besuche, um diesen Vautcher zu vervollständigen (1 bis 100).',
+    reward: 'Belohnung', rewardPlaceholder: 'Ein hausgemachtes Dessert gratis…',
+    rewardHint: 'Was der Kunde erhält, wenn er den Vautcher vervollständigt.',
+    save: 'Speichern', saving: 'Wird gespeichert…', createBtn: 'Vautcher erstellen',
+    archive: 'Diesen Vautcher archivieren',
+    confirmArchive: 'Diesen Vautcher archivieren? Ihre Gäste erhalten ihn nicht mehr.',
+    loadError: 'Vautcher konnte nicht geladen werden.',
+    saveFailed: 'Speichern fehlgeschlagen. Bitte erneut versuchen.'
+  },
   approve: {
     title: 'Zu prüfende Veranstaltungen', empty: 'Keine ausstehenden Veranstaltungen.',
     at: 'bei', approveBtn: 'Genehmigen', refuseBtn: 'Ablehnen'
@@ -239,7 +291,7 @@ const de = {
 
 const it = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Eventi', scan: 'Scansiona', history: 'Cronologia', share: 'Codice QR', approve: 'Da approvare' },
+  nav: { events: 'Eventi', scan: 'Scansiona', vouchers: 'Vautcher', history: 'Cronologia', share: 'Codice QR', approve: 'Da approvare' },
   share: {
     title: 'Codice QR dell’app',
     subtitle: 'Mostra o stampa questo codice. I tuoi clienti lo scansionano per aprire l’app La Gioconda nel browser.',
@@ -337,6 +389,32 @@ const it = {
     start: 'Avvia la scansione', startAgain: 'Scansiona un altro codice', stop: 'Ferma',
     stampAdded: 'Timbro aggiunto per {name}.', stampTotal: '{n} timbri in totale',
     notFound: 'Cliente non trovato.', cameraError: 'Fotocamera non disponibile: {msg}'
+  },
+  vouchers: {
+    title: 'Vautcher',
+    subtitle: 'Le tue carte fedeltà — creane e monitora il loro utilizzo.',
+    create: 'Nuovo vautcher',
+    empty: 'Nessun vautcher per ora.',
+    emptyHint: 'Creane uno: i tuoi clienti inizieranno a raccogliere timbri.',
+    stampsLabel: '{n} timbri',
+    statRedeemed: 'vautcher utilizzati',
+    statCompleted: '{n} completati',
+    statRate: '{rate}% utilizzati',
+    perCompleted: '{n} completati', perRedeemed: '{n} utilizzati',
+    edit: 'Modifica', moveUp: 'Su', moveDown: 'Giù'
+  },
+  voucherEditor: {
+    newTitle: 'Nuovo vautcher', editTitle: 'Modifica vautcher',
+    label: 'Nome del vautcher', labelPlaceholder: 'Carta fedeltà…',
+    stamps: 'Timbri da raccogliere',
+    stampsHint: 'Numero di visite per completare questo vautcher (da 1 a 100).',
+    reward: 'Ricompensa', rewardPlaceholder: 'Un dessert della casa in omaggio…',
+    rewardHint: 'Ciò che il cliente riceve completando il vautcher.',
+    save: 'Salva', saving: 'Salvataggio…', createBtn: 'Crea il vautcher',
+    archive: 'Archivia questo vautcher',
+    confirmArchive: 'Archiviare questo vautcher? I tuoi clienti non lo riceveranno più.',
+    loadError: 'Impossibile caricare il vautcher.',
+    saveFailed: 'Salvataggio non riuscito. Riprova.'
   },
   approve: {
     title: 'Eventi da approvare', empty: 'Nessun evento in attesa.',

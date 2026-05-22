@@ -19,10 +19,12 @@ const showShell = computed(() => route.name && route.name !== 'login')
 
 // Event editor is a sub-page of the Événements tab.
 const activeTab = computed(() => {
-  if (route.name === 'scan') return 'scan'
-  if (route.name === 'history') return 'history'
-  if (route.name === 'share') return 'share'
-  if (route.name === 'approve') return 'approve'
+  const n = route.name
+  if (n === 'scan') return 'scan'
+  if (n === 'history') return 'history'
+  if (n === 'share') return 'share'
+  if (n === 'approve') return 'approve'
+  if (n === 'vouchers' || n === 'voucher-new' || n === 'voucher-edit') return 'vouchers'
   return 'dashboard'
 })
 
@@ -81,6 +83,14 @@ async function doSignOut() {
             <path d="M4 12h16" />
           </svg>
           {{ t('nav.scan') }}
+        </RouterLink>
+        <RouterLink :to="{ name: 'vouchers' }" :class="{ on: activeTab === 'vouchers' }">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4Z" />
+            <path d="M10 7v10" stroke-dasharray="2 2.5" />
+          </svg>
+          {{ t('nav.vouchers') }}
         </RouterLink>
         <RouterLink :to="{ name: 'history' }" :class="{ on: activeTab === 'history' }">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
