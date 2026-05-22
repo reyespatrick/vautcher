@@ -96,11 +96,13 @@ const fr = {
   },
   scan: {
     title: 'Scanner',
-    subtitle: 'Ajoutez un tampon de fidélité en scannant la carte Vautcher du client.',
+    subtitle: 'Scannez la carte du client : ajoutez un tampon, ou validez un vautcher complété.',
     ready: 'Caméra prête', readyAgain: 'Prêt pour un nouveau scan',
     start: 'Démarrer le scan', startAgain: 'Scanner un autre code', stop: 'Arrêter',
     stampAdded: 'Tampon ajouté pour {name}.', stampTotal: '{n} tampon(s) au total',
-    notFound: 'Client introuvable.', cameraError: 'Caméra inaccessible : {msg}'
+    notFound: 'Client introuvable.', cameraError: 'Caméra inaccessible : {msg}',
+    cardComplete: 'Vautcher complété ! 🎉', lifetime: '{n} visites',
+    redeemed: 'Vautcher utilisé pour {name}.', redeemedTotal: '{n} vautchers utilisés'
   },
   vouchers: {
     title: 'Vautchers',
@@ -240,11 +242,13 @@ const de = {
   },
   scan: {
     title: 'Scannen',
-    subtitle: 'Fügen Sie einen Treuestempel hinzu, indem Sie die Vautcher-Karte des Kunden scannen.',
+    subtitle: 'Scannen Sie die Kundenkarte: Stempel hinzufügen oder einen vollständigen Vautcher einlösen.',
     ready: 'Kamera bereit', readyAgain: 'Bereit für einen neuen Scan',
     start: 'Scan starten', startAgain: 'Weiteren Code scannen', stop: 'Stoppen',
     stampAdded: 'Stempel hinzugefügt für {name}.', stampTotal: 'Insgesamt {n} Stempel',
-    notFound: 'Kunde nicht gefunden.', cameraError: 'Kamera nicht verfügbar: {msg}'
+    notFound: 'Kunde nicht gefunden.', cameraError: 'Kamera nicht verfügbar: {msg}',
+    cardComplete: 'Vautcher vollständig! 🎉', lifetime: '{n} Besuche',
+    redeemed: 'Vautcher eingelöst für {name}.', redeemedTotal: '{n} eingelöste Vautcher'
   },
   vouchers: {
     title: 'Vautcher',
@@ -384,11 +388,13 @@ const it = {
   },
   scan: {
     title: 'Scansiona',
-    subtitle: 'Aggiungi un timbro fedeltà scansionando la carta Vautcher del cliente.',
+    subtitle: 'Scansiona la carta del cliente: aggiungi un timbro o utilizza un vautcher completato.',
     ready: 'Fotocamera pronta', readyAgain: 'Pronto per una nuova scansione',
     start: 'Avvia la scansione', startAgain: 'Scansiona un altro codice', stop: 'Ferma',
     stampAdded: 'Timbro aggiunto per {name}.', stampTotal: '{n} timbri in totale',
-    notFound: 'Cliente non trovato.', cameraError: 'Fotocamera non disponibile: {msg}'
+    notFound: 'Cliente non trovato.', cameraError: 'Fotocamera non disponibile: {msg}',
+    cardComplete: 'Vautcher completato! 🎉', lifetime: '{n} visite',
+    redeemed: 'Vautcher utilizzato per {name}.', redeemedTotal: '{n} vautcher utilizzati'
   },
   vouchers: {
     title: 'Vautcher',

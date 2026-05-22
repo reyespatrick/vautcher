@@ -7,8 +7,12 @@ import { supabase } from '../lib/supabase'
 const { t } = useI18n()
 const scanning = ref(false)
 const busy = ref(false)
-const result = ref(null) // { ok, name, stamps } | { ok:false, error }
+const result = ref(null) // see handleCode for the shapes
 let scanner = null
+
+const UUID = '([0-9a-fA-F-]{36})'
+const STAMP_RE = new RegExp(`^vautcher-stamp:${UUID}$`)
+const REDEEM_RE = new RegExp(`^vautcher-redeem:${UUID}$`)
 
 async function stopScanner() {
   if (scanner && scanning.value) {
@@ -17,24 +21,55 @@ async function stopScanner() {
   scanning.value = false
 }
 
+function row(data) {
+  return Array.isArray(data) ? data[0] : data
+}
+
 async function handleCode(text) {
   if (busy.value) return
-  const m = /^vautcher-stamp:([0-9a-fA-F-]{36})$/.exec((text || '').trim())
-  if (!m) return // not a vautcher code — keep scanning
+  const raw = (text || '').trim()
+  const stamp = STAMP_RE.exec(raw)
+  const redeem = REDEEM_RE.exec(raw)
+  if (!stamp && !redeem) return // not a vautcher code — keep scanning
   busy.value = true
   await stopScanner()
 
   try {
-    const { data, error } = await supabase.rpc('vautcher_add_stamp', {
-      p_profile_id: m[1]
-    })
-    if (error) {
-      result.value = { ok: false, error: error.message }
+    if (redeem) {
+      // Completed card → mark the reward as given.
+      const { data, error } = await supabase.rpc('vautcher_redeem_card', {
+        p_card_id: redeem[1]
+      })
+      const r = row(data)
+      if (error) {
+        result.value = { ok: false, error: error.message }
+      } else if (r && r.name) {
+        result.value = {
+          ok: true, mode: 'redeem',
+          name: r.name, reward: r.reward_text, redeemed: r.vouchers_redeemed
+        }
+      } else {
+        result.value = { ok: false, error: t('scan.notFound') }
+      }
     } else {
-      const row = Array.isArray(data) ? data[0] : data
-      result.value = row && row.name
-        ? { ok: true, name: row.name, stamps: row.stamps }
-        : { ok: false, error: t('scan.notFound') }
+      // Active card → add a loyalty stamp.
+      const { data, error } = await supabase.rpc('vautcher_add_stamp', {
+        p_profile_id: stamp[1]
+      })
+      const r = row(data)
+      if (error) {
+        result.value = { ok: false, error: error.message }
+      } else if (r && r.name) {
+        result.value = {
+          ok: true, mode: 'stamp',
+          name: r.name, lifetime: r.lifetime_visits,
+          cardLabel: r.card_label, cardCount: r.card_count,
+          cardRequired: r.card_required, cardCompleted: r.card_completed,
+          redeemed: r.vouchers_redeemed
+        }
+      } else {
+        result.value = { ok: false, error: t('scan.notFound') }
+      }
     }
   } catch (e) {
     result.value = { ok: false, error: (e && e.message) || String(e) }
@@ -87,10 +122,23 @@ onBeforeUnmount(stopScanner)
 
       <div v-if="result" class="result" :class="result.ok ? 'good' : 'bad'">
         <div class="big">{{ result.ok ? '✓' : '✕' }}</div>
-        <template v-if="result.ok">
+
+        <template v-if="result.ok && result.mode === 'stamp'">
+          <p v-if="result.cardCompleted" class="done-line">{{ t('scan.cardComplete') }}</p>
           <p>{{ t('scan.stampAdded', { name: result.name }) }}</p>
-          <p class="count">{{ t('scan.stampTotal', { n: result.stamps }) }}</p>
+          <p class="count">{{ result.cardLabel }} · {{ result.cardCount }}/{{ result.cardRequired }}</p>
+          <p class="sub">
+            {{ t('scan.lifetime', { n: result.lifetime }) }} ·
+            {{ t('scan.redeemedTotal', { n: result.redeemed }) }}
+          </p>
         </template>
+
+        <template v-else-if="result.ok && result.mode === 'redeem'">
+          <p>{{ t('scan.redeemed', { name: result.name }) }}</p>
+          <p class="count">🎁 {{ result.reward }}</p>
+          <p class="sub">{{ t('scan.redeemedTotal', { n: result.redeemed }) }}</p>
+        </template>
+
         <p v-else>{{ result.error }}</p>
       </div>
 
@@ -149,5 +197,12 @@ onBeforeUnmount(stopScanner)
 .result.good { background: rgba(31, 157, 85, 0.12); color: var(--ok); }
 .result.bad { background: rgba(192, 57, 43, 0.1); color: var(--danger); }
 .result strong { color: var(--ink); }
-.result .count { font-size: 0.82rem; margin-top: 2px; }
+.result .done-line {
+  font-family: 'Rufina', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.result .count { font-size: 0.86rem; font-weight: 600; margin-top: 3px; }
+.result .sub { font-size: 0.74rem; opacity: 0.8; margin-top: 5px; }
 </style>

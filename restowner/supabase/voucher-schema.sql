@@ -142,11 +142,20 @@ create trigger vautcher_cards_loyalty_bcast
   for each row execute function public.vautcher_on_loyalty_change();
 
 -- ---------- OWNER: add a stamp by scanning a diner QR ----------
--- Reimplemented for vautcher cards. Keeps its ORIGINAL return shape
--- (name, stamps) so the current scanner keeps working — Phase 3 will
--- widen this to expose card progress + redemption count.
-create or replace function public.vautcher_add_stamp(p_profile_id uuid)
-returns table (name text, stamps bigint)
+-- Adds a stamp to the diner's active card, rolling to the next card
+-- when one fills, and reports card progress + the redemption count
+-- back to the scanner.
+drop function if exists public.vautcher_add_stamp(uuid);
+create function public.vautcher_add_stamp(p_profile_id uuid)
+returns table (
+  name              text,
+  lifetime_visits   bigint,
+  card_label        text,
+  card_count        bigint,
+  card_required     int,
+  card_completed    boolean,
+  vouchers_redeemed bigint
+)
 language plpgsql
 security definer
 set search_path = public
@@ -211,7 +220,13 @@ begin
 
   return query
     select p.name,
-           (select count(*) from public.vautcher_stamps s where s.profile_id = p.id)
+           (select count(*) from public.vautcher_stamps s where s.profile_id = p.id),
+           v_voucher.label,
+           v_count,
+           v_voucher.stamps_required,
+           (v_count >= v_voucher.stamps_required),
+           (select count(*) from public.vautcher_cards c
+             where c.restaurant_id = v_rest and c.status = 'redeemed')
     from public.vautcher_profiles p
     where p.id = p_profile_id;
 end;
