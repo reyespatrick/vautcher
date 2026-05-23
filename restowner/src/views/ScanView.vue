@@ -1,14 +1,34 @@
 <script setup>
-import { ref, nextTick, onBeforeUnmount } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Html5Qrcode } from 'html5-qrcode'
 import { supabase } from '../lib/supabase'
 
 const { t } = useI18n()
+const route = useRoute()
 const scanning = ref(false)
 const busy = ref(false)
 const result = ref(null) // see handleCode for the shapes
 let scanner = null
+
+// Manual screenshots use ?demo=stamp / ?demo=redeem to pre-fill the
+// result card. No effect in normal use.
+onMounted(() => {
+  const d = route.query.demo
+  if (d === 'stamp') {
+    result.value = {
+      ok: true, mode: 'stamp', name: 'Marie', lifetime: 7,
+      cardLabel: 'Carte de fidélité', cardCount: 8, cardRequired: 10,
+      cardCompleted: false, redeemed: 1
+    }
+  } else if (d === 'redeem') {
+    result.value = {
+      ok: true, mode: 'redeem', name: 'Marie',
+      reward: 'Un dessert maison offert', redeemed: 2
+    }
+  }
+})
 
 const UUID = '([0-9a-fA-F-]{36})'
 const STAMP_RE = new RegExp(`^vautcher-stamp:${UUID}$`)

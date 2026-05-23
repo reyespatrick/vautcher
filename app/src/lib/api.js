@@ -49,6 +49,28 @@ const DEMO_VOUCHER = {
   }]
 }
 
+// A second demo variant for `?demoState=complete` — full card with a
+// redeemable reward. Used by the user-manual screenshots.
+const COMPLETE_DEMO_VOUCHER = {
+  lifetime_visits: 10,
+  vouchers_redeemed: 1,
+  template: DEMO_VOUCHER.template,
+  cards: [{
+    id: 'demo-card-complete', card_no: 2, status: 'completed',
+    label: 'Carte de fidélité', reward_text: 'Un dessert maison offert',
+    stamps_required: 10,
+    stamps: ['2026-03-04', '2026-03-15', '2026-03-22', '2026-04-02',
+             '2026-04-12', '2026-04-19', '2026-04-28', '2026-05-05',
+             '2026-05-14', '2026-05-21']
+  }]
+}
+
+function demoVariant() {
+  if (typeof window === 'undefined') return DEMO_VOUCHER
+  const flag = new URLSearchParams(window.location.search).get('demoState')
+  return flag === 'complete' ? COMPLETE_DEMO_VOUCHER : DEMO_VOUCHER
+}
+
 /**
  * Loads the diner's loyalty state: the active card, any completed cards
  * still to be redeemed, the two counters, and a template for diners with
@@ -57,17 +79,17 @@ const DEMO_VOUCHER = {
  * Returns { lifetime_visits, vouchers_redeemed, template, cards, source }.
  */
 export async function fetchVoucher(profileId) {
-  if (!supabase || !profileId) return { ...DEMO_VOUCHER, source: 'local' }
+  if (!supabase || !profileId) return { ...demoVariant(), source: 'local' }
 
   try {
     const { data, error } = await supabase.rpc('vautcher_get_voucher', {
       p_profile_id: profileId,
       p_restaurant_id: RESTAURANT_ID
     })
-    if (error || !data) return { ...DEMO_VOUCHER, source: 'local' }
+    if (error || !data) return { ...demoVariant(), source: 'local' }
     return { ...data, source: 'supabase' }
   } catch (e) {
-    return { ...DEMO_VOUCHER, source: 'local' }
+    return { ...demoVariant(), source: 'local' }
   }
 }
 
