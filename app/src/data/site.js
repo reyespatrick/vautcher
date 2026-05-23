@@ -35,7 +35,8 @@ const GENERIC_FALLBACK = {
   hero: { eyebrow: '', title: '', lead: '' },
   about: { kicker: '', title: '', image_url: '', paragraphs: [] },
   specialties: [],
-  gallery: []
+  gallery: [],
+  sections: []
 }
 
 const LA_GIOCONDA_FALLBACK = {
@@ -83,7 +84,8 @@ const LA_GIOCONDA_FALLBACK = {
     { src: '/assets/photo2.jpg', caption: 'Le bar' },
     { src: '/assets/photo3.jpg', caption: 'La terrasse' },
     { src: '/assets/photo4.jpg', caption: 'Da Vinci, bar à vin' }
-  ]
+  ],
+  sections: []
 }
 
 const FALLBACK = RESTAURANT_ID === LA_GIOCONDA_ID
@@ -112,7 +114,8 @@ function flatten(payload) {
     hero: c.hero ?? FALLBACK.hero,
     about: c.about ?? FALLBACK.about,
     specialties: c.specialties ?? FALLBACK.specialties,
-    gallery: c.gallery ?? FALLBACK.gallery
+    gallery: c.gallery ?? FALLBACK.gallery,
+    sections: c.sections ?? FALLBACK.sections
   }
 }
 

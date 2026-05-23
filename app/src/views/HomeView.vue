@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { site } from '../data/site'
 import { fetchEvents } from '../lib/api'
+import SiteBlocks from '../components/SiteBlocks.vue'
 
 // Hero / about / specialties come from the tenant's config in
 // vautcher_restaurants.config — see app/src/data/site.js. The local
@@ -58,9 +59,16 @@ onMounted(async () => {
       </a>
     </section>
 
-    <!-- About — only when the tenant has filled it in -->
+    <!-- Verbatim content blocks extracted from the tenant's website
+         (heading / text / image). When present, they replace the
+         curated about + specialties sections so we never render an
+         editorialised version of what's already on the source. -->
+    <SiteBlocks v-if="(site.sections || []).length" :blocks="site.sections" />
+
+    <!-- Curated about — only when sections is empty AND the tenant
+         has filled in about content via the editor. -->
     <section
-      v-if="(site.about?.paragraphs || []).length || site.about?.title"
+      v-else-if="(site.about?.paragraphs || []).length || site.about?.title"
       class="section about"
     >
       <div class="container about-grid">
@@ -74,8 +82,12 @@ onMounted(async () => {
       </div>
     </section>
 
-    <!-- Specialties — only when the tenant actually has some -->
-    <section v-if="site.specialties && site.specialties.length" class="section specialties">
+    <!-- Specialties — only when the tenant actually has some AND
+         hasn't gone the verbatim sections route. -->
+    <section
+      v-if="!(site.sections || []).length && site.specialties && site.specialties.length"
+      class="section specialties"
+    >
       <div class="container">
         <div class="section-head">
           <span class="kicker">Nos Spécialités</span>
