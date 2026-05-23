@@ -7,10 +7,11 @@ import { fontScale, useUiPrefs } from './composables/usePrefs'
 import { useViewAs } from './composables/useViewAs'
 import { useScope } from './composables/useScope'
 import ProfileMenu from './components/ProfileMenu.vue'
+import RestaurantPicker from './components/RestaurantPicker.vue'
 
 const { owner, restaurant, isModerator, signOut } = useAuth()
 const { asOwner } = useViewAs()
-const { restaurants: scopeRestaurants, scopeRestaurantId, activeRestaurant, canSwitch, setScope } = useScope()
+const { activeRestaurant, canSwitch } = useScope()
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
@@ -62,19 +63,8 @@ async function doSignOut() {
         </RouterLink>
         <div class="hdr-right">
           <!-- Restaurant scope picker — moderators only, and not on the
-               admin page (which has its own inline selector). -->
-          <select
-            v-if="canSwitch && route.name !== 'admin'"
-            class="scope-pick"
-            :value="scopeRestaurantId || activeRestaurant?.id || ''"
-            @change="setScope($event.target.value)"
-          >
-            <option
-              v-for="r in scopeRestaurants"
-              :key="r.id"
-              :value="r.id"
-            >{{ r.name }}</option>
-          </select>
+               admin page (which is the cross-restaurant overview). -->
+          <RestaurantPicker v-if="canSwitch && route.name !== 'admin'" />
           <span v-else-if="activeRestaurant" class="who">{{ activeRestaurant.name }}</span>
           <ProfileMenu
             v-if="owner || isModerator"
@@ -195,21 +185,6 @@ async function doSignOut() {
 </template>
 
 <style scoped>
-/* Restaurant scope picker in the header */
-.scope-pick {
-  font-family: inherit;
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 7px 28px 7px 10px;
-  max-width: 180px;
-  /* Native caret on iOS Safari */
-  -webkit-appearance: menulist;
-}
-
 /* "Plus" tab — matches the .tabbar a styling from main.css. */
 .more-tab {
   flex: 1;
