@@ -1,9 +1,8 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
-import { useScope } from '../composables/useScope'
 import {
   adminRestaurants, adminClients, createRestaurant,
   setOwnerFlags, setClientLocked, provisionOwner
@@ -11,9 +10,6 @@ import {
 
 const { t } = useI18n()
 const { isModerator } = useAuth()
-// The admin view shares the global scope picker — picking La Gioconda
-// here also narrows Events / Vouchers / etc., and vice-versa.
-const { scopeRestaurantId, setScope } = useScope()
 
 const seg = ref('restaurants')
 const restaurants = ref([])
@@ -21,12 +17,6 @@ const clients = ref([])
 const loading = ref(true)
 const loadError = ref(false)
 const busy = ref(false)
-
-const filteredRestaurants = computed(() =>
-  scopeRestaurantId.value
-    ? restaurants.value.filter((r) => r.id === scopeRestaurantId.value)
-    : restaurants.value
-)
 
 // Inline forms
 const showNewRestaurant = ref(false)
@@ -43,10 +33,8 @@ async function load() {
     if (loading.value) { loading.value = false; loadError.value = true }
   }, 9000)
   try {
-    const [r, c] = await Promise.all([
-      adminRestaurants(),
-      adminClients(scopeRestaurantId.value)
-    ])
+    // Admin is always the cross-restaurant overview — no scope filter.
+    const [r, c] = await Promise.all([adminRestaurants(), adminClients()])
     if (r.error) throw r.error
     restaurants.value = r.data
     clients.value = c.data
@@ -58,13 +46,6 @@ async function load() {
   }
 }
 watch(isModerator, (v) => { if (v) load() }, { immediate: true })
-
-// Switching the restaurant scope re-fetches clients (server-side filter).
-watch(scopeRestaurantId, async (id) => {
-  if (!isModerator.value) return
-  const { data, error } = await adminClients(id)
-  if (!error) clients.value = data
-})
 
 async function submitRestaurant() {
   if (busy.value || !newR.value.name.trim() || !newR.value.slug.trim()) return
@@ -154,24 +135,6 @@ async function copyLink() {
       <p>{{ t('admin.subtitle') }}</p>
     </div>
 
-    <!-- Restaurant scope picker — shared with the header on the rest of
-         the app; this control adds a "Tous les restaurants" option that
-         the header dropdown deliberately doesn't have. -->
-    <div v-if="restaurants.length" class="scope">
-      <label for="scope-sel">{{ t('admin.scopeLabel') }}</label>
-      <select
-        id="scope-sel"
-        :value="scopeRestaurantId || ''"
-        class="scope-sel"
-        @change="setScope($event.target.value || null)"
-      >
-        <option value="">{{ t('admin.scopeAll') }}</option>
-        <option v-for="r in restaurants" :key="r.id" :value="r.id">
-          {{ r.name }}
-        </option>
-      </select>
-    </div>
-
     <div class="seg">
       <button :class="{ on: seg === 'restaurants' }" @click="seg = 'restaurants'">
         {{ t('admin.tabRestaurants') }}
@@ -207,7 +170,7 @@ async function copyLink() {
       </div>
 
       <button
-        v-if="!showNewRestaurant && !scopeRestaurantId"
+        v-if="!showNewRestaurant"
         class="btn btn--full create-btn"
         @click="showNewRestaurant = true"
       ><span class="plus">+</span> {{ t('admin.newRestaurant') }}</button>
@@ -230,10 +193,10 @@ async function copyLink() {
         </div>
       </form>
 
-      <p v-if="!filteredRestaurants.length" class="empty">{{ t('admin.empty') }}</p>
+      <p v-if="!restaurants.length" class="empty">{{ t('admin.empty') }}</p>
 
       <div v-else class="r-list">
-        <div v-for="r in filteredRestaurants" :key="r.id" class="card resto">
+        <div v-for="r in restaurants" :key="r.id" class="card resto">
           <div class="resto-head">
             <strong>{{ r.name }}</strong>
             <span class="resto-slug">{{ r.slug }}</span>
@@ -309,31 +272,6 @@ async function copyLink() {
 <style scoped>
 .retry { display: block; margin: 14px auto 0; }
 .create-btn { margin-bottom: 18px; }
-
-/* Restaurant scope picker */
-.scope {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 16px;
-}
-.scope label {
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--mut);
-}
-.scope-sel {
-  flex: 1;
-  font-family: inherit;
-  font-size: 0.92rem;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--ink);
-}
 .plus { font-size: 1.15rem; font-weight: 700; line-height: 0; }
 
 /* Segmented control */
