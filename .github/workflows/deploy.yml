@@ -45,6 +45,7 @@ jobs:
             restowner/supabase/restaurant-config-schema.sql \
             restowner/supabase/restaurant-admin-schema.sql \
             restowner/supabase/push-schema.sql \
+            restowner/supabase/push-vault-schema.sql \
             restowner/supabase/events-recurrence-schema.sql \
             app/supabase/pass-schema.sql; do
             echo "→ applying $f"
