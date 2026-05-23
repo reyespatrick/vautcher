@@ -1,0 +1,30 @@
+# Per-tenant diner-app deploy.
+# Manually triggered: pick a slug, the workflow reads that tenant's
+# config from Supabase, builds the diner app with its env vars + logo,
+# and publishes it to <slug>.pages.dev.
+name: Deploy tenant
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Tenant slug (e.g. la-gioconda, bella-vista)'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install app deps
+        working-directory: app
+        run: npm ci
+      - name: Build + deploy tenant
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bash deploy-tenant.sh "${{ inputs.slug }}"
