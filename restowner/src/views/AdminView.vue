@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import {
@@ -198,6 +199,10 @@ async function copyLink() {
           <div class="resto-head">
             <strong>{{ r.name }}</strong>
             <span class="resto-slug">{{ r.slug }}</span>
+            <RouterLink :to="{ name: 'restaurant-config', params: { id: r.id } }"
+                        class="btn btn--ghost btn--sm resto-cfg">
+              {{ t('config.edit') }}
+            </RouterLink>
           </div>
 
           <p v-if="!r.owners.length" class="owners-empty">{{ t('admin.noOwners') }}</p>
@@ -325,7 +330,8 @@ async function copyLink() {
 /* Restaurants */
 .r-list, .c-list { display: flex; flex-direction: column; gap: 12px; }
 .resto { padding: 14px 16px; }
-.resto-head { display: flex; align-items: baseline; gap: 9px; }
+.resto-head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.resto-cfg { margin-left: auto; }
 .resto-head strong { font-family: 'Rufina', serif; font-size: 1.1rem; }
 .resto-slug { font-size: 0.74rem; color: var(--mut); }
 

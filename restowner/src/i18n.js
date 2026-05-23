@@ -23,7 +23,41 @@ const fr = {
   common: {
     loading: 'Chargement…', save: 'Enregistrer', cancel: 'Annuler',
     retry: 'Réessayer', loadError: 'Impossible de charger les événements.',
-    signOut: 'Déconnexion'
+    signOut: 'Déconnexion', saving: 'Enregistrement…'
+  },
+  config: {
+    title: 'Configuration du restaurant',
+    subtitle: 'Identité et contenu de la page d’accueil du client.',
+    identity: 'Identité',
+    name: 'Nom', slug: 'Identifiant (slug)', tagline: 'Slogan',
+    branding: 'Marque',
+    brandPrimary: 'Couleur principale', brandDark: 'Couleur sombre',
+    themeColor: 'Couleur du thème (PWA)',
+    logo: 'Logo',
+    logoUrlPlaceholder: 'URL du logo (https://… ou /assets/logo.jpg)',
+    uploadLogo: 'Téléverser un logo', uploading: 'Envoi…',
+    contact: 'Contact', address: 'Adresse',
+    phone: 'Téléphone (affichage)', phoneHref: 'Téléphone (lien tel:)',
+    email: 'E-mail', mapsHref: 'Lien Google Maps',
+    hero: 'En-tête (accueil)',
+    heroEyebrow: 'Eyebrow', heroTitle: 'Titre', heroLead: 'Phrase d’accroche',
+    about: 'À propos',
+    aboutKicker: 'Kicker', aboutTitle: 'Titre', aboutImage: 'URL de l’image',
+    aboutParagraphs: 'Paragraphes',
+    aboutParagraphsHint: 'Un paragraphe par bloc — séparez par une ligne vide.',
+    aboutParagraphsHelp: 'Séparez les paragraphes par une ligne vide.',
+    specialties: 'Spécialités',
+    specialtyTitle: 'Titre', specialtyText: 'Texte',
+    hours: 'Horaires',
+    hoursDays: 'Jours (ex. Lundi – Vendredi)',
+    hoursService: 'Service (Midi, Soir…)',
+    hoursTime: 'Horaire (ex. 11h30 – 14h00)',
+    gallery: 'Galerie',
+    galleryUrl: 'URL de la photo', galleryCaption: 'Légende',
+    pwa: 'PWA (icône installée)',
+    pwaName: 'Nom (long)', pwaShortName: 'Nom (court)',
+    pwaDescription: 'Description',
+    add: 'Ajouter', edit: 'Configurer'
   },
   profile: {
     title: 'Profil', textSize: 'Taille du texte', language: 'Langue',
@@ -190,7 +224,7 @@ const de = {
   common: {
     loading: 'Wird geladen…', save: 'Speichern', cancel: 'Abbrechen',
     retry: 'Erneut versuchen', loadError: 'Veranstaltungen konnten nicht geladen werden.',
-    signOut: 'Abmelden'
+    signOut: 'Abmelden', saving: 'Wird gespeichert…'
   },
   profile: {
     title: 'Profil', textSize: 'Textgröße', language: 'Sprache',
@@ -357,7 +391,7 @@ const it = {
   common: {
     loading: 'Caricamento…', save: 'Salva', cancel: 'Annulla',
     retry: 'Riprova', loadError: 'Impossibile caricare gli eventi.',
-    signOut: 'Disconnetti'
+    signOut: 'Disconnetti', saving: 'Salvataggio…'
   },
   profile: {
     title: 'Profilo', textSize: 'Dimensione del testo', language: 'Lingua',
