@@ -1,0 +1,14 @@
+{
+  "name": "vautcher-manual",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "shots": "node screenshots.js",
+    "pdf": "bash build.sh",
+    "build": "npm run shots && npm run pdf"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}
