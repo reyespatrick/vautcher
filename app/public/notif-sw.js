@@ -31,7 +31,11 @@ self.addEventListener('push', (event) => {
       badge: '/assets/logo.jpg',
       image: payload.image,
       data: { url: payload.url || '/evenements' },
-      tag: payload.tag || 'vautcher'
+      // Per-event tag so successive pushes don't silently overwrite
+      // each other in the iOS notification center; renotify lets a
+      // tag-update still raise a fresh banner.
+      tag: payload.tag || ('vautcher-' + Date.now()),
+      renotify: payload.renotify === true
     })
   )
 })

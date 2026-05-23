@@ -63,14 +63,19 @@ async function loadRestaurant(restaurantId: string) {
 }
 
 function buildPayload(opts: {
-  title: string; body: string; icon?: string | null; url?: string
+  title: string; body: string; icon?: string | null; url?: string; tag?: string
 }): string {
   return JSON.stringify({
     title: opts.title,
     body: opts.body,
     icon: opts.icon || '/assets/logo.jpg',
     badge: opts.icon || '/assets/logo.jpg',
-    url: opts.url || '/evenements'
+    url: opts.url || '/evenements',
+    // Per-event tag so successive announces/reminders don't silently
+    // collapse onto a single notification slot. renotify lets iOS show
+    // a fresh banner even when the tag matches an existing one.
+    tag: opts.tag || ('vautcher-' + Date.now()),
+    renotify: true
   })
 }
 
@@ -108,7 +113,8 @@ async function doAnnounce(eventId: string) {
     title: `${restName} — Nouvel événement`,
     body: `${ev.title} · ${dateLabel}${ev.event_time ? ' à ' + ev.event_time : ''}`,
     icon: restLogo,
-    url: '/evenements'
+    url: '/evenements',
+    tag: 'announce-' + ev.id
   })
 
   let sent = 0, failed = 0
@@ -153,7 +159,8 @@ async function doRemind() {
       title: `${restName} — ${ev.title}`,
       body: `${relativeDays(ev.event_date, ev.notify_days_before)}${ev.event_time ? ' à ' + ev.event_time : ''}`,
       icon: restLogo,
-      url: '/evenements'
+      url: '/evenements',
+      tag: 'remind-' + ev.id
     })
     for (const s of subs as Sub[]) {
       const r = await send(s, payload)
