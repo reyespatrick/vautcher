@@ -1,9 +1,27 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { site } from '../data/site'
 import { fetchEvents } from '../lib/api'
 import SiteBlocks from '../components/SiteBlocks.vue'
+
+// Hero background = tenant's own photo when available (first gallery
+// item or about image), else a brand-color gradient. Never the
+// previously-hardcoded La Gioconda photo.
+const heroStyle = computed(() => {
+  const img = site.gallery?.[0]?.src || site.about?.image_url
+  if (img) {
+    return {
+      backgroundImage:
+        `linear-gradient(rgba(20,0,8,0.62), rgba(20,0,8,0.66)), url(${img})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  const a = site.brandPrimary || '#9e053d'
+  const b = site.brandDark || '#6f032b'
+  return { background: `linear-gradient(135deg, ${a}, ${b})` }
+})
 
 // Hero / about / specialties come from the tenant's config in
 // vautcher_restaurants.config — see app/src/data/site.js. The local
@@ -31,7 +49,7 @@ onMounted(async () => {
 <template>
   <div>
     <!-- Hero -->
-    <section class="hero">
+    <section class="hero" :style="heroStyle">
       <div class="hero-inner">
         <p class="eyebrow">{{ site.hero.eyebrow }}</p>
         <h1>{{ site.hero.title }}</h1>
@@ -148,14 +166,15 @@ onMounted(async () => {
 
 <style scoped>
 .hero {
+  /* Background is set via :style on the section — driven by the tenant's
+     gallery/brand. The static fallback is just a brand-burgundy block. */
   min-height: 70vh;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   color: #fff;
-  background: linear-gradient(rgba(20, 0, 8, 0.62), rgba(20, 0, 8, 0.66)),
-              url('/assets/photo1.jpg') center/cover no-repeat;
+  background-color: var(--burgundy-dark, #6f032b);
 }
 .hero-inner { max-width: 680px; padding: 56px 22px; }
 .eyebrow { font-size: 0.78rem; letter-spacing: 0.26em; text-transform: uppercase; margin-bottom: 14px; }

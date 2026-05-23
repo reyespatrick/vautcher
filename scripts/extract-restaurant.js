@@ -150,6 +150,65 @@ const og = {
 }
 const themeColor = meta($h, 'theme-color')
 
+// ---------- brand color from the site's own CSS ----------
+// Extracts hex colors from `color:` and `background[-color]:` declarations
+// across all same-origin stylesheets + inline <style> blocks, ignores
+// neutrals (whites, blacks, greys), and picks the most-frequent saturated
+// color as the brand primary. Not invention — directly from the site.
+function isNeutralHex(hex) {
+  let h = hex.replace('#', '')
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
+  if (h.length !== 6) return true
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  const mx = Math.max(r, g, b)
+  const mn = Math.min(r, g, b)
+  if (mx - mn < 30) return true                  // low saturation
+  if (mx > 240 || mx < 30) return true           // near white / black
+  return false
+}
+function darken(hex, amount = 0.3) {
+  let h = hex.replace('#', '')
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
+  const r = Math.max(0, Math.floor(parseInt(h.slice(0, 2), 16) * (1 - amount)))
+  const g = Math.max(0, Math.floor(parseInt(h.slice(2, 4), 16) * (1 - amount)))
+  const b = Math.max(0, Math.floor(parseInt(h.slice(4, 6), 16) * (1 - amount)))
+  return '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('')
+}
+
+async function sampleBrandColorFromCss() {
+  const cssUrls = []
+  $h('link[rel="stylesheet"][href]').each((_, el) => {
+    const href = $h(el).attr('href')
+    try {
+      const abs = new URL(href, baseUrl).href
+      if (sameOrigin(abs, baseUrl)) cssUrls.push(abs)
+    } catch { /* ignore */ }
+  })
+  // Inline styles on the home page too.
+  let css = ''
+  $h('style').each((_, el) => { css += '\n' + $h(el).text() })
+  for (const u of cssUrls.slice(0, 6)) {
+    const r = await fetch(u, { headers: { 'User-Agent': UA } }).catch(() => null)
+    if (r && r.ok) css += '\n' + await r.text()
+  }
+  if (!css) return null
+
+  const tally = new Map()
+  const colorRe = /(?:color|background(?:-color)?)\s*:\s*(#[0-9a-fA-F]{3,8})/g
+  let m
+  while ((m = colorRe.exec(css))) {
+    const hex = m[1].toLowerCase().slice(0, 7) // drop alpha if any
+    if (isNeutralHex(hex)) continue
+    tally.set(hex, (tally.get(hex) || 0) + 1)
+  }
+  if (!tally.size) return null
+  const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0][0]
+  return top
+}
+const cssBrand = await sampleBrandColorFromCss()
+
 // ---------- logo (highest-res favicon → og:image) ----------
 function pickLogo() {
   if (r.logo) return typeof r.logo === 'string' ? r.logo : (r.logo.url || null)
@@ -315,12 +374,12 @@ const config = {
   maps_href: r.hasMap ||
     (address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : null),
   logo_url: pickLogo(),
-  // Brand colors: only set when explicitly published (theme-color meta).
-  // Otherwise null and the diner app falls back to the system default —
-  // never picked by eye, never sampled from a screenshot.
-  brand_primary: themeColor || null,
-  brand_dark: null,
-  theme_color: themeColor || null,
+  // Brand colors come from <meta theme-color> if set, else from a
+  // frequency-count of `color:`/`background:` declarations in the site's
+  // own stylesheets (excluding neutrals). Never picked by eye.
+  brand_primary: themeColor || cssBrand || null,
+  brand_dark: cssBrand ? darken(cssBrand, 0.35) : null,
+  theme_color: themeColor || cssBrand || null,
   pwa_name: name,
   pwa_short_name: name,
   pwa_description: og.description || r.description || null,
