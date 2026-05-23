@@ -56,6 +56,11 @@ if [[ "$LOGO" =~ ^https?:// ]]; then
   curl -sS -L -o "$HERE/app/public/assets/logo.jpg" "$LOGO"
 fi
 
+# Bake the row into the bundle so the first paint shows the tenant's
+# identity immediately, no La-Gioconda fallback flash.
+echo "→ baking config into app/src/data/baked.json"
+echo "$ROW" | jq '.[0]' > "$HERE/app/src/data/baked.json"
+
 echo "→ building app/ for $SLUG"
 ( cd "$HERE/app" && \
   VITE_RESTAURANT_ID="$RID" \
@@ -83,3 +88,6 @@ echo "→ deploying app/dist → $SLUG.pages.dev"
     --commit-dirty=true )
 
 echo "  ✓ https://$SLUG.pages.dev"
+
+# Restore the local working tree — don't leave baked.json dirty.
+git -C "$HERE" checkout HEAD -- app/src/data/baked.json 2>/dev/null || true

@@ -9,6 +9,12 @@
 // from the DB.
 import { reactive } from 'vue'
 import { fetchRestaurant, RESTAURANT_ID } from '../lib/api'
+// Build-time tenant config — written by deploy-tenant.sh just before the
+// build. When present (id non-empty), it's used for the first paint so
+// the app shows the right tenant identity *immediately*, without the
+// La-Gioconda flash. Defaults to {} (no bake), and is overwritten on
+// every per-tenant deploy.
+import baked from './baked.json'
 
 const CACHE_KEY = 'restaurant.' + RESTAURANT_ID
 const LA_GIOCONDA_ID = '11111111-1111-1111-1111-111111111111'
@@ -135,7 +141,13 @@ function applyBrand(s) {
   r.setProperty('--burgundy-dark', s.brandDark)
 }
 
-const initial = loadCached() || FALLBACK
+// Priority for the first paint:
+//   1. localStorage cache (the most recent DB fetch this device has done)
+//   2. The build-baked config (point-in-time of the last deploy)
+//   3. FALLBACK (La-Gioconda defaults for La Gioconda, generic empties
+//      for any other tenant)
+const bakedInitial = baked && baked.id ? flatten(baked) : null
+const initial = loadCached() || bakedInitial || FALLBACK
 export const site = reactive(initial)
 export const gallery = reactive(initial.gallery || [])
 applyBrand(initial)

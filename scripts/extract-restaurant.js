@@ -20,6 +20,7 @@
 // =============================================================
 import { load } from 'cheerio'
 import { writeFile } from 'fs/promises'
+import probe from 'probe-image-size'
 
 const args = process.argv.slice(2)
 let url = null
@@ -360,6 +361,35 @@ const heroLead = headings.find((h) => h.level === 2)?.text || og.description || 
 const aboutParagraphs = texts.slice(0, 4).map((t) => t.text)
 const gallery = images.slice(0, 12).map((img) => ({ src: img.src, caption: img.alt || '' }))
 
+// ---------- pick a hero image ----------
+// Hero should be landscape (wide enough to fill the banner). Probe the
+// first ~12 candidate images for dimensions; prefer landscape ones with
+// reasonable size. Falls back to the first image when no probe succeeds.
+async function pickHeroImage() {
+  const candidates = images.slice(0, 12).map((i) => i.src)
+  if (!candidates.length) return null
+  const sized = []
+  for (const url of candidates) {
+    try {
+      const info = await probe(url, { read_timeout: 5000 })
+      sized.push({ url, w: info.width, h: info.height })
+    } catch { /* unreachable / unknown — skip dimension data */ }
+  }
+  // Landscape = aspect ratio >= 1.3, reasonable size, prefer larger.
+  const landscapes = sized
+    .filter((s) => s.w >= 600 && s.h >= 300 && s.w / s.h >= 1.3)
+    .sort((a, b) => (b.w * b.h) - (a.w * a.h))
+  if (landscapes.length) return landscapes[0].url
+  // No clear landscape — fall back to the largest probed image,
+  // or the first image if probing failed for all.
+  if (sized.length) {
+    sized.sort((a, b) => (b.w * b.h) - (a.w * a.h))
+    return sized[0].url
+  }
+  return candidates[0]
+}
+const heroImage = await pickHeroImage()
+
 // ---------- build the payload ----------
 const phone = r.telephone || fallbackPhone()
 const address = addressString()
@@ -388,7 +418,8 @@ const config = {
   hero: {
     eyebrow: (r.address && r.address.addressLocality) || null,
     title: heroTitle,
-    lead: heroLead
+    lead: heroLead,
+    image_url: heroImage
   },
   about: {
     kicker: '',

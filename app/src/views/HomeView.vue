@@ -9,7 +9,9 @@ import SiteBlocks from '../components/SiteBlocks.vue'
 // item or about image), else a brand-color gradient. Never the
 // previously-hardcoded La Gioconda photo.
 const heroStyle = computed(() => {
-  const img = site.gallery?.[0]?.src || site.about?.image_url
+  // Prefer hero.image_url (extractor probes for a landscape image),
+  // then fall back to the first gallery image, then about image.
+  const img = site.hero?.image_url || site.gallery?.[0]?.src || site.about?.image_url
   if (img) {
     return {
       backgroundImage:
