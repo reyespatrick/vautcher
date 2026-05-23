@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue'
 import { useProfile } from '../composables/useProfile'
 import { fetchEvents, joinEvent, leaveEvent } from '../lib/api'
 import EventCard from '../components/EventCard.vue'
-import NotifyBanner from '../components/NotifyBanner.vue'
 
 const { profile } = useProfile()
 const events = ref([])
@@ -61,8 +60,6 @@ async function onLeave(ev) {
     </header>
 
     <div class="container list">
-      <NotifyBanner />
-
       <p v-if="loading" class="state">Chargement des événements…</p>
       <p v-else-if="!events.length" class="state">
         Aucun événement à venir pour le moment — revenez bientôt&nbsp;!
