@@ -8,9 +8,15 @@ export async function adminRestaurants() {
   return { data: data || [], error }
 }
 
-/** Every diner profile, with stamp count + lock state. */
-export async function adminClients() {
-  const { data, error } = await supabase.rpc('vautcher_admin_clients')
+/**
+ * Diner profiles with stamp count + lock state. When restaurantId is
+ * given, scopes to clients who have at least one stamp at that
+ * restaurant — used by the admin-panel restaurant filter.
+ */
+export async function adminClients(restaurantId = null) {
+  const { data, error } = await supabase.rpc('vautcher_admin_clients', {
+    p_restaurant_id: restaurantId
+  })
   return { data: data || [], error }
 }
 

@@ -192,6 +192,8 @@ const fr = {
   admin: {
     title: 'Administration',
     subtitle: 'Restaurants, propriétaires et clients de la plateforme.',
+    scopeLabel: 'Restaurant',
+    scopeAll: 'Tous les restaurants',
     tabRestaurants: 'Restaurants', tabClients: 'Clients',
     newRestaurant: 'Nouveau restaurant',
     restaurantName: 'Nom du restaurant', restaurantSlug: 'Identifiant (slug)',
