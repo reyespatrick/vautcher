@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Install mock</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+    width: 390px;
+    height: 844px;
+    color: #fff;
+    background: linear-gradient(165deg, #f3c6c0 0%, #d68f88 35%, #9e5572 75%, #5b2a4e 100%);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .statusbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 28px 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .statusbar .icons {
+    display: flex;
+    gap: 5px;
+    font-size: 13px;
+  }
+  .grid {
+    padding: 56px 24px 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px 18px;
+  }
+  .app { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .icon {
+    width: 60px; height: 60px;
+    border-radius: 14px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.4rem;
+    overflow: hidden;
+  }
+  .icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .label {
+    font-size: 11px;
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Generic-app colors */
+  .ic-green   { background: linear-gradient(180deg, #5af04e, #2bb83a); }
+  .ic-blue    { background: linear-gradient(180deg, #5ec0f4, #2b7ad6); }
+  .ic-grey    { background: linear-gradient(180deg, #b0b3b8, #6e7378); }
+  .ic-white   { background: #fff; color: #444; }
+  .ic-yellow  { background: linear-gradient(180deg, #ffe45b, #f5c108); color: #333; }
+  .ic-red     { background: linear-gradient(180deg, #ff7065, #e63a2a); }
+  .ic-orange  { background: linear-gradient(180deg, #ffaf45, #f37016); }
+  .ic-black   { background: linear-gradient(180deg, #4a4a4c, #1a1a1c); }
+
+  /* The new La Gioconda app — highlighted with a soft glow + Nouveau badge */
+  .app.new .icon {
+    box-shadow:
+      0 0 0 3px rgba(255, 255, 255, 0.85),
+      0 10px 28px rgba(158, 5, 61, 0.55),
+      0 0 36px rgba(255, 255, 255, 0.5);
+  }
+  .app.new {
+    position: relative;
+  }
+  .app.new::before {
+    content: 'Nouveau';
+    position: absolute;
+    top: -10px; right: -6px;
+    background: #fff;
+    color: #9e053d;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+  }
+
+  .dock {
+    position: absolute;
+    bottom: 28px;
+    left: 18px;
+    right: 18px;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 32px;
+    padding: 12px 18px;
+    display: flex;
+    justify-content: space-around;
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+  }
+  .dock .icon { width: 58px; height: 58px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); }
+
+  /* Home-indicator bar */
+  .home-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 50%; transform: translateX(-50%);
+    width: 134px; height: 5px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.95);
+  }
+</style>
+</head>
+<body>
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="icons"><span>•••</span><span>📶</span><span>🔋</span></span>
+  </div>
+
+  <div class="grid">
+    <div class="app"><div class="icon ic-green">💬</div><span class="label">Messages</span></div>
+    <div class="app"><div class="icon ic-blue">✉︎</div><span class="label">Mail</span></div>
+    <div class="app"><div class="icon ic-blue">🧭</div><span class="label">Safari</span></div>
+    <div class="app"><div class="icon ic-grey">📷</div><span class="label">Appareil</span></div>
+
+    <div class="app"><div class="icon ic-white">🖼</div><span class="label">Photos</span></div>
+    <div class="app"><div class="icon ic-green">🗺</div><span class="label">Plans</span></div>
+    <div class="app"><div class="icon ic-red">♪</div><span class="label">Musique</span></div>
+    <div class="app"><div class="icon ic-yellow">📝</div><span class="label">Notes</span></div>
+
+    <div class="app"><div class="icon ic-blue">☀︎</div><span class="label">Météo</span></div>
+    <div class="app new">
+      <div class="icon"><img src="../img/la-gioconda-icon.jpg" alt="" /></div>
+      <span class="label">La Gioconda</span>
+    </div>
+    <div class="app"><div class="icon ic-orange">⏰</div><span class="label">Horloge</span></div>
+    <div class="app"><div class="icon ic-grey">⚙︎</div><span class="label">Réglages</span></div>
+  </div>
+
+  <div class="dock">
+    <div class="icon ic-green">📞</div>
+    <div class="icon ic-blue">✉︎</div>
+    <div class="icon ic-blue">🧭</div>
+    <div class="icon ic-red">♪</div>
+  </div>
+
+  <div class="home-indicator"></div>
+</body>
+</html>
