@@ -28,8 +28,12 @@ export async function saveProfile(profile) {
   }
 }
 
-// La Gioconda — the single restaurant this diner app belongs to.
-const RESTAURANT_ID = '11111111-1111-1111-1111-111111111111'
+// Per-tenant — the restaurant this build of the diner app belongs to.
+// Set by VITE_RESTAURANT_ID in the per-restaurant deploy; falls back to
+// La Gioconda for local dev without an env file.
+export const RESTAURANT_ID =
+  import.meta.env.VITE_RESTAURANT_ID ||
+  '11111111-1111-1111-1111-111111111111'
 
 // Demo data so the voucher card looks alive when there is no backend.
 const DEMO_VOUCHER = {
@@ -63,6 +67,24 @@ const COMPLETE_DEMO_VOUCHER = {
              '2026-04-12', '2026-04-19', '2026-04-28', '2026-05-05',
              '2026-05-14', '2026-05-21']
   }]
+}
+
+/**
+ * Loads this tenant's identity + content config (brand tokens, hero, about,
+ * specialties, gallery, hours, contact info). Returns null if unavailable
+ * so callers can fall back to a cached / default config.
+ */
+export async function fetchRestaurant() {
+  if (!supabase) return null
+  try {
+    const { data, error } = await supabase.rpc('vautcher_get_restaurant', {
+      p_restaurant_id: RESTAURANT_ID
+    })
+    if (error || !data) return null
+    return data
+  } catch (e) {
+    return null
+  }
 }
 
 function demoVariant() {
@@ -121,7 +143,8 @@ export async function fetchEvents(profileId) {
   if (!supabase) return { events: DEMO_EVENTS, source: 'local' }
   try {
     const { data, error } = await supabase.rpc('vautcher_upcoming_events', {
-      p_profile_id: profileId || null
+      p_profile_id: profileId || null,
+      p_restaurant_id: RESTAURANT_ID
     })
     if (error || !Array.isArray(data)) return { events: DEMO_EVENTS, source: 'local' }
     return { events: data, source: 'supabase' }

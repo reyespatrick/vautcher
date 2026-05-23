@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useProfile } from '../composables/useProfile'
+import { site } from '../data/site'
 
 const { profile, openDialog } = useProfile()
 const version = __APP_VERSION__
@@ -14,10 +15,10 @@ const initial = computed(() => firstName.value.charAt(0).toUpperCase() || '?')
   <header class="hdr">
     <div class="hdr-inner">
       <RouterLink to="/" class="brand">
-        <img src="/assets/logo.jpg" alt="La Gioconda" />
+        <img :src="site.logoUrl" :alt="site.name" />
         <span class="brand-txt">
-          La Gioconda
-          <small>Ristorante · Pizzeria · v{{ version }}</small>
+          {{ site.name }}
+          <small>{{ site.tagline }} · v{{ version }}</small>
         </span>
       </RouterLink>
 

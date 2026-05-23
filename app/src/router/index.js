@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { site } from '../data/site'
 
 import HomeView from '../views/HomeView.vue'
 import VoucherView from '../views/VoucherView.vue'
@@ -26,7 +27,9 @@ const router = createRouter({
 })
 
 router.afterEach((to) => {
-  document.title = `La Gioconda — ${to.meta.title || 'Restaurant Pizzeria'}`
+  // `site.name` is reactive — once the DB-loaded config arrives it
+  // overrides the fallback, and the next navigation picks it up.
+  document.title = `${site.name} — ${to.meta.title || ''}`.replace(/—\s*$/, '').trim()
 })
 
 export default router

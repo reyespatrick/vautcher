@@ -4,11 +4,10 @@ import { RouterLink } from 'vue-router'
 import { site } from '../data/site'
 import { fetchEvents } from '../lib/api'
 
-const specialties = [
-  { icon: '🧀', title: 'Risotto à la meule', text: 'Préparé et flambé en salle dans une meule de parmesan.' },
-  { icon: '🍝', title: 'Pâtes fraîches', text: 'Préparées à la commande, dans la tradition artisanale.' },
-  { icon: '🍷', title: 'Vins d’Italie', text: 'Une sélection pour accompagner et sublimer chaque plat.' }
-]
+// Hero / about / specialties come from the tenant's config in
+// vautcher_restaurants.config — see app/src/data/site.js. The local
+// references via `site.hero`, `site.about`, `site.specialties` keep
+// this view tenant-agnostic.
 
 const events = ref([])
 const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
@@ -33,9 +32,9 @@ onMounted(async () => {
     <!-- Hero -->
     <section class="hero">
       <div class="hero-inner">
-        <p class="eyebrow">Cointrin · Genève</p>
-        <h1>Une part de Naples au cœur de Genève</h1>
-        <p class="lead">{{ site.tagline }} — cuisine italienne authentique, pâtes fraîches et pizzas au feu de bois.</p>
+        <p class="eyebrow">{{ site.hero.eyebrow }}</p>
+        <h1>{{ site.hero.title }}</h1>
+        <p class="lead">{{ site.hero.lead }}</p>
         <div class="hero-actions">
           <RouterLink to="/reservation" class="btn btn--light">Réserver une table</RouterLink>
           <RouterLink to="/evenements" class="btn btn--light">Nos événements</RouterLink>
@@ -62,12 +61,11 @@ onMounted(async () => {
     <!-- About -->
     <section class="section about">
       <div class="container about-grid">
-        <img src="/assets/photo1.jpg" alt="La salle du restaurant" />
+        <img :src="site.about.image_url" :alt="site.about.title" />
         <div>
-          <span class="kicker">Notre Maison</span>
-          <h2>Bienvenue à La Gioconda</h2>
-          <p>Située à Cointrin, notre maison représente une véritable part de Naples au sein de Genève. Dans un cadre chaleureux et lumineux, nous vous accueillons midi et soir, 7 jours sur 7.</p>
-          <p>Produits frais, recettes traditionnelles et accueil familial : chaque assiette est préparée avec passion.</p>
+          <span class="kicker">{{ site.about.kicker }}</span>
+          <h2>{{ site.about.title }}</h2>
+          <p v-for="(p, i) in site.about.paragraphs" :key="i">{{ p }}</p>
           <RouterLink to="/contact" class="btn btn--ghost">Nous découvrir</RouterLink>
         </div>
       </div>
@@ -82,7 +80,7 @@ onMounted(async () => {
           <div class="divider"></div>
         </div>
         <div class="spec-grid">
-          <article v-for="s in specialties" :key="s.title" class="spec-card">
+          <article v-for="s in site.specialties" :key="s.title" class="spec-card">
             <div class="spec-icon">{{ s.icon }}</div>
             <h3>{{ s.title }}</h3>
             <p>{{ s.text }}</p>
