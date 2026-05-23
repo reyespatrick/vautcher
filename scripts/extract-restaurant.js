@@ -298,6 +298,35 @@ function extractBlocksFromPage($, pageUrl) {
   const $body = $('body').length ? $('body') : $.root()
   // Skip obvious header/nav/footer regions.
   $body.find('header, nav, footer, script, style, noscript').remove()
+  // Tags that count as block-level — used to detect "leaf" containers
+  // (a div/li/dd whose own text content isn't double-counted by a child).
+  const BLOCK_RE = /^(div|section|article|aside|main|p|h[1-6]|ul|ol|li|dl|dd|dt|table|tr|td|th|figure|figcaption)$/
+  // Direct text content of an element — only text nodes that are
+  // direct children, joined and whitespace-collapsed.
+  function directText($el) {
+    return $el.contents()
+      .filter((_, n) => n.type === 'text')
+      .map((_, n) => n.data).get().join(' ').replace(/\s+/g, ' ').trim()
+  }
+  // The element's full text, but only counted when it has no block-level
+  // descendants — i.e., this IS the leaf content holder.
+  function leafText($el) {
+    const hasBlockChild = $el.find(BLOCK_RE).length > 0
+    if (hasBlockChild) return ''
+    return $el.text().replace(/<br\s*\/?>/gi, ' ').replace(/\s+/g, ' ').trim()
+  }
+  function looksLikeNav($el) {
+    // Walk up — anything still tagged nav/menu/breadcrumb is chrome.
+    let cur = $el
+    while (cur && cur.length) {
+      const cls = (cur.attr && cur.attr('class')) || ''
+      if (/(?:^|\s)(nav|menu|breadcrumb|navbar|topbar|sidebar)(?:\s|$|--|__|-)/i.test(cls)) return true
+      cur = cur.parent && cur.parent()
+      if (!cur || !cur.length || cur.is('body, html')) break
+    }
+    return false
+  }
+
   $body.find('*').each((_, el) => {
     const tag = (el.tagName || '').toLowerCase()
     const $el = $(el)
@@ -319,6 +348,23 @@ function extractBlocksFromPage($, pageUrl) {
       if (text.length >= 25 && !isNavLikeText(text)) {
         out.push({ type: 'text', text })
       }
+    } else if (tag === 'li' || tag === 'dd' || tag === 'dt') {
+      if (looksLikeNav($el)) return
+      const text = leafText($el)
+      if (text && text.length >= 2 && text.length <= 400 && !isNavLikeText(text)) {
+        out.push({ type: 'text', text })
+      }
+    } else if (tag === 'div') {
+      // Only emit when this div is the actual content leaf — directly
+      // contains text, no nested block elements. Catches the Lion d'Or
+      // pattern: <div class="section-subtitle"> Route de Suisse… </div>.
+      if (looksLikeNav($el)) return
+      const direct = directText($el)
+      const leaf = leafText($el)
+      if (!leaf || leaf.length < 2 || leaf.length > 500) return
+      if (direct.length < 2) return // pure wrapper — child holds the text
+      if (isNavLikeText(leaf)) return
+      out.push({ type: 'text', text: leaf })
     }
   })
   return out
@@ -337,11 +383,30 @@ function key(b) {
   if (b.type === 'text') return 't:' + b.text
   return Math.random()
 }
-const sections = []
+const dedupedSections = []
 for (const b of allBlocks) {
   const k = key(b)
   if (seen.has(k)) continue
   seen.add(k)
+  dedupedSections.push(b)
+}
+// Drop any heading immediately followed by another heading (or by EOF)
+// with nothing in between. Lion d'Or's /contact emits "Heures d'ouverture"
+// and "Contact" as bare H2s when the body content is in non-<p> markup
+// the extractor still misses — better to suppress the orphan title than
+// to render a section heading with no body.
+const sections = []
+for (let i = 0; i < dedupedSections.length; i++) {
+  const b = dedupedSections[i]
+  if (b.type === 'heading') {
+    // Look ahead until we find a non-heading or the end.
+    let j = i + 1
+    while (j < dedupedSections.length && dedupedSections[j].type === 'heading') j++
+    const next = dedupedSections[j]
+    // Drop this heading if there's nothing of substance after it before
+    // the next heading runs out.
+    if (!next || next.type === 'heading') continue
+  }
   sections.push(b)
 }
 

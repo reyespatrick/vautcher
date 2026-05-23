@@ -113,7 +113,8 @@ async function doAnnounce(eventId: string) {
     title: `${restName} — Nouvel événement`,
     body: `${ev.title} · ${dateLabel}${ev.event_time ? ' à ' + ev.event_time : ''}`,
     icon: restLogo,
-    url: '/evenements',
+    // Deep-link to the event detail page so a tap goes straight there.
+    url: `/evenements/${ev.id}`,
     tag: 'announce-' + ev.id
   })
 
@@ -159,7 +160,7 @@ async function doRemind() {
       title: `${restName} — ${ev.title}`,
       body: `${relativeDays(ev.event_date, ev.notify_days_before)}${ev.event_time ? ' à ' + ev.event_time : ''}`,
       icon: restLogo,
-      url: '/evenements',
+      url: `/evenements/${ev.id}`,
       tag: 'remind-' + ev.id
     })
     for (const s of subs as Sub[]) {

@@ -27,7 +27,9 @@ const tabs = [
 <style scoped>
 .bottom-nav {
   flex: 0 0 auto;
-  min-height: var(--bottomnav-h);
+  /* Include the safe-area inset in the bar height so the iPhone's
+     home-indicator doesn't eat into the icon row. */
+  min-height: calc(var(--bottomnav-h) + env(safe-area-inset-bottom));
   background: #fff;
   border-top: 1px solid var(--line);
   display: flex;

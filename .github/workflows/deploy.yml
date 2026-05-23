@@ -38,6 +38,7 @@ jobs:
             restowner/supabase/points-schema.sql \
             restowner/supabase/moderation-schema.sql \
             restowner/supabase/root-admin-schema.sql \
+            restowner/supabase/moderation-trust-fix.sql \
             restowner/supabase/root-account-schema.sql \
             restowner/supabase/owner-stats.sql \
             restowner/supabase/voucher-schema.sql \

@@ -188,6 +188,29 @@ export async function fetchEvents(profileId) {
   }
 }
 
+/**
+ * One event by id, with the attendee count and whether this visitor
+ * has joined. Falls back to a DEMO_EVENTS match when there's no
+ * Supabase configured. Returns { event, source } or { event: null }.
+ */
+export async function fetchEvent(eventId, profileId) {
+  if (!supabase) {
+    const e = DEMO_EVENTS.find((x) => x.id === eventId) || null
+    return { event: e, source: 'local' }
+  }
+  try {
+    const { data, error } = await supabase.rpc('vautcher_upcoming_events', {
+      p_profile_id: profileId || null,
+      p_restaurant_id: RESTAURANT_ID
+    })
+    if (error || !Array.isArray(data)) return { event: null }
+    const event = data.find((x) => x.id === eventId) || null
+    return { event, source: 'supabase' }
+  } catch (e) {
+    return { event: null }
+  }
+}
+
 /** Signals the visitor will join an event. */
 export async function joinEvent(eventId, profileId) {
   if (!supabase) return { ok: true, source: 'local' }

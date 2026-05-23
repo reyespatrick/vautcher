@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -34,63 +35,74 @@ const rebateText = computed(() => {
 </script>
 
 <template>
-  <article class="event" :class="{ joined: event.joined }">
-    <div class="ev-media" :style="{ backgroundImage: `url(${event.image_url})` }">
-      <div class="ev-date">
-        <strong>{{ day }}</strong>
-        <small>{{ monthShort }}</small>
+  <RouterLink
+    :to="{ name: 'event-detail', params: { id: event.id } }"
+    class="event-link"
+  >
+    <article class="event" :class="{ joined: event.joined }">
+      <div class="ev-media" :style="{ backgroundImage: `url(${event.image_url})` }">
+        <div class="ev-date">
+          <strong>{{ day }}</strong>
+          <small>{{ monthShort }}</small>
+        </div>
+        <span v-if="event.joined" class="ev-flag">✓ Inscrit</span>
+        <span v-if="full" class="ev-full">Complet</span>
       </div>
-      <span v-if="event.joined" class="ev-flag">✓ Inscrit</span>
-      <span v-if="full" class="ev-full">Complet</span>
-    </div>
 
-    <div class="ev-body">
-      <h3>{{ event.title }}</h3>
+      <div class="ev-body">
+        <h3>{{ event.title }}</h3>
 
-      <ul class="ev-meta">
-        <li><span class="ic">📅</span>{{ fullDate }}</li>
-        <li v-if="event.event_time"><span class="ic">🕖</span>{{ event.event_time }}</li>
-        <li v-if="event.location"><span class="ic">📍</span>{{ event.location }}</li>
-        <li v-if="event.price"><span class="ic">🎟️</span>{{ event.price }}</li>
-      </ul>
+        <ul class="ev-meta">
+          <li><span class="ic">📅</span>{{ fullDate }}</li>
+          <li v-if="event.event_time"><span class="ic">🕖</span>{{ event.event_time }}</li>
+          <li v-if="event.location"><span class="ic">📍</span>{{ event.location }}</li>
+          <li v-if="event.price"><span class="ic">🎟️</span>{{ event.price }}</li>
+        </ul>
 
-      <p v-if="rebateText" class="ev-rebate">🎁 {{ rebateText }}</p>
+        <p v-if="rebateText" class="ev-rebate">🎁 {{ rebateText }}</p>
 
-      <p class="ev-desc">{{ event.description }}</p>
+        <p class="ev-desc">{{ event.description }}</p>
 
-      <div class="ev-foot">
-        <span class="ev-count">
-          <template v-if="max != null">{{ attendees }} / {{ max }} participants</template>
-          <template v-else>
-            {{ attendees }} {{ attendees > 1 ? 'personnes intéressées' : 'personne intéressée' }}
-          </template>
-        </span>
-        <button
-          v-if="event.joined"
-          class="ev-act leave"
-          type="button"
-          :disabled="busy"
-          @click="emit('leave', event)"
-        >Annuler ma participation</button>
-        <button
-          v-else-if="full"
-          class="ev-act join"
-          type="button"
-          disabled
-        >Complet</button>
-        <button
-          v-else
-          class="ev-act join"
-          type="button"
-          :disabled="busy"
-          @click="emit('join', event)"
-        >Je participe</button>
+        <div class="ev-foot">
+          <span class="ev-count">
+            <template v-if="max != null">{{ attendees }} / {{ max }} participants</template>
+            <template v-else>
+              {{ attendees }} {{ attendees > 1 ? 'personnes intéressées' : 'personne intéressée' }}
+            </template>
+          </span>
+          <!-- .stop / .prevent so tapping the action button doesn't also
+               navigate to the detail page (the whole card is a link). -->
+          <button
+            v-if="event.joined"
+            class="ev-act leave"
+            type="button"
+            :disabled="busy"
+            @click.stop.prevent="emit('leave', event)"
+          >Annuler ma participation</button>
+          <button
+            v-else-if="full"
+            class="ev-act join"
+            type="button"
+            disabled
+            @click.stop.prevent
+          >Complet</button>
+          <button
+            v-else
+            class="ev-act join"
+            type="button"
+            :disabled="busy"
+            @click.stop.prevent="emit('join', event)"
+          >Je participe</button>
+        </div>
       </div>
-    </div>
-  </article>
+    </article>
+  </RouterLink>
 </template>
 
 <style scoped>
+/* RouterLink reset — let the .event styling do all the visual work. */
+.event-link { display: block; color: inherit; text-decoration: none; }
+
 .event {
   display: flex;
   background: #fff;
