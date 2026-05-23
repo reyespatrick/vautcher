@@ -58,25 +58,28 @@ onMounted(async () => {
       </a>
     </section>
 
-    <!-- About -->
-    <section class="section about">
+    <!-- About — only when the tenant has filled it in -->
+    <section
+      v-if="(site.about?.paragraphs || []).length || site.about?.title"
+      class="section about"
+    >
       <div class="container about-grid">
-        <img :src="site.about.image_url" :alt="site.about.title" />
+        <img v-if="site.about.image_url" :src="site.about.image_url" :alt="site.about.title || site.name" />
         <div>
-          <span class="kicker">{{ site.about.kicker }}</span>
-          <h2>{{ site.about.title }}</h2>
+          <span v-if="site.about.kicker" class="kicker">{{ site.about.kicker }}</span>
+          <h2 v-if="site.about.title">{{ site.about.title }}</h2>
           <p v-for="(p, i) in site.about.paragraphs" :key="i">{{ p }}</p>
           <RouterLink to="/contact" class="btn btn--ghost">Nous découvrir</RouterLink>
         </div>
       </div>
     </section>
 
-    <!-- Specialties -->
-    <section class="section specialties">
+    <!-- Specialties — only when the tenant actually has some -->
+    <section v-if="site.specialties && site.specialties.length" class="section specialties">
       <div class="container">
         <div class="section-head">
           <span class="kicker">Nos Spécialités</span>
-          <h2>Le goût de l’Italie</h2>
+          <h2>{{ site.specialtiesTitle || 'Nos plats' }}</h2>
           <div class="divider"></div>
         </div>
         <div class="spec-grid">
