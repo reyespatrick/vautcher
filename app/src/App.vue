@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import BottomNav from './components/BottomNav.vue'
 import OnboardingDialog from './components/OnboardingDialog.vue'
+import NotifyPrompt from './components/NotifyPrompt.vue'
 import { useProfile } from './composables/useProfile'
 
 const { dialogOpen } = useProfile()
@@ -33,4 +34,5 @@ watch(() => route.fullPath, () => {
   </div>
 
   <OnboardingDialog v-if="dialogOpen" />
+  <NotifyPrompt />
 </template>

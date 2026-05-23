@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useProfile } from '../composables/useProfile'
+import { usePush } from '../composables/usePush'
 import { site } from '../data/site'
 
 const { profile, save, closeDialog, logout } = useProfile()
+const { subscribeIfPossible, canPrompt } = usePush()
 
 const today = new Date().toISOString().split('T')[0]
 const isEdit = computed(() => !!profile.value)
@@ -15,9 +17,17 @@ const form = ref({
 
 const valid = computed(() => form.value.name.trim().length >= 2 && !!form.value.birthDate)
 
-function submit() {
+async function submit() {
   if (!valid.value) return
+  const wasNew = !profile.value
   save(form.value)
+  // First-time onboarding: chain straight into the notification
+  // permission prompt while we still hold the user-gesture. The user
+  // never has to dig into Agenda to enable pushes. No-op on a profile
+  // edit, or on iOS Safari (non-standalone), or if push isn't supported.
+  if (wasNew && canPrompt.value && profile.value?.id) {
+    try { await subscribeIfPossible(profile.value.id) } catch { /* best effort */ }
+  }
 }
 
 function doLogout() {

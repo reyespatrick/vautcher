@@ -1,77 +1,16 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref } from 'vue'
 import { site } from '../data/site'
 import { useProfile } from '../composables/useProfile'
-import { registerPushSubscription } from '../lib/api'
+import { usePush } from '../composables/usePush'
 
 const { profile } = useProfile()
+const {
+  supported, permission, subscribed, needsInstallFirst, subscribeIfPossible
+} = usePush()
 
-const VAPID_PUBLIC_KEY = (import.meta.env.VITE_VAPID_PUBLIC_KEY || '').trim()
-
-const supported = ref(false)
-const permission = ref('default')
-const isiOS = ref(false)
-const isStandalone = ref(false)
 const busy = ref(false)
 const message = ref('')
-const subscribed = ref(false)
-
-onMounted(async () => {
-  supported.value = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
-  if (supported.value) {
-    permission.value = Notification.permission
-    // Already subscribed on this device?
-    try {
-      const reg = await navigator.serviceWorker.ready
-      const sub = await reg.pushManager.getSubscription()
-      subscribed.value = !!sub
-    } catch { /* ignore */ }
-  }
-  isiOS.value = /iphone|ipad|ipod/i.test(navigator.userAgent)
-  isStandalone.value =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true
-})
-
-// iOS only delivers push to a PWA added to the Home Screen.
-const iosNeedsInstall = computed(() => isiOS.value && !isStandalone.value)
-
-// Standard helper to convert the VAPID public key (base64url) into the
-// Uint8Array pushManager.subscribe() wants.
-function urlBase64ToUint8Array(b64) {
-  const pad = '='.repeat((4 - (b64.length % 4)) % 4)
-  const base64 = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/')
-  const raw = atob(base64)
-  const out = new Uint8Array(raw.length)
-  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i)
-  return out
-}
-
-async function subscribeAndRegister() {
-  if (!VAPID_PUBLIC_KEY) {
-    message.value = 'Push non configuré sur ce build.'
-    return false
-  }
-  if (!profile.value?.id) {
-    message.value = 'Renseignez d’abord votre profil.'
-    return false
-  }
-  const reg = await navigator.serviceWorker.ready
-  let sub = await reg.pushManager.getSubscription()
-  if (!sub) {
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-    })
-  }
-  const res = await registerPushSubscription(profile.value.id, sub, navigator.userAgent)
-  if (!res.ok) {
-    message.value = 'Inscription au push impossible : ' + (res.error || 'erreur réseau')
-    return false
-  }
-  subscribed.value = true
-  return true
-}
 
 async function showSample() {
   const reg = await navigator.serviceWorker.ready
@@ -90,26 +29,23 @@ async function onClick() {
     message.value = 'Les notifications ne sont pas supportées sur ce navigateur.'
     return
   }
-  if (iosNeedsInstall.value) {
+  if (needsInstallFirst.value) {
     message.value =
       'Sur iPhone : ajoutez d’abord l’app à l’écran d’accueil (Partager → Sur l’écran d’accueil), puis réessayez.'
     return
   }
+  if (!profile.value?.id) {
+    message.value = 'Renseignez d’abord votre profil.'
+    return
+  }
   busy.value = true
   try {
-    if (permission.value !== 'granted') {
-      permission.value = await Notification.requestPermission()
-    }
-    if (permission.value !== 'granted') {
-      if (permission.value === 'denied') {
-        message.value = 'Notifications refusées — réactivez-les dans les réglages de votre téléphone.'
-      }
-      return
-    }
-    const ok = await subscribeAndRegister()
+    const ok = await subscribeIfPossible(profile.value.id)
     if (ok) {
       await showSample()
       message.value = '✓ Vous êtes inscrit·e — les futurs événements vous seront notifiés.'
+    } else if (permission.value === 'denied') {
+      message.value = 'Notifications refusées — réactivez-les dans les réglages de votre téléphone.'
     }
   } catch (e) {
     message.value = 'Inscription au push impossible : ' + (e?.message || e)
