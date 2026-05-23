@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { site } from '../data/site'
 
 // One loyalty card — the stamp grid for a single vautcher. Used both for
 // the card the diner is currently collecting and for completed cards
@@ -40,7 +41,7 @@ function tilt(i) { return ((i * 53) % 15) - 7 }
   <article class="voucher" :class="{ done: complete }">
     <!-- Header band -->
     <div class="vc-head">
-      <span class="vc-logo"><img src="/assets/logo.jpg" alt="La Gioconda" /></span>
+      <span class="vc-logo"><img :src="site.logoUrl" :alt="site.name" /></span>
       <span class="vc-title">
         <strong>{{ card.label }}</strong>
         <small>Carte n° {{ card.card_no }}</small>

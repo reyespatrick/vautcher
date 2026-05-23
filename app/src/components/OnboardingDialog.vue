@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useProfile } from '../composables/useProfile'
+import { site } from '../data/site'
 
 const { profile, save, closeDialog, logout } = useProfile()
 
@@ -30,7 +31,7 @@ function doLogout() {
     <div class="dialog" role="dialog" aria-modal="true">
       <button v-if="isEdit" class="x" aria-label="Fermer" @click="closeDialog">✕</button>
 
-      <img class="logo" src="/assets/logo.jpg" alt="La Gioconda" />
+      <img class="logo" :src="site.logoUrl" :alt="site.name" />
       <h2>{{ isEdit ? 'Votre profil' : 'Benvenuto !' }}</h2>
       <p class="intro">
         {{ isEdit

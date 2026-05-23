@@ -18,6 +18,11 @@ SLUG="${1:-}"
 if [ -f "$HERE/.env" ] && [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
   set -a; . "$HERE/.env"; set +a
 fi
+# The repo .env uses CF_* (matches the existing deploy-*.sh scripts);
+# wrangler reads CLOUDFLARE_* — bridge them so either works.
+: "${CLOUDFLARE_API_TOKEN:=${CF_API_TOKEN:-}}"
+: "${CLOUDFLARE_ACCOUNT_ID:=${CF_ACCOUNT_ID:-}}"
+export CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID
 
 SUPA_URL="${VITE_SUPABASE_URL:-https://yfyfoqrautdogivalimb.supabase.co}"
 ANON="${VITE_SUPABASE_ANON_KEY:-sb_publishable_CucZIIP9fzY-AN5ChPQGlQ_vWfmeTAR}"
@@ -63,9 +68,15 @@ echo "→ building app/ for $SLUG"
   npm run build )
 
 echo "→ deploying app/dist → $SLUG.pages.dev"
+: "${CLOUDFLARE_API_TOKEN:?missing CLOUDFLARE_API_TOKEN}"
+: "${CLOUDFLARE_ACCOUNT_ID:?missing CLOUDFLARE_ACCOUNT_ID}"
+
+# wrangler no longer auto-creates Pages projects on first deploy — do
+# it here, idempotently (ignore "already exists").
 ( cd "$HERE" && \
-  CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN:?missing CLOUDFLARE_API_TOKEN}" \
-  CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:?missing CLOUDFLARE_ACCOUNT_ID}" \
+  npx --yes wrangler pages project create "$SLUG" --production-branch=main 2>/dev/null || true )
+
+( cd "$HERE" && \
   npx --yes wrangler pages deploy app/dist \
     --project-name="$SLUG" \
     --branch=main \

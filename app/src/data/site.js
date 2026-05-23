@@ -11,12 +11,33 @@ import { reactive } from 'vue'
 import { fetchRestaurant, RESTAURANT_ID } from '../lib/api'
 
 const CACHE_KEY = 'restaurant.' + RESTAURANT_ID
+const LA_GIOCONDA_ID = '11111111-1111-1111-1111-111111111111'
 
 // Fallback values so the app has SOMETHING to paint before the network
-// reply lands, and when running locally without a backend. These mirror
-// La Gioconda's seed config; a per-tenant build will overwrite them
-// from cache (instant) or from the DB (a brief first-launch flash).
-const FALLBACK = {
+// reply lands. La Gioconda gets its own seed defaults; every other tenant
+// gets a generic empty fallback so we don't leak Gioconda strings while
+// waiting for the DB (and on first visit before the cache exists).
+const GENERIC_FALLBACK = {
+  id: RESTAURANT_ID,
+  name: 'Restaurant',
+  slug: '',
+  tagline: '',
+  address: '',
+  phone: '',
+  phoneHref: '',
+  email: '',
+  mapsHref: '',
+  logoUrl: '/assets/logo.jpg',
+  brandPrimary: '#9e053d',
+  brandDark: '#6f032b',
+  hours: [],
+  hero: { eyebrow: '', title: '', lead: '' },
+  about: { kicker: '', title: '', image_url: '', paragraphs: [] },
+  specialties: [],
+  gallery: []
+}
+
+const LA_GIOCONDA_FALLBACK = {
   id: RESTAURANT_ID,
   name: 'La Gioconda',
   slug: 'la-gioconda',
@@ -59,6 +80,10 @@ const FALLBACK = {
     { src: '/assets/photo4.jpg', caption: 'Da Vinci, bar à vin' }
   ]
 }
+
+const FALLBACK = RESTAURANT_ID === LA_GIOCONDA_ID
+  ? LA_GIOCONDA_FALLBACK
+  : GENERIC_FALLBACK
 
 // Convert a { id, name, slug, config:{...} } RPC payload (snake_case in
 // `config`) into the flat camelCase shape the views consume.

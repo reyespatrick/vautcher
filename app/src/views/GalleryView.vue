@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { gallery } from '../data/site'
+import { gallery, site } from '../data/site'
 
 const lightbox = ref(-1)
 
@@ -14,8 +14,8 @@ function prev() { lightbox.value = (lightbox.value - 1 + gallery.length) % galle
   <div>
     <header class="page-head">
       <span class="kicker">Galerie</span>
-      <h1>L’ambiance La Gioconda</h1>
-      <p>Salle vitrée, bar à vin Da Vinci et terrasse ensoleillée.</p>
+      <h1>L’ambiance {{ site.name }}</h1>
+      <p v-if="site.tagline">{{ site.tagline }}</p>
     </header>
 
     <div class="container grid">

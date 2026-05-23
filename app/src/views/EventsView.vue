@@ -57,7 +57,7 @@ async function onLeave(ev) {
     <header class="page-head">
       <span class="kicker">Agenda</span>
       <h1>Nos événements</h1>
-      <p>Soirées, dégustations et rendez-vous à venir à La Gioconda. Indiquez-nous si vous souhaitez y participer.</p>
+      <p>Soirées, dégustations et rendez-vous à venir. Indiquez-nous si vous souhaitez y participer.</p>
     </header>
 
     <div class="container list">

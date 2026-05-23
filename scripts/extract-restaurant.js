@@ -146,13 +146,20 @@ function addressString() {
   return fallbackAddress()
 }
 
+// ---------- page-level text fallbacks ----------
+const pageTitle = ($('title').first().text() || '').trim()
+const firstH1 = ($('h1').first().text() || '').trim()
+const firstH2 = ($('h2').first().text() || '').trim()
+const metaDesc = meta('description') || ''
+
 // ---------- build the payload ----------
 const phone = r.telephone || fallbackPhone()
 const address = addressString()
-const name = r.name || og.title || og.site_name || ''
+const name = r.name || og.title || og.site_name || pageTitle || firstH1 || ''
+const description = og.description || r.description || metaDesc || firstH2 || firstH1 || ''
 
 const config = {
-  tagline: og.description || null,
+  tagline: og.description || metaDesc || firstH2 || null,
   address,
   phone,
   phone_href: phone ? 'tel:' + phone.replace(/[^\d+]/g, '') : null,
@@ -165,18 +172,19 @@ const config = {
   theme_color: themeColor || '#9e053d',
   pwa_name: name,
   pwa_short_name: name,
-  pwa_description: og.description || r.description || null,
+  pwa_description: description || null,
+  tagline_alt: firstH2 || null,
   hours: pickHours(),
   hero: {
     eyebrow: (r.address && r.address.addressLocality) || null,
-    title: og.title || name || '',
-    lead: og.description || r.description || ''
+    title: firstH1 || og.title || name || '',
+    lead: description
   },
   about: {
     kicker: 'Notre maison',
     title: name,
     image_url: og.image || null,
-    paragraphs: r.description ? [r.description] : []
+    paragraphs: description ? [description] : []
   },
   specialties: [],
   gallery: og.image ? [{ src: og.image, caption: '' }] : []

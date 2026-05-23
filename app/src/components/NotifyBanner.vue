@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { site } from '../data/site'
 
 const supported = ref(false)
 const permission = ref('default')
@@ -22,11 +23,11 @@ const iosNeedsInstall = computed(() => isiOS.value && !isStandalone.value)
 
 async function showSample() {
   const reg = await navigator.serviceWorker.ready
-  await reg.showNotification('La Gioconda', {
-    body: 'Soirée Pizza au feu de bois — ce vendredi 19h. Réservez votre table 🍕',
-    icon: '/assets/logo.jpg',
-    badge: '/assets/logo.jpg',
-    image: '/assets/photo1.jpg',
+  await reg.showNotification(site.name, {
+    body: 'Une nouvelle proposition vous attend — ouvrez l’app pour la découvrir.',
+    icon: site.logoUrl,
+    badge: site.logoUrl,
+    image: site.gallery?.[0]?.src || site.logoUrl,
     data: { url: '/evenements' },
     tag: 'vautcher-sample'
   })

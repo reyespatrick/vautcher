@@ -8,15 +8,15 @@ import { site } from '../data/site'
     <header class="page-head">
       <span class="kicker">Présentation &amp; Contact</span>
       <h1>Nous trouver</h1>
-      <p>Une part de Naples au cœur de Genève, à Cointrin.</p>
+      <p v-if="site.tagline">{{ site.tagline }}</p>
     </header>
 
     <div class="container info-grid">
       <!-- Story + details -->
       <div>
-        <section class="block">
-          <h2>Notre maison</h2>
-          <p>La Gioconda vous accueille midi et soir dans un cadre chaleureux : salle vitrée lumineuse, terrasse ensoleillée et le bar à vin Da Vinci. Cuisine napolitaine authentique, produits frais et accueil familial.</p>
+        <section v-if="site.about?.paragraphs?.length" class="block">
+          <h2>{{ site.about.kicker || 'Notre maison' }}</h2>
+          <p v-for="(p, i) in site.about.paragraphs" :key="i">{{ p }}</p>
         </section>
 
         <section class="block">
@@ -48,8 +48,9 @@ import { site } from '../data/site'
       </div>
 
       <!-- Map -->
-      <a :href="site.mapsHref" target="_blank" rel="noopener" class="map">
-        <img src="/assets/photo3.jpg" alt="La Gioconda — terrasse" />
+      <a v-if="site.mapsHref" :href="site.mapsHref" target="_blank" rel="noopener" class="map">
+        <img :src="site.gallery?.[2]?.src || site.about?.image_url || '/assets/logo.jpg'"
+             :alt="site.name" />
         <span class="map-pin">📍 Ouvrir dans Google Maps</span>
       </a>
     </div>
