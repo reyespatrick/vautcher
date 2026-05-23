@@ -2,12 +2,12 @@
 import { ref, watch, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAuth } from '../composables/useAuth'
+import { useScope } from '../composables/useScope'
 import { listEvents, listEventStats, cancelEvent } from '../lib/events'
 import { today } from '../lib/format'
 import EventRow from '../components/EventRow.vue'
 
-const { restaurant } = useAuth()
+const { activeRestaurantId, activeRestaurant } = useScope()
 const { t } = useI18n()
 const events = ref([])
 const stats = ref({})        // { [eventId]: attendee count }
@@ -22,12 +22,14 @@ async function load() {
     if (loading.value) { loading.value = false; loadError.value = true }
   }, 9000)
   try {
-    if (restaurant.value) {
-      const { data, error } = await listEvents(restaurant.value.id)
+    if (activeRestaurantId.value) {
+      const { data, error } = await listEvents(activeRestaurantId.value)
       if (error) throw error
       events.value = data
       // Attendee counts are best-effort — never block the list on them.
       stats.value = await listEventStats()
+    } else {
+      events.value = []
     }
   } catch (e) {
     loadError.value = true
@@ -36,8 +38,8 @@ async function load() {
     loading.value = false
   }
 }
-// Runs now and again if `restaurant` resolves after this view mounts.
-watch(restaurant, load, { immediate: true })
+// Re-fetches when the scope changes (header dropdown).
+watch(activeRestaurantId, load, { immediate: true })
 
 // Upcoming = today or later. Past events live in History.
 // Latest event first.
@@ -58,7 +60,7 @@ async function onCancel(ev) {
   <div class="page">
     <div class="page-head">
       <h1>{{ t('dashboard.title') }}</h1>
-      <p>{{ restaurant ? restaurant.name : '' }}</p>
+      <p>{{ activeRestaurant ? activeRestaurant.name : '' }}</p>
     </div>
 
     <RouterLink to="/event/new" class="btn btn--full create-btn">

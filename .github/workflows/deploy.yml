@@ -40,6 +40,7 @@ jobs:
             restowner/supabase/root-admin-schema.sql \
             restowner/supabase/moderation-trust-fix.sql \
             restowner/supabase/admin-client-scope.sql \
+            restowner/supabase/my-restaurants.sql \
             restowner/supabase/root-account-schema.sql \
             restowner/supabase/owner-stats.sql \
             restowner/supabase/voucher-schema.sql \

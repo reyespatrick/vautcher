@@ -111,12 +111,14 @@ export async function deleteEventImage(path) {
 // ---- Moderation (root / moderator) ----
 
 /** Pending events awaiting moderation, oldest first, with restaurant name. */
-export async function listPendingEvents() {
-  const { data, error } = await supabase
+export async function listPendingEvents(restaurantId = null) {
+  let q = supabase
     .from(TABLE)
     .select('*, restaurant:vautcher_restaurants(name)')
     .eq('moderation_status', 'pending')
     .order('submitted_at', { ascending: true })
+  if (restaurantId) q = q.eq('restaurant_id', restaurantId)
+  const { data, error } = await q
   return { data: data || [], error }
 }
 

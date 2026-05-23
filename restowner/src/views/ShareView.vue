@@ -1,19 +1,27 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAuth } from '../composables/useAuth'
+import { useScope } from '../composables/useScope'
 import QRCode from 'qrcode'
 import { DINER_APP_URL } from '../lib/config'
 
-const { restaurant } = useAuth()
+const { activeRestaurant } = useScope()
 const { t } = useI18n()
+
+// Each tenant is deployed to <slug>.pages.dev. Fall back to the legacy
+// DINER_APP_URL constant only when the active restaurant has no slug.
+const dinerUrl = computed(() =>
+  activeRestaurant.value?.slug
+    ? `https://${activeRestaurant.value.slug}.pages.dev`
+    : DINER_APP_URL
+)
 
 const qrUrl = ref('')      // on-screen QR (data URL)
 const error = ref('')
 
-onMounted(async () => {
+async function regenerate() {
   try {
-    qrUrl.value = await QRCode.toDataURL(DINER_APP_URL, {
+    qrUrl.value = await QRCode.toDataURL(dinerUrl.value, {
       width: 720,
       margin: 1,
       errorCorrectionLevel: 'M',
@@ -22,7 +30,10 @@ onMounted(async () => {
   } catch (e) {
     error.value = String(e)
   }
-})
+}
+// Regenerate whenever the active restaurant (and therefore its slug)
+// changes — the QR has to point at THIS tenant's pages.dev project.
+watch(dinerUrl, regenerate, { immediate: true })
 </script>
 
 <template>

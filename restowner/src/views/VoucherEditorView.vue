@@ -2,12 +2,12 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAuth } from '../composables/useAuth'
+import { useScope } from '../composables/useScope'
 import { getVoucher, createVoucher, updateVoucher, archiveVoucher } from '../lib/vouchers'
 
 const route = useRoute()
 const router = useRouter()
-const { restaurant } = useAuth()
+const { activeRestaurantId } = useScope()
 const { t } = useI18n()
 
 const editingId = computed(() => (route.name === 'voucher-edit' ? route.params.id : null))
@@ -67,7 +67,7 @@ async function save() {
 
   try {
     const payload = {
-      restaurant_id: restaurant.value.id,
+      restaurant_id: activeRestaurantId.value,
       label: form.value.label.trim(),
       stamps_required: Number(form.value.stamps_required),
       reward_text: form.value.reward_text.trim()

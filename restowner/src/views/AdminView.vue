@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
+import { useScope } from '../composables/useScope'
 import {
   adminRestaurants, adminClients, createRestaurant,
   setOwnerFlags, setClientLocked, provisionOwner
@@ -10,6 +11,9 @@ import {
 
 const { t } = useI18n()
 const { isModerator } = useAuth()
+// The admin view shares the global scope picker — picking La Gioconda
+// here also narrows Events / Vouchers / etc., and vice-versa.
+const { scopeRestaurantId, setScope } = useScope()
 
 const seg = ref('restaurants')
 const restaurants = ref([])
@@ -17,10 +21,6 @@ const clients = ref([])
 const loading = ref(true)
 const loadError = ref(false)
 const busy = ref(false)
-
-// Restaurant scope: null = show everything (current cross-restaurant
-// view), otherwise narrow the page to the picked restaurant.
-const scopeRestaurantId = ref(null)
 
 const filteredRestaurants = computed(() =>
   scopeRestaurantId.value
@@ -154,11 +154,18 @@ async function copyLink() {
       <p>{{ t('admin.subtitle') }}</p>
     </div>
 
-    <!-- Restaurant scope picker — narrows the page to one restaurant. -->
+    <!-- Restaurant scope picker — shared with the header on the rest of
+         the app; this control adds a "Tous les restaurants" option that
+         the header dropdown deliberately doesn't have. -->
     <div v-if="restaurants.length" class="scope">
       <label for="scope-sel">{{ t('admin.scopeLabel') }}</label>
-      <select id="scope-sel" v-model="scopeRestaurantId" class="scope-sel">
-        <option :value="null">{{ t('admin.scopeAll') }}</option>
+      <select
+        id="scope-sel"
+        :value="scopeRestaurantId || ''"
+        class="scope-sel"
+        @change="setScope($event.target.value || null)"
+      >
+        <option value="">{{ t('admin.scopeAll') }}</option>
         <option v-for="r in restaurants" :key="r.id" :value="r.id">
           {{ r.name }}
         </option>

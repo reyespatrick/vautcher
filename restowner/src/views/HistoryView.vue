@@ -2,12 +2,12 @@
 import { ref, watch, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAuth } from '../composables/useAuth'
+import { useScope } from '../composables/useScope'
 import { listEvents } from '../lib/events'
 import { today } from '../lib/format'
 import EventRow from '../components/EventRow.vue'
 
-const { restaurant } = useAuth()
+const { activeRestaurantId } = useScope()
 const { t } = useI18n()
 const events = ref([])
 const loading = ref(true)
@@ -20,10 +20,12 @@ async function load() {
     if (loading.value) { loading.value = false; loadError.value = true }
   }, 9000)
   try {
-    if (restaurant.value) {
-      const { data, error } = await listEvents(restaurant.value.id)
+    if (activeRestaurantId.value) {
+      const { data, error } = await listEvents(activeRestaurantId.value)
       if (error) throw error
       events.value = data
+    } else {
+      events.value = []
     }
   } catch (e) {
     loadError.value = true
@@ -32,8 +34,9 @@ async function load() {
     loading.value = false
   }
 }
-// Runs now and again if `restaurant` resolves after this view mounts.
-watch(restaurant, load, { immediate: true })
+// Re-fetches when the scope changes (header dropdown) or when the active
+// restaurant resolves after this view mounts.
+watch(activeRestaurantId, load, { immediate: true })
 
 // History = past events OR cancelled events, most recent first.
 const past = computed(() =>

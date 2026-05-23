@@ -2,10 +2,10 @@
 import { ref, watch, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAuth } from '../composables/useAuth'
+import { useScope } from '../composables/useScope'
 import { listVouchers, voucherStats, updateVoucher } from '../lib/vouchers'
 
-const { restaurant } = useAuth()
+const { activeRestaurantId } = useScope()
 const { t } = useI18n()
 const vouchers = ref([])
 const stats = ref(null)
@@ -20,12 +20,14 @@ async function load() {
     if (loading.value) { loading.value = false; loadError.value = true }
   }, 9000)
   try {
-    if (restaurant.value) {
-      const { data, error } = await listVouchers(restaurant.value.id)
+    if (activeRestaurantId.value) {
+      const { data, error } = await listVouchers(activeRestaurantId.value)
       if (error) throw error
       vouchers.value = data
       // Stats are best-effort — never block the list on them.
       stats.value = (await voucherStats()).data
+    } else {
+      vouchers.value = []
     }
   } catch (e) {
     loadError.value = true
@@ -34,8 +36,8 @@ async function load() {
     loading.value = false
   }
 }
-// Runs now and again if `restaurant` resolves after this view mounts.
-watch(restaurant, load, { immediate: true })
+// Re-fetches when the scope changes (header dropdown).
+watch(activeRestaurantId, load, { immediate: true })
 
 const redeemed = computed(() => stats.value?.redeemed || 0)
 const completed = computed(() => stats.value?.completed || 0)

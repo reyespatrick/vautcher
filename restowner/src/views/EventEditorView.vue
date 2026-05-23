@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAuth } from '../composables/useAuth'
+import { useScope } from '../composables/useScope'
 import {
   getEvent, createEvent, updateEvent, cancelEvent, IMAGE_OPTIONS,
   uploadEventImage, listUploadedImages, deleteEventImage,
@@ -11,7 +11,7 @@ import {
 
 const route = useRoute()
 const router = useRouter()
-const { restaurant } = useAuth()
+const { activeRestaurantId } = useScope()
 const { t } = useI18n()
 
 const editingId = computed(() => (route.name === 'event-edit' ? route.params.id : null))
@@ -68,19 +68,19 @@ function fillFrom(ev) {
 }
 
 async function loadUploaded() {
-  if (restaurant.value) {
-    uploadedImages.value = await listUploadedImages(restaurant.value.id)
+  if (activeRestaurantId.value) {
+    uploadedImages.value = await listUploadedImages(activeRestaurantId.value)
   }
 }
 
 async function onPickFile(e) {
   const file = e.target.files && e.target.files[0]
   e.target.value = ''
-  if (!file || !restaurant.value) return
+  if (!file || !activeRestaurantId.value) return
   uploading.value = true
   error.value = ''
   try {
-    const { url, path, error: e2 } = await uploadEventImage(restaurant.value.id, file)
+    const { url, path, error: e2 } = await uploadEventImage(activeRestaurantId.value, file)
     if (e2) { error.value = t('editor.uploadFailed'); return }
     uploadedImages.value.unshift({ url, path })
     form.value.image_url = url
@@ -148,7 +148,7 @@ async function save() {
 
   try {
     const payload = {
-      restaurant_id: restaurant.value.id,
+      restaurant_id: activeRestaurantId.value,
       title: form.value.title.trim(),
       description: form.value.description.trim(),
       event_date: form.value.event_date,

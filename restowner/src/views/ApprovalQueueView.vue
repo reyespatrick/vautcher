@@ -2,9 +2,11 @@
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
+import { useScope } from '../composables/useScope'
 import { listPendingEvents, approveEvent, refuseEvent } from '../lib/events'
 
 const { isModerator } = useAuth()
+const { scopeRestaurantId } = useScope()
 const { t, locale } = useI18n()
 
 const events = ref([])
@@ -25,7 +27,8 @@ async function load() {
     if (loading.value) { loading.value = false; loadError.value = true }
   }, 9000)
   try {
-    const { data, error } = await listPendingEvents()
+    // When the global scope is set, narrow the queue to that restaurant.
+    const { data, error } = await listPendingEvents(scopeRestaurantId.value)
     if (error) throw error
     events.value = data
   } catch (e) {
@@ -36,6 +39,8 @@ async function load() {
   }
 }
 watch(isModerator, (v) => { if (v) load() }, { immediate: true })
+// Re-fetch when the header dropdown narrows / widens the scope.
+watch(scopeRestaurantId, () => { if (isModerator.value) load() })
 
 function fmtDate(d) {
   if (!d) return ''
