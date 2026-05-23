@@ -1,48 +1,57 @@
 <script setup>
-// Auto-opening modal that asks for notification permission on first
-// app launch when the user has already onboarded but never enrolled
-// in push (e.g. they installed the PWA before the push feature shipped).
+// Mandatory pre-onboarding gate. Layered ABOVE OnboardingDialog so it
+// is the very first thing a diner sees when the PWA cold-launches.
+// One button: Activer. Tapping it gives us the user-gesture we need
+// to call Notification.requestPermission(); regardless of grant/deny
+// the modal disappears (the iOS prompt only fires once anyway) and
+// onboarding becomes visible underneath.
 //
-// MUST be triggered from a user gesture for the iOS permission dialog
-// to appear — so the Activer button is the gesture. We don't try to
-// auto-call requestPermission() on mount, only auto-SHOW the modal.
-import { computed, onMounted, ref } from 'vue'
+// The server-side registerPushSubscription() happens later, in the
+// OnboardingDialog submit handler — once a profile_id exists.
+//
+// For diners who launched the PWA before this feature shipped (profile
+// already exists, never enrolled), the same modal completes the full
+// subscribe right here.
+import { computed, ref } from 'vue'
 import { usePush } from '../composables/usePush'
 import { useProfile } from '../composables/useProfile'
 
 const { profile } = useProfile()
-const { supported, permission, isStandalone, subscribed, canPrompt, subscribeIfPossible } = usePush()
+const {
+  supported, permission, subscribed,
+  canPrompt, requestPermission, subscribeIfPossible
+} = usePush()
 
-const DISMISS_KEY = 'lagioconda.notifyPromptDismissed'
-const dismissed = ref(false)
 const busy = ref(false)
 
-onMounted(() => {
-  try { dismissed.value = localStorage.getItem(DISMISS_KEY) === '1' } catch { /* ignore */ }
-})
-
+// Show only when push is actually usable here (canPrompt already
+// requires standalone on iOS), the user hasn't been asked yet
+// (permission === 'default'), and they aren't already subscribed.
+// Both pre-login (no profile) and post-login (profile but never
+// enrolled) qualify — same one-button UX either way.
 const show = computed(() =>
-  !!profile.value &&
   supported.value &&
-  isStandalone.value &&            // only inside the installed PWA
-  permission.value === 'default' && // not yet asked
-  !subscribed.value &&
-  !dismissed.value &&
-  canPrompt.value
+  canPrompt.value &&
+  permission.value === 'default' &&
+  !subscribed.value
 )
 
 async function activate() {
   if (busy.value) return
   busy.value = true
   try {
-    await subscribeIfPossible(profile.value.id)
+    if (profile.value?.id) {
+      // Returning user with a profile — do the full enrollment now.
+      await subscribeIfPossible(profile.value.id)
+    } else {
+      // No profile yet — only ask for permission. The subscribe + server
+      // registration completes inside OnboardingDialog.submit() once the
+      // diner finishes filling the form.
+      await requestPermission()
+    }
   } finally {
     busy.value = false
   }
-}
-function postpone() {
-  dismissed.value = true
-  try { localStorage.setItem(DISMISS_KEY, '1') } catch { /* ignore */ }
 }
 </script>
 
@@ -50,15 +59,14 @@ function postpone() {
   <div v-if="show" class="overlay">
     <div class="dialog" role="dialog" aria-modal="true">
       <span class="ico">🔔</span>
-      <h2>Activer les notifications</h2>
+      <h2>Restez informé·e</h2>
       <p>
-        Soyez prévenu·e dès qu'un nouvel événement est annoncé, ou avant
-        un événement auquel vous participez.
+        Activez les notifications pour ne manquer aucun événement du
+        restaurant.
       </p>
       <button class="btn" type="button" :disabled="busy" @click="activate">
-        {{ busy ? '…' : 'Activer' }}
+        {{ busy ? '…' : 'Activer les notifications' }}
       </button>
-      <button class="link" type="button" @click="postpone">Plus tard</button>
     </div>
   </div>
 </template>
@@ -67,7 +75,9 @@ function postpone() {
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 280;          /* below OnboardingDialog (300) but above app */
+  /* Above OnboardingDialog (z-index 300) so this is the FIRST modal
+     the diner interacts with on cold launch. */
+  z-index: 360;
   background: rgba(15, 0, 6, 0.78);
   display: flex;
   align-items: center;
@@ -80,7 +90,7 @@ function postpone() {
   max-width: 360px;
   background: #fff;
   border-radius: 14px;
-  padding: 32px 28px 22px;
+  padding: 32px 28px 28px;
   text-align: center;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
   animation: pop 0.22s ease;
@@ -95,7 +105,7 @@ p {
   color: var(--grey);
   font-size: 0.92rem;
   line-height: 1.5;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 .btn {
   display: inline-flex;
@@ -116,15 +126,4 @@ p {
 }
 .btn:hover { background: var(--burgundy-dark); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.link {
-  display: block;
-  background: none;
-  border: 0;
-  color: var(--grey);
-  font-size: 0.86rem;
-  margin: 12px auto 0;
-  text-decoration: underline;
-  cursor: pointer;
-}
-.link:hover { color: var(--burgundy); }
 </style>

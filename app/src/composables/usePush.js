@@ -61,6 +61,22 @@ export function usePush() {
   const needsInstallFirst = computed(() => isiOS.value && !isStandalone.value)
 
   /**
+   * Ask the browser for notification permission only (no subscribe).
+   * Use this BEFORE a profile exists — the server-side registration
+   * happens later, once the diner has filled the onboarding form.
+   * MUST be called from a user gesture.
+   */
+  async function requestPermission() {
+    if (!supported.value) return 'unsupported'
+    if (needsInstallFirst.value) return 'install-first'
+    if (permission.value === 'denied') return 'denied'
+    if (permission.value !== 'granted') {
+      permission.value = await Notification.requestPermission()
+    }
+    return permission.value
+  }
+
+  /**
    * Run the full subscribe flow. MUST be invoked from a user-gesture
    * handler — Notification.requestPermission() rejects otherwise on
    * Safari and Chrome.
@@ -98,6 +114,6 @@ export function usePush() {
 
   return {
     supported, permission, isiOS, isStandalone, subscribed,
-    canPrompt, needsInstallFirst, subscribeIfPossible
+    canPrompt, needsInstallFirst, requestPermission, subscribeIfPossible
   }
 }
