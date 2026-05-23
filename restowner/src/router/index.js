@@ -11,6 +11,7 @@ import ApprovalQueueView from '../views/ApprovalQueueView.vue'
 import VouchersView from '../views/VouchersView.vue'
 import VoucherEditorView from '../views/VoucherEditorView.vue'
 import AdminView from '../views/AdminView.vue'
+import ClientsView from '../views/ClientsView.vue'
 import RestaurantConfigView from '../views/RestaurantConfigView.vue'
 
 const routes = [
@@ -24,6 +25,7 @@ const routes = [
   { path: '/vouchers', name: 'vouchers', component: VouchersView },
   { path: '/voucher/new', name: 'voucher-new', component: VoucherEditorView },
   { path: '/voucher/:id', name: 'voucher-edit', component: VoucherEditorView },
+  { path: '/clients', name: 'clients', component: ClientsView },
   { path: '/approve', name: 'approve', component: ApprovalQueueView },
   { path: '/admin', name: 'admin', component: AdminView },
   { path: '/restaurant/:id', name: 'restaurant-config', component: RestaurantConfigView },

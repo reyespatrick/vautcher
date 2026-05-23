@@ -3,7 +3,7 @@ import { createI18n } from 'vue-i18n'
 
 const fr = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Événements', scan: 'Scanner', vouchers: 'Fidélité', history: 'Historique', share: 'Code QR', approve: 'À approuver', admin: 'Admin', more: 'Plus' },
+  nav: { events: 'Événements', scan: 'Scanner', vouchers: 'Fidélité', history: 'Historique', share: 'Code QR', clients: 'Clients', approve: 'À approuver', admin: 'Admin', more: 'Plus' },
   share: {
     title: 'Code QR de l’application',
     subtitle: 'Affichez ou imprimez ce code. Vos clients le scannent pour ouvrir l’application La Gioconda dans leur navigateur.',
@@ -83,6 +83,16 @@ const fr = {
     title: 'Événements à venir', create: 'Créer un événement',
     empty: 'Aucun événement à venir.',
     emptyHint: 'Créez-en un pour qu’il apparaisse dans l’app cliente.'
+  },
+  clients: {
+    title: 'Vos clients',
+    searchPlaceholder: 'Rechercher un client…',
+    empty: 'Aucun client n’a encore tamponné de carte ici.',
+    noMatch: 'Aucun client ne correspond à cette recherche.',
+    stamps: 'tampons',
+    lastVisit: 'dernière visite',
+    ageYears: '{n} ans',
+    locked: 'Verrouillé'
   },
   history: {
     title: 'Historique',
@@ -222,7 +232,7 @@ const fr = {
 
 const de = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Veranstaltungen', scan: 'Scannen', vouchers: 'Treuekarten', history: 'Verlauf', share: 'QR-Code', approve: 'Zu prüfen', admin: 'Admin', more: 'Mehr' },
+  nav: { events: 'Veranstaltungen', scan: 'Scannen', vouchers: 'Treuekarten', history: 'Verlauf', share: 'QR-Code', clients: 'Kunden', approve: 'Zu prüfen', admin: 'Admin', more: 'Mehr' },
   share: {
     title: 'QR-Code der App',
     subtitle: 'Zeigen Sie diesen Code an oder drucken Sie ihn aus. Ihre Gäste scannen ihn, um die La-Gioconda-App im Browser zu öffnen.',
@@ -389,7 +399,7 @@ const de = {
 
 const it = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Eventi', scan: 'Scansiona', vouchers: 'Fedeltà', history: 'Cronologia', share: 'Codice QR', approve: 'Da approvare', admin: 'Admin', more: 'Altro' },
+  nav: { events: 'Eventi', scan: 'Scansiona', vouchers: 'Fedeltà', history: 'Cronologia', share: 'Codice QR', clients: 'Clienti', approve: 'Da approvare', admin: 'Admin', more: 'Altro' },
   share: {
     title: 'Codice QR dell’app',
     subtitle: 'Mostra o stampa questo codice. I tuoi clienti lo scansionano per aprire l’app La Gioconda nel browser.',

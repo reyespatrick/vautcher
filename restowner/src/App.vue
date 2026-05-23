@@ -26,6 +26,7 @@ const activeTab = computed(() => {
   if (n === 'scan') return 'scan'
   if (n === 'history') return 'history'
   if (n === 'share') return 'share'
+  if (n === 'clients') return 'clients'
   if (n === 'approve') return 'approve'
   if (n === 'admin') return 'admin'
   if (n === 'vouchers' || n === 'voucher-new' || n === 'voucher-edit') return 'vouchers'
@@ -35,7 +36,7 @@ const activeTab = computed(() => {
 // Bottom nav keeps the three daily tabs; everything else lives behind
 // the "Plus" tab so the bar never gets crowded (esp. for moderators).
 const moreActive = computed(() =>
-  ['history', 'share', 'approve', 'admin'].includes(activeTab.value)
+  ['history', 'share', 'clients', 'approve', 'admin'].includes(activeTab.value)
 )
 const moreOpen = ref(false)
 // Close the sheet on any navigation (item tap, back button, …).
@@ -151,6 +152,17 @@ async function doSignOut() {
               <path d="M14 14h3.5v3.5M21 21v-3.5M14 21h3.5" />
             </svg>
             {{ t('nav.share') }}
+          </RouterLink>
+          <RouterLink :to="{ name: 'clients' }" class="more-item"
+            :class="{ on: activeTab === 'clients' }">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="9" r="3.4" />
+              <path d="M3.5 19.5c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2" />
+              <circle cx="16.8" cy="8.2" r="2.7" />
+              <path d="M14 14.4c2.6.5 5 2.5 5 5.1" />
+            </svg>
+            {{ t('nav.clients') }}
           </RouterLink>
           <RouterLink
             v-if="isModerator && !asOwner"
