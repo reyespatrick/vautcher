@@ -160,12 +160,16 @@ async function save() {
       age_max: ageTargeted.value ? (Number(form.value.age_max) || null) : null,
       points_min: pointsTargeted.value ? (Number(form.value.points_min) || null) : null,
       points_max: pointsTargeted.value ? (Number(form.value.points_max) || null) : null,
-      // Days-before-event the diner gets a reminder push. 0 / unset =
-      // no reminder. Announcements fire on approval regardless.
-      notify_days_before: form.value.notify_days_before === null ||
-                          form.value.notify_days_before === ''
-        ? null
-        : (Number(form.value.notify_days_before) || null),
+      // Days-before-event the diner gets a reminder push. 0 means
+      // "announce now on approval"; null means no reminder. Don't use
+      // `Number(x) || null` here — that collapses 0 to null because 0
+      // is falsy in JS, which silently disables the announce path.
+      notify_days_before: (() => {
+        const v = form.value.notify_days_before
+        if (v === null || v === '' || v === undefined) return null
+        const n = Number(v)
+        return Number.isFinite(n) ? n : null
+      })(),
       rebate_value: rebateOn.value ? (Number(form.value.rebate_value) || null) : null,
       rebate_unit: form.value.rebate_unit,
       rebate_first_n: (rebateOn.value && rebateLimited.value)
