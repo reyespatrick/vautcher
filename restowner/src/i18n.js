@@ -57,7 +57,10 @@ const fr = {
     pwa: 'PWA (icône installée)',
     pwaName: 'Nom (long)', pwaShortName: 'Nom (court)',
     pwaDescription: 'Description',
-    add: 'Ajouter', edit: 'Configurer'
+    add: 'Ajouter', edit: 'Configurer',
+    importJson: 'Importer un JSON (depuis l’extracteur)',
+    importHint: 'Collez ici le JSON produit par scripts/extract-restaurant.js…',
+    importBtn: 'Importer', importOk: 'Importé ✓', importErr: 'JSON invalide.'
   },
   profile: {
     title: 'Profil', textSize: 'Taille du texte', language: 'Langue',

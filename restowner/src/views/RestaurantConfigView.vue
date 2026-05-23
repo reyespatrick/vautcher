@@ -32,6 +32,30 @@ const saving = ref(false)
 const uploading = ref(false)
 const error = ref('')
 const fileInput = ref(null)
+const importJson = ref('')
+const importMsg = ref('')
+const importErr = ref(false)
+
+// Accepts the JSON produced by scripts/extract-restaurant.js
+// ({ name, slug?, config: {...} }) and merges it into the form.
+// Slug isn't overwritten when null/empty.
+function doImport() {
+  importMsg.value = ''
+  importErr.value = false
+  try {
+    const parsed = JSON.parse(importJson.value)
+    if (parsed.name) form.value.name = String(parsed.name)
+    if (parsed.slug) form.value.slug = String(parsed.slug)
+    if (parsed.config && typeof parsed.config === 'object') {
+      form.value.config = { ...emptyConfig(), ...parsed.config }
+      paragraphsText.value = (form.value.config.about?.paragraphs || []).join('\n\n')
+    }
+    importMsg.value = t('config.importOk')
+  } catch (e) {
+    importMsg.value = t('config.importErr')
+    importErr.value = true
+  }
+}
 
 onMounted(async () => {
   const watchdog = setTimeout(() => {
@@ -116,6 +140,21 @@ function removeItem(list, i) { list.splice(i, 1) }
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 
     <form v-else class="card editor" @submit.prevent="save">
+      <!-- JSON import (from scripts/extract-restaurant.js) -->
+      <details class="import-block">
+        <summary>{{ t('config.importJson') }}</summary>
+        <textarea v-model="importJson" rows="4"
+                  :placeholder="t('config.importHint')"></textarea>
+        <div class="import-row">
+          <button type="button" class="btn btn--plain btn--sm" @click="doImport">
+            {{ t('config.importBtn') }}
+          </button>
+          <span v-if="importMsg" class="import-msg" :class="{ bad: importErr }">
+            {{ importMsg }}
+          </span>
+        </div>
+      </details>
+
       <!-- Identity -->
       <h3 class="grp">{{ t('config.identity') }}</h3>
       <div class="row2">
@@ -351,4 +390,28 @@ function removeItem(list, i) { list.splice(i, 1) }
   margin: 14px 0 0;
 }
 .editor-actions { margin-top: 20px; }
+
+.import-block {
+  background: var(--cream, #faf4ea);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+}
+.import-block summary {
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--accent-dark);
+}
+.import-block textarea {
+  width: 100%;
+  font-family: 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.74rem;
+  margin-top: 10px;
+  resize: vertical;
+}
+.import-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.import-msg { font-size: 0.78rem; color: var(--ok); }
+.import-msg.bad { color: var(--danger); }
 </style>
