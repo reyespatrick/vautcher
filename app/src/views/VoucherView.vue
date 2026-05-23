@@ -99,7 +99,7 @@ onBeforeUnmount(() => {
   <div class="page">
     <header class="page-head">
       <span class="kicker">Fidélité</span>
-      <h1>Votre carte Vautcher</h1>
+      <h1>Votre carte de fidélité</h1>
       <p>Une visite, un tampon. Collectionnez-les pour votre récompense.</p>
     </header>
 
@@ -116,7 +116,7 @@ onBeforeUnmount(() => {
         <strong>{{ lifetime }}</strong> {{ lifetime > 1 ? 'visites' : 'visite' }}
         <span class="dot">·</span>
         <strong>{{ redeemed }}</strong>
-        {{ redeemed > 1 ? 'vautchers utilisés' : 'vautcher utilisé' }}
+        {{ redeemed > 1 ? 'cartes complétées' : 'carte complétée' }}
       </p>
 
       <!-- Completed cards awaiting their reward -->

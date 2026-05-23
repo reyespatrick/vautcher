@@ -103,7 +103,7 @@ function tilt(i) { return ((i * 53) % 15) - 7 }
 
     <p class="vc-note">
       {{ complete
-        ? 'Faites scanner ce vautcher par le restaurant pour recevoir votre récompense.'
+        ? 'Faites scanner cette carte de fidélité par le restaurant pour recevoir votre récompense.'
         : 'Un tampon est ajouté par le restaurant à chaque visite.' }}
     </p>
   </article>

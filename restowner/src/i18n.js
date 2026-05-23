@@ -3,7 +3,7 @@ import { createI18n } from 'vue-i18n'
 
 const fr = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Événements', scan: 'Scanner', vouchers: 'Vautcher', history: 'Historique', share: 'Code QR', approve: 'À approuver', admin: 'Admin', more: 'Plus' },
+  nav: { events: 'Événements', scan: 'Scanner', vouchers: 'Fidélité', history: 'Historique', share: 'Code QR', approve: 'À approuver', admin: 'Admin', more: 'Plus' },
   share: {
     title: 'Code QR de l’application',
     subtitle: 'Affichez ou imprimez ce code. Vos clients le scannent pour ouvrir l’application La Gioconda dans leur navigateur.',
@@ -151,38 +151,38 @@ const fr = {
   },
   scan: {
     title: 'Scanner',
-    subtitle: 'Scannez la carte du client : ajoutez un tampon, ou validez un vautcher complété.',
+    subtitle: 'Scannez la carte du client : ajoutez un tampon, ou validez une carte de fidélité complétée.',
     ready: 'Caméra prête', readyAgain: 'Prêt pour un nouveau scan',
     start: 'Démarrer le scan', startAgain: 'Scanner un autre code', stop: 'Arrêter',
     stampAdded: 'Tampon ajouté pour {name}.', stampTotal: '{n} tampon(s) au total',
     notFound: 'Client introuvable.', cameraError: 'Caméra inaccessible : {msg}',
-    cardComplete: 'Vautcher complété ! 🎉', lifetime: '{n} visites',
-    redeemed: 'Vautcher utilisé pour {name}.', redeemedTotal: '{n} vautchers utilisés'
+    cardComplete: 'Carte de fidélité complétée ! 🎉', lifetime: '{n} visites',
+    redeemed: 'Carte de fidélité utilisée pour {name}.', redeemedTotal: '{n} cartes utilisées'
   },
   vouchers: {
-    title: 'Vautchers',
+    title: 'Cartes de fidélité',
     subtitle: 'Vos cartes de fidélité — créez-en et suivez leur utilisation.',
-    create: 'Nouveau vautcher',
-    empty: 'Aucun vautcher pour le moment.',
-    emptyHint: 'Créez-en un : vos clients commenceront à collectionner des tampons.',
+    create: 'Nouvelle carte de fidélité',
+    empty: 'Aucune carte de fidélité pour le moment.',
+    emptyHint: 'Créez-en une : vos clients commenceront à collectionner des tampons.',
     stampsLabel: '{n} tampons',
-    statRedeemed: 'vautchers utilisés',
-    statCompleted: '{n} complétés',
-    statRate: '{rate}% utilisés',
-    perCompleted: '{n} complétés', perRedeemed: '{n} utilisés',
+    statRedeemed: 'cartes utilisées',
+    statCompleted: '{n} complétées',
+    statRate: '{rate}% utilisées',
+    perCompleted: '{n} complétées', perRedeemed: '{n} utilisées',
     edit: 'Modifier', moveUp: 'Monter', moveDown: 'Descendre'
   },
   voucherEditor: {
-    newTitle: 'Nouveau vautcher', editTitle: 'Modifier le vautcher',
-    label: 'Nom du vautcher', labelPlaceholder: 'Carte de fidélité…',
+    newTitle: 'Nouvelle carte de fidélité', editTitle: 'Modifier la carte de fidélité',
+    label: 'Nom de la carte', labelPlaceholder: 'Carte de fidélité…',
     stamps: 'Tampons à collecter',
-    stampsHint: 'Nombre de visites pour compléter ce vautcher (1 à 100).',
+    stampsHint: 'Nombre de visites pour compléter cette carte (1 à 100).',
     reward: 'Récompense', rewardPlaceholder: 'Un dessert maison offert…',
-    rewardHint: 'Ce que le client reçoit lorsqu’il complète le vautcher.',
-    save: 'Enregistrer', saving: 'Enregistrement…', createBtn: 'Créer le vautcher',
-    archive: 'Archiver ce vautcher',
-    confirmArchive: 'Archiver ce vautcher ? Vos clients ne le recevront plus.',
-    loadError: 'Impossible de charger le vautcher.',
+    rewardHint: 'Ce que le client reçoit lorsqu’il complète la carte.',
+    save: 'Enregistrer', saving: 'Enregistrement…', createBtn: 'Créer la carte',
+    archive: 'Archiver cette carte',
+    confirmArchive: 'Archiver cette carte ? Vos clients ne la recevront plus.',
+    loadError: 'Impossible de charger la carte.',
     saveFailed: 'L’enregistrement a échoué. Réessayez.'
   },
   approve: {
@@ -222,7 +222,7 @@ const fr = {
 
 const de = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Veranstaltungen', scan: 'Scannen', vouchers: 'Vautcher', history: 'Verlauf', share: 'QR-Code', approve: 'Zu prüfen', admin: 'Admin', more: 'Mehr' },
+  nav: { events: 'Veranstaltungen', scan: 'Scannen', vouchers: 'Treuekarten', history: 'Verlauf', share: 'QR-Code', approve: 'Zu prüfen', admin: 'Admin', more: 'Mehr' },
   share: {
     title: 'QR-Code der App',
     subtitle: 'Zeigen Sie diesen Code an oder drucken Sie ihn aus. Ihre Gäste scannen ihn, um die La-Gioconda-App im Browser zu öffnen.',
@@ -318,38 +318,38 @@ const de = {
   },
   scan: {
     title: 'Scannen',
-    subtitle: 'Scannen Sie die Kundenkarte: Stempel hinzufügen oder einen vollständigen Vautcher einlösen.',
+    subtitle: 'Scannen Sie die Kundenkarte: Stempel hinzufügen oder eine vollständige Treuekarte einlösen.',
     ready: 'Kamera bereit', readyAgain: 'Bereit für einen neuen Scan',
     start: 'Scan starten', startAgain: 'Weiteren Code scannen', stop: 'Stoppen',
     stampAdded: 'Stempel hinzugefügt für {name}.', stampTotal: 'Insgesamt {n} Stempel',
     notFound: 'Kunde nicht gefunden.', cameraError: 'Kamera nicht verfügbar: {msg}',
-    cardComplete: 'Vautcher vollständig! 🎉', lifetime: '{n} Besuche',
-    redeemed: 'Vautcher eingelöst für {name}.', redeemedTotal: '{n} eingelöste Vautcher'
+    cardComplete: 'Treuekarte vollständig! 🎉', lifetime: '{n} Besuche',
+    redeemed: 'Treuekarte eingelöst für {name}.', redeemedTotal: '{n} eingelöste Treuekarten'
   },
   vouchers: {
-    title: 'Vautcher',
+    title: 'Treuekarten',
     subtitle: 'Ihre Treuekarten — erstellen Sie welche und verfolgen Sie ihre Nutzung.',
-    create: 'Neuer Vautcher',
-    empty: 'Noch keine Vautcher.',
-    emptyHint: 'Erstellen Sie einen: Ihre Gäste beginnen, Stempel zu sammeln.',
+    create: 'Neue Treuekarte',
+    empty: 'Noch keine Treuekarten.',
+    emptyHint: 'Erstellen Sie eine: Ihre Gäste beginnen, Stempel zu sammeln.',
     stampsLabel: '{n} Stempel',
-    statRedeemed: 'eingelöste Vautcher',
+    statRedeemed: 'eingelöste Treuekarten',
     statCompleted: '{n} vollständig',
     statRate: '{rate}% eingelöst',
     perCompleted: '{n} vollständig', perRedeemed: '{n} eingelöst',
     edit: 'Bearbeiten', moveUp: 'Nach oben', moveDown: 'Nach unten'
   },
   voucherEditor: {
-    newTitle: 'Neuer Vautcher', editTitle: 'Vautcher bearbeiten',
-    label: 'Name des Vautchers', labelPlaceholder: 'Treuekarte…',
+    newTitle: 'Neue Treuekarte', editTitle: 'Treuekarte bearbeiten',
+    label: 'Name der Treuekarte', labelPlaceholder: 'Treuekarte…',
     stamps: 'Zu sammelnde Stempel',
-    stampsHint: 'Anzahl der Besuche, um diesen Vautcher zu vervollständigen (1 bis 100).',
+    stampsHint: 'Anzahl der Besuche, um diese Treuekarte zu vervollständigen (1 bis 100).',
     reward: 'Belohnung', rewardPlaceholder: 'Ein hausgemachtes Dessert gratis…',
-    rewardHint: 'Was der Kunde erhält, wenn er den Vautcher vervollständigt.',
-    save: 'Speichern', saving: 'Wird gespeichert…', createBtn: 'Vautcher erstellen',
-    archive: 'Diesen Vautcher archivieren',
-    confirmArchive: 'Diesen Vautcher archivieren? Ihre Gäste erhalten ihn nicht mehr.',
-    loadError: 'Vautcher konnte nicht geladen werden.',
+    rewardHint: 'Was der Kunde erhält, wenn er die Treuekarte vervollständigt.',
+    save: 'Speichern', saving: 'Wird gespeichert…', createBtn: 'Treuekarte erstellen',
+    archive: 'Diese Treuekarte archivieren',
+    confirmArchive: 'Diese Treuekarte archivieren? Ihre Gäste erhalten sie nicht mehr.',
+    loadError: 'Treuekarte konnte nicht geladen werden.',
     saveFailed: 'Speichern fehlgeschlagen. Bitte erneut versuchen.'
   },
   approve: {
@@ -389,7 +389,7 @@ const de = {
 
 const it = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
-  nav: { events: 'Eventi', scan: 'Scansiona', vouchers: 'Vautcher', history: 'Cronologia', share: 'Codice QR', approve: 'Da approvare', admin: 'Admin', more: 'Altro' },
+  nav: { events: 'Eventi', scan: 'Scansiona', vouchers: 'Fedeltà', history: 'Cronologia', share: 'Codice QR', approve: 'Da approvare', admin: 'Admin', more: 'Altro' },
   share: {
     title: 'Codice QR dell’app',
     subtitle: 'Mostra o stampa questo codice. I tuoi clienti lo scansionano per aprire l’app La Gioconda nel browser.',
@@ -485,38 +485,38 @@ const it = {
   },
   scan: {
     title: 'Scansiona',
-    subtitle: 'Scansiona la carta del cliente: aggiungi un timbro o utilizza un vautcher completato.',
+    subtitle: 'Scansiona la carta del cliente: aggiungi un timbro o utilizza una carta fedeltà completata.',
     ready: 'Fotocamera pronta', readyAgain: 'Pronto per una nuova scansione',
     start: 'Avvia la scansione', startAgain: 'Scansiona un altro codice', stop: 'Ferma',
     stampAdded: 'Timbro aggiunto per {name}.', stampTotal: '{n} timbri in totale',
     notFound: 'Cliente non trovato.', cameraError: 'Fotocamera non disponibile: {msg}',
-    cardComplete: 'Vautcher completato! 🎉', lifetime: '{n} visite',
-    redeemed: 'Vautcher utilizzato per {name}.', redeemedTotal: '{n} vautcher utilizzati'
+    cardComplete: 'Carta fedeltà completata! 🎉', lifetime: '{n} visite',
+    redeemed: 'Carta fedeltà utilizzata per {name}.', redeemedTotal: '{n} carte utilizzate'
   },
   vouchers: {
-    title: 'Vautcher',
+    title: 'Carte fedeltà',
     subtitle: 'Le tue carte fedeltà — creane e monitora il loro utilizzo.',
-    create: 'Nuovo vautcher',
-    empty: 'Nessun vautcher per ora.',
-    emptyHint: 'Creane uno: i tuoi clienti inizieranno a raccogliere timbri.',
+    create: 'Nuova carta fedeltà',
+    empty: 'Nessuna carta fedeltà per ora.',
+    emptyHint: 'Creane una: i tuoi clienti inizieranno a raccogliere timbri.',
     stampsLabel: '{n} timbri',
-    statRedeemed: 'vautcher utilizzati',
-    statCompleted: '{n} completati',
-    statRate: '{rate}% utilizzati',
-    perCompleted: '{n} completati', perRedeemed: '{n} utilizzati',
+    statRedeemed: 'carte utilizzate',
+    statCompleted: '{n} completate',
+    statRate: '{rate}% utilizzate',
+    perCompleted: '{n} completate', perRedeemed: '{n} utilizzate',
     edit: 'Modifica', moveUp: 'Su', moveDown: 'Giù'
   },
   voucherEditor: {
-    newTitle: 'Nuovo vautcher', editTitle: 'Modifica vautcher',
-    label: 'Nome del vautcher', labelPlaceholder: 'Carta fedeltà…',
+    newTitle: 'Nuova carta fedeltà', editTitle: 'Modifica carta fedeltà',
+    label: 'Nome della carta', labelPlaceholder: 'Carta fedeltà…',
     stamps: 'Timbri da raccogliere',
-    stampsHint: 'Numero di visite per completare questo vautcher (da 1 a 100).',
+    stampsHint: 'Numero di visite per completare questa carta (da 1 a 100).',
     reward: 'Ricompensa', rewardPlaceholder: 'Un dessert della casa in omaggio…',
-    rewardHint: 'Ciò che il cliente riceve completando il vautcher.',
-    save: 'Salva', saving: 'Salvataggio…', createBtn: 'Crea il vautcher',
-    archive: 'Archivia questo vautcher',
-    confirmArchive: 'Archiviare questo vautcher? I tuoi clienti non lo riceveranno più.',
-    loadError: 'Impossibile caricare il vautcher.',
+    rewardHint: 'Ciò che il cliente riceve completando la carta.',
+    save: 'Salva', saving: 'Salvataggio…', createBtn: 'Crea la carta',
+    archive: 'Archivia questa carta',
+    confirmArchive: 'Archiviare questa carta? I tuoi clienti non la riceveranno più.',
+    loadError: 'Impossibile caricare la carta.',
     saveFailed: 'Salvataggio non riuscito. Riprova.'
   },
   approve: {
