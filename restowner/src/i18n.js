@@ -98,7 +98,10 @@ const fr = {
     attendees: 'Inscrits', rebateFirstN: '{badge} · {n} premiers',
     allAges: 'Tous âges', ageRange: '{min}–{max} ans',
     ageMinOnly: '{min} ans et +', ageMaxOnly: 'jusqu’à {max} ans',
-    confirmCancel: 'Annuler définitivement « {title} » ?'
+    confirmCancel: 'Annuler définitivement « {title} » ?',
+    recur: {
+      weekly: 'hebdo', biweekly: 'bimensuel', monthly: 'mensuel'
+    }
   },
   editor: {
     newTitle: 'Nouvel événement', editTitle: 'Modifier l’événement',
@@ -124,10 +127,18 @@ const fr = {
     capacity: 'Limiter le nombre de participants',
     capacityOpen: 'Aucune limite de participants.',
     capacitySuffix: 'participants au maximum',
-    notify: 'Rappel push',
-    notifyPre: 'Notifier les inscrits',
-    notifySuffix: 'jours avant l’événement',
-    notifyHint: '0 ou vide pour désactiver le rappel. L’annonce à l’approbation est envoyée à tous les diners abonnés.',
+    notify: 'Notification push',
+    notifyNone: 'Aucune notification',
+    notifyNow: 'Tout de suite (à l’approbation)',
+    notifyDays: '{n} jour(s) avant l’événement',
+    notifyHint: '« Tout de suite » prévient tous les diners abonnés dès qu’un modérateur valide l’événement. Les autres options envoient un rappel ciblé aux inscrits.',
+    recur: 'Récurrence',
+    recurNone: 'Aucune — événement unique',
+    recurWeekly: 'Chaque semaine — même jour',
+    recurBiweekly: 'Toutes les deux semaines',
+    recurMonthly: 'Tous les mois — même date',
+    recurHint: 'Crée 8 occurrences à venir à partir de la date choisie. Chaque occurrence est un événement modifiable séparément.',
+    recurLocked: 'La récurrence ne peut être modifiée qu’à la création de l’événement.',
     save: 'Enregistrer', saving: 'Enregistrement…', createBtn: 'Créer l’événement',
     resubmitNote: 'Toute modification renvoie l’événement en validation : il sera de nouveau visible par les clients une fois approuvé.',
     cancelEvent: 'Annuler l’événement',

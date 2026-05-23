@@ -45,6 +45,12 @@ const pointsBadge = computed(() => {
   if (points_max) return `≤${points_max} pts`
   return ''
 })
+
+const recurrenceBadge = computed(() => {
+  const r = props.event.recurrence
+  if (!r || r === 'none') return ''
+  return t('event.recur.' + r)
+})
 </script>
 
 <template>
@@ -74,6 +80,7 @@ const pointsBadge = computed(() => {
           <span v-if="ageText" class="badge badge--age">{{ ageText }}</span>
           <span v-if="rebateBadge" class="badge badge--rebate">{{ rebateBadge }}</span>
           <span v-if="pointsBadge" class="badge badge--age">{{ pointsBadge }}</span>
+          <span v-if="recurrenceBadge" class="badge badge--rebate">🔁 {{ recurrenceBadge }}</span>
         </div>
         <p class="ev-meta">
           {{ dateText }}<template v-if="event.event_time"> · {{ event.event_time }}</template><template v-if="event.location"> · {{ event.location }}</template>

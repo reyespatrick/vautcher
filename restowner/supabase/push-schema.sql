@@ -85,6 +85,8 @@ grant execute on function public.vautcher_unregister_push(text) to anon, authent
 -- ---------- NOTIFIER HELPERS ----------
 -- Events scheduled to be REMINDED today: notify_days_before is set,
 -- event_date − notify_days_before = today, and we haven't reminded yet.
+-- Reminder is ONLY for notify_days_before >= 1. The 0 case
+-- ("notify now") is handled by the announce trigger on save.
 create or replace function public.vautcher_events_due_for_reminder()
 returns table (
   id uuid, restaurant_id uuid, title text, event_date date,
@@ -101,6 +103,7 @@ as $$
     and e.moderation_status = 'approved'
     and e.status = 'active'
     and e.notify_days_before is not null
+    and e.notify_days_before >= 1
     and e.reminded_at is null
     and e.event_date = current_date + (e.notify_days_before * interval '1 day');
 $$;
@@ -121,9 +124,11 @@ as $$
 declare
   v_secret text;
 begin
-  -- Only fire on the transition INTO approved.
+  -- Only fire on the transition INTO approved, and only when the owner
+  -- chose "notify now" (notify_days_before = 0). N≥1 = reminder cron.
   if new.moderation_status is distinct from 'approved' then return new; end if;
   if new.announced_at is not null then return new; end if;
+  if new.notify_days_before is distinct from 0 then return new; end if;
   if tg_op = 'UPDATE' and old.moderation_status = 'approved' then
     return new;
   end if;

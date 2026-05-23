@@ -31,6 +31,18 @@ export async function createEvent(payload) {
   return { data, error }
 }
 
+/**
+ * Materialises N future occurrences of a recurring event (RPC).
+ * No-op server-side if the parent's recurrence is 'none'.
+ */
+export async function materializeSeries(eventId, count = 8) {
+  const { error } = await supabase.rpc('vautcher_materialize_series', {
+    p_event_id: eventId,
+    p_count: count
+  })
+  return { error }
+}
+
 export async function updateEvent(id, payload) {
   const { error } = await supabase.from(TABLE).update(payload).eq('id', id)
   return { error }

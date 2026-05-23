@@ -5,7 +5,8 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import {
   getEvent, createEvent, updateEvent, cancelEvent, IMAGE_OPTIONS,
-  uploadEventImage, listUploadedImages, deleteEventImage
+  uploadEventImage, listUploadedImages, deleteEventImage,
+  materializeSeries
 } from '../lib/events'
 
 const route = useRoute()
@@ -26,9 +27,10 @@ const form = ref({
   title: '', description: '', event_date: todayStr(), event_time: '',
   location: '', price: '', image_url: '/assets/photo1.jpg',
   age_min: null, age_max: null, points_min: null, points_max: null,
-  notify_days_before: 3,
+  notify_days_before: 1,
   rebate_value: null, rebate_unit: 'percent', rebate_first_n: null,
   max_participants: null,
+  recurrence: 'none',
   published: true, status: 'active'
 })
 const ageTargeted = ref(false)
@@ -51,10 +53,11 @@ function fillFrom(ev) {
     image_url: ev.image_url || '/assets/photo1.jpg',
     age_min: ev.age_min, age_max: ev.age_max,
     points_min: ev.points_min, points_max: ev.points_max,
-    notify_days_before: ev.notify_days_before ?? 3,
+    notify_days_before: ev.notify_days_before ?? null,
     rebate_value: ev.rebate_value, rebate_unit: ev.rebate_unit || 'percent',
     rebate_first_n: ev.rebate_first_n,
     max_participants: ev.max_participants,
+    recurrence: ev.recurrence || 'none',
     published: ev.published, status: ev.status || 'active'
   }
   ageTargeted.value = !!(ev.age_min || ev.age_max)
@@ -171,6 +174,7 @@ async function save() {
       max_participants: capacityOn.value
         ? (Number(form.value.max_participants) || null)
         : null,
+      recurrence: form.value.recurrence || 'none',
       published: true,
       status: form.value.status,
       // Creating or editing an event (re-)enters the moderation queue:
@@ -184,6 +188,12 @@ async function save() {
       ? await updateEvent(editingId.value, payload)
       : await createEvent(payload)
     if (res.error) { error.value = res.error.message; return }
+
+    // For a brand-new recurring event, generate the next 8 occurrences.
+    // Editing an existing event never re-materialises (would dupe rows).
+    if (!editingId.value && form.value.recurrence !== 'none' && res.data?.id) {
+      await materializeSeries(res.data.id, 8)
+    }
     router.push({ name: 'dashboard' })
   } catch (e) {
     error.value = (e && e.message) || String(e)
@@ -357,13 +367,34 @@ async function onCancelEvent() {
       <!-- Reminder push -->
       <div class="opt">
         <span class="tg-text">{{ t('editor.notify') }}</span>
-        <div class="opt-body rebate-line">
-          <span>{{ t('editor.notifyPre') }}</span>
-          <input v-model="form.notify_days_before" type="number" min="0" max="30"
-            class="rb-val" placeholder="3" />
-          <span>{{ t('editor.notifySuffix') }}</span>
+        <div class="opt-body">
+          <select v-model="form.notify_days_before" class="opt-select">
+            <option :value="null">{{ t('editor.notifyNone') }}</option>
+            <option :value="0">{{ t('editor.notifyNow') }}</option>
+            <option :value="1">{{ t('editor.notifyDays', { n: 1 }) }}</option>
+            <option :value="2">{{ t('editor.notifyDays', { n: 2 }) }}</option>
+            <option :value="3">{{ t('editor.notifyDays', { n: 3 }) }}</option>
+            <option :value="4">{{ t('editor.notifyDays', { n: 4 }) }}</option>
+            <option :value="5">{{ t('editor.notifyDays', { n: 5 }) }}</option>
+          </select>
         </div>
         <span class="opt-help">{{ t('editor.notifyHint') }}</span>
+      </div>
+
+      <!-- Recurrence -->
+      <div class="opt">
+        <span class="tg-text">{{ t('editor.recur') }}</span>
+        <div class="opt-body">
+          <select v-model="form.recurrence" class="opt-select" :disabled="!!editingId">
+            <option value="none">{{ t('editor.recurNone') }}</option>
+            <option value="weekly">{{ t('editor.recurWeekly') }}</option>
+            <option value="biweekly">{{ t('editor.recurBiweekly') }}</option>
+            <option value="monthly">{{ t('editor.recurMonthly') }}</option>
+          </select>
+        </div>
+        <span class="opt-help">
+          {{ editingId ? t('editor.recurLocked') : t('editor.recurHint') }}
+        </span>
       </div>
 
       <!-- Participant cap -->
@@ -505,6 +536,17 @@ async function onCancelEvent() {
 .toggle.sub .tg-text { font-size: 0.84rem; }
 
 .opt-body { margin: 12px 0 4px; }
+.opt-select {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.opt-select:disabled { opacity: 0.55; cursor: not-allowed; }
 .opt-help {
   display: block;
   font-size: 0.74rem;
