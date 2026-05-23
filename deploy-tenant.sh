@@ -89,5 +89,6 @@ echo "→ deploying app/dist → $SLUG.pages.dev"
 
 echo "  ✓ https://$SLUG.pages.dev"
 
-# Restore the local working tree — don't leave baked.json dirty.
-git -C "$HERE" checkout HEAD -- app/src/data/baked.json 2>/dev/null || true
+# Restore the local working tree — don't leave the tenant-specific
+# baked config or logo lying around in the working copy.
+git -C "$HERE" checkout HEAD -- app/src/data/baked.json app/public/assets/logo.jpg 2>/dev/null || true
