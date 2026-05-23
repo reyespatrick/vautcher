@@ -157,7 +157,12 @@ async function save() {
       age_max: ageTargeted.value ? (Number(form.value.age_max) || null) : null,
       points_min: pointsTargeted.value ? (Number(form.value.points_min) || null) : null,
       points_max: pointsTargeted.value ? (Number(form.value.points_max) || null) : null,
-      notify_days_before: null,
+      // Days-before-event the diner gets a reminder push. 0 / unset =
+      // no reminder. Announcements fire on approval regardless.
+      notify_days_before: form.value.notify_days_before === null ||
+                          form.value.notify_days_before === ''
+        ? null
+        : (Number(form.value.notify_days_before) || null),
       rebate_value: rebateOn.value ? (Number(form.value.rebate_value) || null) : null,
       rebate_unit: form.value.rebate_unit,
       rebate_first_n: (rebateOn.value && rebateLimited.value)
@@ -347,6 +352,18 @@ async function onCancelEvent() {
           <span v-else class="rebate-note">{{ t('editor.rebateNoLimit') }}</span>
         </div>
         <span class="opt-help">{{ t('editor.rebateHint') }}</span>
+      </div>
+
+      <!-- Reminder push -->
+      <div class="opt">
+        <span class="tg-text">{{ t('editor.notify') }}</span>
+        <div class="opt-body rebate-line">
+          <span>{{ t('editor.notifyPre') }}</span>
+          <input v-model="form.notify_days_before" type="number" min="0" max="30"
+            class="rb-val" placeholder="3" />
+          <span>{{ t('editor.notifySuffix') }}</span>
+        </div>
+        <span class="opt-help">{{ t('editor.notifyHint') }}</span>
       </div>
 
       <!-- Participant cap -->

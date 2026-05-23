@@ -1,6 +1,12 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { site } from '../data/site'
+import { useProfile } from '../composables/useProfile'
+import { registerPushSubscription } from '../lib/api'
+
+const { profile } = useProfile()
+
+const VAPID_PUBLIC_KEY = (import.meta.env.VITE_VAPID_PUBLIC_KEY || '').trim()
 
 const supported = ref(false)
 const permission = ref('default')
@@ -8,10 +14,19 @@ const isiOS = ref(false)
 const isStandalone = ref(false)
 const busy = ref(false)
 const message = ref('')
+const subscribed = ref(false)
 
-onMounted(() => {
-  supported.value = 'Notification' in window && 'serviceWorker' in navigator
-  if (supported.value) permission.value = Notification.permission
+onMounted(async () => {
+  supported.value = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
+  if (supported.value) {
+    permission.value = Notification.permission
+    // Already subscribed on this device?
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      subscribed.value = !!sub
+    } catch { /* ignore */ }
+  }
   isiOS.value = /iphone|ipad|ipod/i.test(navigator.userAgent)
   isStandalone.value =
     window.matchMedia('(display-mode: standalone)').matches ||
@@ -21,17 +36,52 @@ onMounted(() => {
 // iOS only delivers push to a PWA added to the Home Screen.
 const iosNeedsInstall = computed(() => isiOS.value && !isStandalone.value)
 
+// Standard helper to convert the VAPID public key (base64url) into the
+// Uint8Array pushManager.subscribe() wants.
+function urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - (b64.length % 4)) % 4)
+  const base64 = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(base64)
+  const out = new Uint8Array(raw.length)
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i)
+  return out
+}
+
+async function subscribeAndRegister() {
+  if (!VAPID_PUBLIC_KEY) {
+    message.value = 'Push non configuré sur ce build.'
+    return false
+  }
+  if (!profile.value?.id) {
+    message.value = 'Renseignez d’abord votre profil.'
+    return false
+  }
+  const reg = await navigator.serviceWorker.ready
+  let sub = await reg.pushManager.getSubscription()
+  if (!sub) {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    })
+  }
+  const res = await registerPushSubscription(profile.value.id, sub, navigator.userAgent)
+  if (!res.ok) {
+    message.value = 'Inscription au push impossible : ' + (res.error || 'erreur réseau')
+    return false
+  }
+  subscribed.value = true
+  return true
+}
+
 async function showSample() {
   const reg = await navigator.serviceWorker.ready
   await reg.showNotification(site.name, {
-    body: 'Une nouvelle proposition vous attend — ouvrez l’app pour la découvrir.',
+    body: 'Vous serez prévenu·e quand le restaurant annonce un événement.',
     icon: site.logoUrl,
     badge: site.logoUrl,
-    image: site.gallery?.[0]?.src || site.logoUrl,
     data: { url: '/evenements' },
     tag: 'vautcher-sample'
   })
-  message.value = '✓ Notification envoyée — regardez l’écran de votre téléphone.'
 }
 
 async function onClick() {
@@ -50,11 +100,19 @@ async function onClick() {
     if (permission.value !== 'granted') {
       permission.value = await Notification.requestPermission()
     }
-    if (permission.value === 'granted') {
-      await showSample()
-    } else if (permission.value === 'denied') {
-      message.value = 'Notifications refusées — réactivez-les dans les réglages de votre téléphone.'
+    if (permission.value !== 'granted') {
+      if (permission.value === 'denied') {
+        message.value = 'Notifications refusées — réactivez-les dans les réglages de votre téléphone.'
+      }
+      return
     }
+    const ok = await subscribeAndRegister()
+    if (ok) {
+      await showSample()
+      message.value = '✓ Vous êtes inscrit·e — les futurs événements vous seront notifiés.'
+    }
+  } catch (e) {
+    message.value = 'Inscription au push impossible : ' + (e?.message || e)
   } finally {
     busy.value = false
   }
@@ -69,7 +127,7 @@ async function onClick() {
       <span>Recevez une alerte quand le restaurant annonce une soirée.</span>
     </div>
     <button class="notify-btn" :disabled="busy" @click="onClick">
-      {{ permission === 'granted' ? 'Voir un exemple' : 'Activer' }}
+      {{ subscribed ? 'Activé ✓' : (permission === 'granted' ? 'S\'inscrire' : 'Activer') }}
     </button>
   </div>
   <p v-if="message" class="notify-msg">{{ message }}</p>

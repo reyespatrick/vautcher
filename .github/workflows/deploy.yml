@@ -44,6 +44,7 @@ jobs:
             restowner/supabase/event-capacity-schema.sql \
             restowner/supabase/restaurant-config-schema.sql \
             restowner/supabase/restaurant-admin-schema.sql \
+            restowner/supabase/push-schema.sql \
             app/supabase/pass-schema.sql; do
             echo "→ applying $f"
             jq -Rs '{query: .}' "$f" \
@@ -95,6 +96,10 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://yfyfoqrautdogivalimb.supabase.co
           VITE_SUPABASE_ANON_KEY: sb_publishable_CucZIIP9fzY-AN5ChPQGlQ_vWfmeTAR
+          # VAPID public key — pairs with VAPID_PRIVATE_KEY secret on the
+          # event-notifier edge function. Public by design (sent to the
+          # browser to identify this sender to the push service).
+          VITE_VAPID_PUBLIC_KEY: BH2S3bUsxSCSP822MfhmI1QMty7XXcXxZ-JCsxC3ph1-45MSCJgdSSpv6i9XGQAjXCeao7gmCPRKsKBD_5aZCHw
       - name: Deploy to Cloudflare Pages (la-gioconda)
         uses: cloudflare/wrangler-action@v3
         with:
@@ -124,3 +129,4 @@ jobs:
         run: |
           supabase functions deploy vautcher-pass --project-ref yfyfoqrautdogivalimb
           supabase functions deploy provision-owner --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy event-notifier --project-ref yfyfoqrautdogivalimb

@@ -9,3 +9,8 @@ verify_jwt = false
 # the function additionally checks the caller is a moderator.
 [functions.provision-owner]
 verify_jwt = true
+
+# event-notifier is called by pg_cron and DB triggers without a user
+# JWT; it gates itself on the CRON_SECRET header instead.
+[functions.event-notifier]
+verify_jwt = false

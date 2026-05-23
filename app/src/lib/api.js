@@ -70,6 +70,41 @@ const COMPLETE_DEMO_VOUCHER = {
 }
 
 /**
+ * Saves a Web-Push subscription for this diner. Upserts on endpoint
+ * so re-subscribing on the same device replaces the row.
+ */
+export async function registerPushSubscription(profileId, subscription, userAgent) {
+  if (!supabase || !profileId || !subscription) return { ok: false }
+  const json = subscription.toJSON ? subscription.toJSON() : subscription
+  if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return { ok: false }
+  try {
+    const { error } = await supabase.rpc('vautcher_register_push', {
+      p_profile_id: profileId,
+      p_restaurant_id: RESTAURANT_ID,
+      p_endpoint: json.endpoint,
+      p_p256dh: json.keys.p256dh,
+      p_auth: json.keys.auth,
+      p_user_agent: userAgent || ''
+    })
+    if (error) return { ok: false, error: error.message }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e && e.message) || String(e) }
+  }
+}
+
+/** Removes a stale subscription. */
+export async function unregisterPushSubscription(endpoint) {
+  if (!supabase || !endpoint) return { ok: false }
+  try {
+    await supabase.rpc('vautcher_unregister_push', { p_endpoint: endpoint })
+    return { ok: true }
+  } catch (e) {
+    return { ok: false }
+  }
+}
+
+/**
  * Loads this tenant's identity + content config (brand tokens, hero, about,
  * specialties, gallery, hours, contact info). Returns null if unavailable
  * so callers can fall back to a cached / default config.

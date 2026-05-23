@@ -70,6 +70,7 @@ echo "→ building app/ for $SLUG"
   VITE_PWA_SHORT_NAME="$PWA_SHORT" \
   VITE_PWA_DESCRIPTION="$PWA_DESC" \
   VITE_THEME_COLOR="$THEME" \
+  VITE_VAPID_PUBLIC_KEY="BH2S3bUsxSCSP822MfhmI1QMty7XXcXxZ-JCsxC3ph1-45MSCJgdSSpv6i9XGQAjXCeao7gmCPRKsKBD_5aZCHw" \
   npm run build )
 
 echo "→ deploying app/dist → $SLUG.pages.dev"
