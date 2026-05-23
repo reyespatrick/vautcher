@@ -17,10 +17,10 @@ const form = ref({
   notes: ''
 })
 
-const times = [
-  '11:30', '12:00', '12:30', '13:00', '13:30',
-  '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'
-]
+// Per-tenant time slots, configured via vautcher_restaurants.config.reservation_slots
+// (array of strings like "12:00"). When unset, the view falls back to a
+// free-text time input — never claim service hours we don't know.
+const times = computed(() => site.reservationSlots || [])
 
 const submitted = ref(false)
 const saving = ref(false)
@@ -60,7 +60,7 @@ function reset() {
     <header class="page-head">
       <span class="kicker">Réservation</span>
       <h1>Réservez votre table</h1>
-      <p>Ouvert 7j/7, midi et soir. Confirmation immédiate.</p>
+      <p>Confirmation immédiate.</p>
     </header>
 
     <!-- Confirmation screen -->
@@ -97,7 +97,7 @@ function reset() {
 
       <fieldset class="time-field">
         <legend>Heure</legend>
-        <div class="time-grid">
+        <div v-if="times.length" class="time-grid">
           <button
             v-for="t in times"
             :key="t"
@@ -106,6 +106,7 @@ function reset() {
             @click="form.time = t"
           >{{ t }}</button>
         </div>
+        <input v-else v-model="form.time" type="time" required />
       </fieldset>
 
       <div class="row">

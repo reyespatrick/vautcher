@@ -31,6 +31,7 @@ const GENERIC_FALLBACK = {
   brandPrimary: '#9e053d',
   brandDark: '#6f032b',
   hours: [],
+  reservationSlots: [],
   hero: { eyebrow: '', title: '', lead: '' },
   about: { kicker: '', title: '', image_url: '', paragraphs: [] },
   specialties: [],
@@ -53,6 +54,10 @@ const LA_GIOCONDA_FALLBACK = {
   hours: [
     { days: 'Lundi – Dimanche', service: 'Midi', time: '11h30 – 14h00' },
     { days: 'Lundi – Dimanche', service: 'Soir', time: '18h30 – 23h30' }
+  ],
+  reservationSlots: [
+    '11:30', '12:00', '12:30', '13:00', '13:30',
+    '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30'
   ],
   hero: {
     eyebrow: 'Cointrin · Genève',
@@ -103,6 +108,7 @@ function flatten(payload) {
     brandPrimary: c.brand_primary ?? FALLBACK.brandPrimary,
     brandDark: c.brand_dark ?? FALLBACK.brandDark,
     hours: c.hours ?? FALLBACK.hours,
+    reservationSlots: c.reservation_slots ?? FALLBACK.reservationSlots,
     hero: c.hero ?? FALLBACK.hero,
     about: c.about ?? FALLBACK.about,
     specialties: c.specialties ?? FALLBACK.specialties,

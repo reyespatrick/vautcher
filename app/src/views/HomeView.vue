@@ -127,7 +127,7 @@ onMounted(async () => {
     <section class="cta-banner">
       <div class="container">
         <h2>Envie de nous rejoindre&nbsp;?</h2>
-        <p>Ouvert 7j/7, midi et soir. Réservez votre table en ligne.</p>
+        <p>Réservez votre table en ligne, confirmation immédiate.</p>
         <RouterLink to="/reservation" class="btn btn--light">Réserver maintenant</RouterLink>
       </div>
     </section>

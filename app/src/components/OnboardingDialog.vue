@@ -32,7 +32,7 @@ function doLogout() {
       <button v-if="isEdit" class="x" aria-label="Fermer" @click="closeDialog">✕</button>
 
       <img class="logo" :src="site.logoUrl" :alt="site.name" />
-      <h2>{{ isEdit ? 'Votre profil' : 'Benvenuto !' }}</h2>
+      <h2>{{ isEdit ? 'Votre profil' : 'Bienvenue' + (site.name ? ' chez ' + site.name : '') }}</h2>
       <p class="intro">
         {{ isEdit
           ? 'Modifiez vos informations ci-dessous.'

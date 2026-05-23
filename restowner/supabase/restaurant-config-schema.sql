@@ -39,6 +39,10 @@ update public.vautcher_restaurants
        {"days": "Lundi – Dimanche", "service": "Midi", "time": "11h30 – 14h00"},
        {"days": "Lundi – Dimanche", "service": "Soir", "time": "18h30 – 23h30"}
      ],
+     "reservation_slots": [
+       "11:30", "12:00", "12:30", "13:00", "13:30",
+       "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30"
+     ],
      "hero": {
        "eyebrow": "Cointrin · Genève",
        "title": "Une part de Naples au cœur de Genève",
