@@ -46,12 +46,13 @@ let watchersBound = false
 export function useScope() {
   const { owner, restaurant, isModerator, session } = useAuth()
 
-  // Fetch the dropdown options once the user is authenticated; reset
-  // them on sign-out. Bound once across the app, not per-component.
+  // Fetch the dropdown options whenever auth state changes. Bound once
+  // across the app, not per-component. Two redundant triggers help avoid
+  // races: (a) session change, (b) owner-or-moderator becoming known.
   if (!watchersBound) {
     watchersBound = true
     watch([session, owner, isModerator], ([s, o, m]) => {
-      if (s && (o || m)) loadRestaurants()
+      if (s) loadRestaurants()
       else { restaurants.value = []; loadInFlight = null }
     }, { immediate: true })
   }
@@ -74,9 +75,10 @@ export function useScope() {
   })
 
   // Show the picker only when there's actually a choice to make.
-  const canSwitch = computed(() =>
-    isModerator.value && restaurants.value.length > 1
-  )
+  // The RPC already filters: a plain owner only ever sees their own
+  // restaurant, a moderator sees every one — so the data alone is a
+  // reliable gate, no need to also wait on isModerator to resolve.
+  const canSwitch = computed(() => restaurants.value.length > 1)
 
   function setScope(id) {
     scopeRestaurantId.value = id || null
