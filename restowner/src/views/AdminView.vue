@@ -202,18 +202,35 @@ const deleteConfirmFor = ref(null) // restaurant id while typing
 const deleteSlugTyped = ref('')
 const deleteBusy = ref(false)
 
+// Visible debug strip — temporary diagnostic for the "Supprimer does
+// nothing" report. If the click fires we set this; if confirm() resolves
+// we update it; if it throws we surface the message. Once the bug is
+// pinned down this can go.
+const deleteDebug = ref('')
+
 async function startDelete(r) {
-  const counts = (r.owners?.length || 0) + ' propriétaire(s)'
-  const ok1 = await confirm({
-    title: t('admin.deleteStep1Title', { name: r.name }),
-    body: t('admin.deleteStep1Body', { name: r.name, counts }),
-    confirmLabel: t('admin.deleteStep1Btn'),
-    cancelLabel: t('common.keep'),
-    danger: true
-  })
-  if (!ok1) return
-  deleteConfirmFor.value = r.id
-  deleteSlugTyped.value = ''
+  deleteDebug.value = `clic Supprimer reçu pour ${r?.name || '?'} (${r?.slug || '?'})…`
+  try {
+    const counts = (r.owners?.length || 0) + ' propriétaire(s)'
+    if (typeof confirm !== 'function') {
+      deleteDebug.value = '❌ confirm() est undefined — useDialog n’a pas exporté la fonction.'
+      return
+    }
+    const ok1 = await confirm({
+      title: t('admin.deleteStep1Title', { name: r.name }),
+      body: t('admin.deleteStep1Body', { name: r.name, counts }),
+      confirmLabel: t('admin.deleteStep1Btn'),
+      cancelLabel: t('common.keep'),
+      danger: true
+    })
+    deleteDebug.value = `confirm résolu → ${ok1 ? 'OK, on passe à l’étape 2' : 'annulé'}`
+    if (!ok1) return
+    deleteConfirmFor.value = r.id
+    deleteSlugTyped.value = ''
+  } catch (e) {
+    deleteDebug.value = '❌ erreur startDelete: ' + (e && e.message ? e.message : String(e))
+    console.error('startDelete threw', e)
+  }
 }
 
 async function submitDelete(r) {
@@ -293,6 +310,14 @@ async function copyLink() {
     <div class="page-head">
       <h1>{{ t('admin.title') }}</h1>
       <p>{{ t('admin.subtitle') }}</p>
+    </div>
+
+    <!-- Temporary diagnostic banner for the "Supprimer does nothing" report.
+         Shows whatever startDelete sets — so the user can see whether the
+         click handler fired at all and what state confirm() resolved to. -->
+    <div v-if="deleteDebug" class="del-debug" role="status">
+      <span>🐞 {{ deleteDebug }}</span>
+      <button class="del-debug-x" @click="deleteDebug = ''" aria-label="Fermer">×</button>
     </div>
 
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
@@ -834,6 +859,31 @@ async function copyLink() {
 
 /* Two-step delete confirmation inside the restaurant card */
 .resto-del { margin-left: 6px; }
+
+/* Temporary diagnostic strip for the Supprimer-does-nothing debug. */
+.del-debug {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff7d5;
+  border: 1px solid #f3d96b;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 10px 0 16px;
+  font-size: 0.85rem;
+  color: #6e5006;
+  word-break: break-word;
+}
+.del-debug span { flex: 1; }
+.del-debug-x {
+  background: transparent;
+  border: 0;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: #6e5006;
+  cursor: pointer;
+  padding: 0 4px;
+}
 .del-confirm {
   margin: 12px 0 4px;
   padding: 12px 14px;
