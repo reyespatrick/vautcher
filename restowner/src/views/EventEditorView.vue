@@ -135,23 +135,87 @@ onMounted(async () => {
 
 const valid = computed(() => form.value.title.trim() && form.value.event_date)
 
-// ---- Recurrence preview ----
-// Derive day-of-week / week-of-month from the event_date so the owner
-// sees exactly what the series will look like before saving.
+// ---- Recurrence preview + day-of-week / week-of-month controls ----
+// The event_date field carries both "first occurrence" and (implicitly)
+// the weekday + week-of-month for the series. The controls below let
+// the owner change the weekday or the week-of-month directly; we snap
+// event_date forward to the next date that matches their pick — so an
+// owner planning ahead can say "every Tuesday" without having to count
+// out a Tuesday in the calendar themselves.
 const WEEKDAYS_FR = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
 function nthLabel(n) {
   if (n === 1) return '1ᵉʳ'
   return n + 'ᵉ'
 }
-const recurDate = computed(() =>
-  form.value.event_date ? new Date(form.value.event_date + 'T00:00:00') : null
-)
+
+function dateAsLocal(yyyymmdd) {
+  return yyyymmdd ? new Date(yyyymmdd + 'T00:00:00') : null
+}
+function fmtYYYYMMDD(d) {
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+}
+
+const recurDate = computed(() => dateAsLocal(form.value.event_date))
 const recurWeekday = computed(() =>
   recurDate.value ? WEEKDAYS_FR[recurDate.value.getDay()] : ''
 )
 const recurNthOfMonth = computed(() =>
   recurDate.value ? Math.ceil(recurDate.value.getDate() / 7) : 0
 )
+
+// Day-of-week picker proxy for weekly / biweekly.
+// Reading: getDay() of event_date. Writing: snap event_date to the next
+// date (today or later) that lands on the picked weekday.
+const selectedDow = computed({
+  get() { return recurDate.value ? recurDate.value.getDay() : 0 },
+  set(newDow) {
+    const base = recurDate.value || new Date()
+    const diff = (Number(newDow) - base.getDay() + 7) % 7
+    const next = new Date(base)
+    // If diff is 0 we keep the same date; otherwise jump forward.
+    if (diff !== 0) next.setDate(next.getDate() + diff)
+    form.value.event_date = fmtYYYYMMDD(next)
+  }
+})
+
+// Monthly "Nth weekday" pattern needs two picks: the week of month
+// (1..5) and the day of week. Writing either one snaps event_date so
+// the Nth-weekday display stays consistent.
+function snapToNthWeekday(n, dow) {
+  const base = recurDate.value || new Date()
+  // Build the candidate within the current month first.
+  const first = new Date(base.getFullYear(), base.getMonth(), 1)
+  const offset = (Number(dow) - first.getDay() + 7) % 7
+  let candidate = new Date(first.getFullYear(), first.getMonth(), 1 + offset + (Number(n) - 1) * 7)
+  // If the candidate has passed (in the past), or doesn't exist in this
+  // month, roll forward to the next month.
+  if (candidate.getMonth() !== first.getMonth() || candidate < base) {
+    const nextFirst = new Date(base.getFullYear(), base.getMonth() + 1, 1)
+    const nextOffset = (Number(dow) - nextFirst.getDay() + 7) % 7
+    candidate = new Date(nextFirst.getFullYear(), nextFirst.getMonth(), 1 + nextOffset + (Number(n) - 1) * 7)
+    if (candidate.getMonth() !== nextFirst.getMonth()) {
+      // Nth occurrence doesn't exist next month — fall back to the
+      // last one (i.e., subtract a week).
+      candidate.setDate(candidate.getDate() - 7)
+    }
+  }
+  form.value.event_date = fmtYYYYMMDD(candidate)
+}
+const monthlyDow = computed({
+  get() { return selectedDow.value },
+  set(v) { snapToNthWeekday(recurNthOfMonth.value || 1, v) }
+})
+const monthlyNth = computed({
+  get() { return recurNthOfMonth.value || 1 },
+  set(v) { snapToNthWeekday(v, selectedDow.value) }
+})
+const recurFirstLabel = computed(() => {
+  if (!recurDate.value) return ''
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  }).format(recurDate.value)
+})
+
 const recurPreview = computed(() => {
   if (!recurDate.value || form.value.recurrence === 'none') return ''
   const wd = recurWeekday.value
@@ -438,6 +502,25 @@ async function onCancelEvent() {
           </select>
         </div>
 
+        <!-- Day-of-week picker for weekly / biweekly. Changing it snaps
+             the event date to the next matching weekday so the owner
+             can plan ahead without hunting for a Tuesday in the calendar. -->
+        <div
+          v-if="!editingId && (form.recurrence === 'weekly' || form.recurrence === 'biweekly')"
+          class="opt-body opt-sub"
+        >
+          <label class="sub-label">{{ t('editor.recurDow') }}</label>
+          <select v-model.number="selectedDow" class="opt-select">
+            <option :value="1">lundi</option>
+            <option :value="2">mardi</option>
+            <option :value="3">mercredi</option>
+            <option :value="4">jeudi</option>
+            <option :value="5">vendredi</option>
+            <option :value="6">samedi</option>
+            <option :value="0">dimanche</option>
+          </select>
+        </div>
+
         <!-- Monthly sub-mode: same date vs same Nth weekday -->
         <div v-if="form.recurrence === 'monthly' && !editingId" class="opt-body opt-sub">
           <label class="rad">
@@ -448,9 +531,32 @@ async function onCancelEvent() {
             <input type="radio" v-model="form.recurrence_pattern" value="weekday" />
             <span>Le {{ nthLabel(recurNthOfMonth) }} {{ recurWeekday }} de chaque mois</span>
           </label>
+
+          <!-- Explicit week + weekday pickers when weekday-pattern is on. -->
+          <div v-if="form.recurrence_pattern === 'weekday'" class="monthly-pickers">
+            <select v-model.number="monthlyNth" class="opt-select">
+              <option :value="1">1ᵉʳ</option>
+              <option :value="2">2ᵉ</option>
+              <option :value="3">3ᵉ</option>
+              <option :value="4">4ᵉ</option>
+              <option :value="5">5ᵉ (ou dernier)</option>
+            </select>
+            <select v-model.number="monthlyDow" class="opt-select">
+              <option :value="1">lundi</option>
+              <option :value="2">mardi</option>
+              <option :value="3">mercredi</option>
+              <option :value="4">jeudi</option>
+              <option :value="5">vendredi</option>
+              <option :value="6">samedi</option>
+              <option :value="0">dimanche</option>
+            </select>
+          </div>
         </div>
 
         <p v-if="recurPreview && !editingId" class="recur-preview">{{ recurPreview }}</p>
+        <p v-if="recurPreview && !editingId" class="recur-first">
+          {{ t('editor.recurFirst') }} <strong>{{ recurFirstLabel }}</strong>.
+        </p>
 
         <span class="opt-help">
           {{ editingId ? t('editor.recurLocked') : t('editor.recurHint') }}
@@ -608,8 +714,21 @@ async function onCancelEvent() {
 }
 .opt-select:disabled { opacity: 0.55; cursor: not-allowed; }
 .opt-sub { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.sub-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
 .rad { display: flex; align-items: center; gap: 9px; font-size: 0.9rem; cursor: pointer; }
 .rad input { accent-color: var(--accent); }
+.monthly-pickers {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.monthly-pickers .opt-select { flex: 1; }
 .recur-preview {
   margin: 10px 0 0;
   padding: 8px 11px;
@@ -619,6 +738,12 @@ async function onCancelEvent() {
   font-size: 0.84rem;
   color: var(--accent-dark);
 }
+.recur-first {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--mut);
+}
+.recur-first strong { color: var(--ink); }
 .opt-help {
   display: block;
   font-size: 0.74rem;
