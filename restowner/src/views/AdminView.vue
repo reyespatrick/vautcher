@@ -278,7 +278,12 @@ async function copyLink() {
         <div class="scaffold-row">
           <input
             v-model="scaffoldUrl"
-            type="url"
+            type="text"
+            inputmode="url"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
             class="scaffold-input"
             :placeholder="t('admin.scaffoldPlaceholder')"
             :disabled="scaffoldBusy"

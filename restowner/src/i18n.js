@@ -233,7 +233,7 @@ const fr = {
     subtitle: 'Restaurants, propriétaires et clients de la plateforme.',
     scaffoldTitle: 'Nouveau restaurant à partir d’une URL',
     scaffoldHint: 'Collez l’adresse du site web du restaurant. On extrait le contenu, on crée la fiche et on déploie l’app cliente sur <slug>.pages.dev.',
-    scaffoldPlaceholder: 'https://www.unrestaurant.ch/',
+    scaffoldPlaceholder: 'unrestaurant.ch',
     scaffoldBtn: 'Créer',
     scaffoldRunning: 'En cours…',
     scaffoldDone: 'Fiche créée',
