@@ -6,6 +6,7 @@ import { site } from '../data/site'
 
 const { profile, save, closeDialog, logout } = useProfile()
 const { subscribeIfPossible, canPrompt } = usePush()
+const version = __APP_VERSION__
 
 const today = new Date().toISOString().split('T')[0]
 const isEdit = computed(() => !!profile.value)
@@ -81,6 +82,8 @@ function doLogout() {
       <button v-if="isEdit" class="logout" type="button" @click="doLogout">
         Se déconnecter
       </button>
+
+      <p v-if="isEdit" class="version">v{{ version }}</p>
     </div>
   </div>
 </template>
@@ -162,4 +165,11 @@ input:focus { border-color: var(--burgundy); }
   cursor: pointer;
 }
 .logout:hover { color: var(--burgundy); }
+.version {
+  margin-top: 14px;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--grey);
+  opacity: 0.75;
+}
 </style>

@@ -148,7 +148,7 @@ const fr = {
     notifyNow: 'Tout de suite (à l’approbation)',
     notifyDays: '{n} jour(s) avant l’événement',
     notifyHint: '« Tout de suite » prévient tous les diners abonnés dès qu’un modérateur valide l’événement. Les autres options envoient un rappel ciblé aux inscrits.',
-    recur: 'Faire un événement récurrent',
+    recur: 'Répéter cet événement',
     recurOff: 'Événement unique — pas de répétition.',
     recurNone: 'Aucune — événement unique',
     recurWeekly: 'Chaque semaine',

@@ -542,23 +542,6 @@ async function onCancelEvent() {
         <span class="opt-help">{{ t('editor.rebateHint') }}</span>
       </div>
 
-      <!-- Reminder push -->
-      <div class="opt">
-        <span class="tg-text">{{ t('editor.notify') }}</span>
-        <div class="opt-body">
-          <select v-model="form.notify_days_before" class="opt-select">
-            <option :value="null">{{ t('editor.notifyNone') }}</option>
-            <option :value="0">{{ t('editor.notifyNow') }}</option>
-            <option :value="1">{{ t('editor.notifyDays', { n: 1 }) }}</option>
-            <option :value="2">{{ t('editor.notifyDays', { n: 2 }) }}</option>
-            <option :value="3">{{ t('editor.notifyDays', { n: 3 }) }}</option>
-            <option :value="4">{{ t('editor.notifyDays', { n: 4 }) }}</option>
-            <option :value="5">{{ t('editor.notifyDays', { n: 5 }) }}</option>
-          </select>
-        </div>
-        <span class="opt-help">{{ t('editor.notifyHint') }}</span>
-      </div>
-
       <!-- Recurrence — themed as an opt-in toggle, like "Offrir un rabais". -->
       <div class="opt">
         <label class="toggle">
@@ -655,6 +638,23 @@ async function onCancelEvent() {
         <span v-if="editingId" class="opt-help">{{ t('editor.recurLocked') }}</span>
         <span v-else-if="!recurrenceOn" class="opt-help">{{ t('editor.recurOff') }}</span>
         <span v-else class="opt-help">{{ t('editor.recurHint') }}</span>
+      </div>
+
+      <!-- Reminder push -->
+      <div class="opt">
+        <span class="tg-text">{{ t('editor.notify') }}</span>
+        <div class="opt-body">
+          <select v-model="form.notify_days_before" class="opt-select">
+            <option :value="null">{{ t('editor.notifyNone') }}</option>
+            <option :value="0">{{ t('editor.notifyNow') }}</option>
+            <option :value="1">{{ t('editor.notifyDays', { n: 1 }) }}</option>
+            <option :value="2">{{ t('editor.notifyDays', { n: 2 }) }}</option>
+            <option :value="3">{{ t('editor.notifyDays', { n: 3 }) }}</option>
+            <option :value="4">{{ t('editor.notifyDays', { n: 4 }) }}</option>
+            <option :value="5">{{ t('editor.notifyDays', { n: 5 }) }}</option>
+          </select>
+        </div>
+        <span class="opt-help">{{ t('editor.notifyHint') }}</span>
       </div>
 
       <p v-if="editingId" class="resubmit-note">{{ t('editor.resubmitNote') }}</p>

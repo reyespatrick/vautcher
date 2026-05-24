@@ -5,7 +5,6 @@ import { useProfile } from '../composables/useProfile'
 import { site } from '../data/site'
 
 const { profile, openDialog } = useProfile()
-const version = __APP_VERSION__
 
 const firstName = computed(() => profile.value?.name.trim().split(/\s+/)[0] || '')
 const initial = computed(() => firstName.value.charAt(0).toUpperCase() || '?')
@@ -18,7 +17,7 @@ const initial = computed(() => firstName.value.charAt(0).toUpperCase() || '?')
         <img :src="site.logoUrl" :alt="site.name" />
         <span class="brand-txt">
           {{ site.name }}
-          <small>{{ site.tagline }} · v{{ version }}</small>
+          <small>{{ site.tagline }}</small>
         </span>
       </RouterLink>
 
