@@ -2,10 +2,11 @@
 --  vautcher_restaurant_clients(p_restaurant_id)
 --
 --  Diners who have stamped at the given restaurant, with their
---  per-restaurant stamp count and last-visit date. Powers the
---  new Clients tab in restowner — both for plain owners (their
---  own restaurant only) and for moderators (any restaurant via
---  the scope picker).
+--  per-restaurant stamp count and last-visit date.
+--
+--  Stamps don't carry a restaurant_id directly — the link goes
+--  vautcher_stamps.card_id → vautcher_cards.restaurant_id, so the
+--  query joins through the cards table.
 --
 --  Access:
 --    - moderators always
@@ -46,17 +47,18 @@ begin
       'name',       p.name,
       'birth_date', p.birth_date,
       'locked',     p.locked,
-      'stamps',     s.cnt,
-      'last_visit', s.last_visit
-    ) order by s.last_visit desc nulls last, lower(p.name))
+      'stamps',     agg.cnt,
+      'last_visit', agg.last_visit
+    ) order by agg.last_visit desc nulls last, lower(p.name))
     from public.vautcher_profiles p
     join lateral (
-      select count(*)        as cnt,
-             max(stamp_date) as last_visit
+      select count(*)             as cnt,
+             max(s.stamp_date)    as last_visit
         from public.vautcher_stamps s
+        join public.vautcher_cards c on c.id = s.card_id
        where s.profile_id    = p.id
-         and s.restaurant_id = p_restaurant_id
-    ) s on s.cnt > 0
+         and c.restaurant_id = p_restaurant_id
+    ) agg on agg.cnt > 0
   ), '[]'::jsonb);
 end;
 $$;

@@ -92,7 +92,8 @@ const fr = {
     stamps: 'tampons',
     lastVisit: 'dernière visite',
     ageYears: '{n} ans',
-    locked: 'Verrouillé'
+    locked: 'Verrouillé',
+    loadError: 'Impossible de charger les clients.'
   },
   history: {
     title: 'Historique',

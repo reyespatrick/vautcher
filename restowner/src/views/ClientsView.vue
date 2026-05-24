@@ -75,7 +75,7 @@ function age(d) {
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 
     <div v-else-if="loadError" class="empty">
-      {{ t('common.loadError') }}
+      {{ t('clients.loadError') }}
       <button class="btn btn--plain btn--sm retry" @click="load">{{ t('common.retry') }}</button>
     </div>
 

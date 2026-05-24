@@ -3,12 +3,14 @@
 --
 --  When p_restaurant_id is provided, return only diners who have at
 --  least one stamp at that restaurant, with their stamp count for
---  that restaurant (not the global count). Powers the admin panel's
---  restaurant filter: pick a restaurant from the dropdown, the
---  Clients tab is scoped accordingly.
+--  that restaurant (not the global count).
+--
+--  Stamps don't carry a restaurant_id directly — the link goes
+--  vautcher_stamps.card_id → vautcher_cards.restaurant_id, so the
+--  scoped branch joins through the cards table.
 --
 --  When p_restaurant_id is null, behaviour is identical to the
---  previous global version.
+--  original global version.
 --
 --  Re-runnable (idempotent).
 -- ============================================================
@@ -43,15 +45,16 @@ begin
     select jsonb_agg(jsonb_build_object(
       'id', p.id, 'name', p.name, 'birth_date', p.birth_date,
       'locked', p.locked,
-      'stamps', s.cnt
+      'stamps', agg.cnt
     ) order by p.name)
     from public.vautcher_profiles p
     join lateral (
       select count(*) as cnt
         from public.vautcher_stamps s
+        join public.vautcher_cards c on c.id = s.card_id
        where s.profile_id    = p.id
-         and s.restaurant_id = p_restaurant_id
-    ) s on s.cnt > 0
+         and c.restaurant_id = p_restaurant_id
+    ) agg on agg.cnt > 0
   ), '[]'::jsonb);
 end;
 $$;
