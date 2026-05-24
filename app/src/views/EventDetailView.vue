@@ -202,12 +202,8 @@ async function addToCalendar() {
 
         <p v-if="event.description" class="ed-desc">{{ event.description }}</p>
 
-        <p class="ed-count">
-          <template v-if="max != null">{{ attendees }} / {{ max }} participants</template>
-          <template v-else>
-            {{ attendees }} {{ attendees > 1 ? 'personnes intéressées' : 'personne intéressée' }}
-          </template>
-        </p>
+        <!-- Attendee count is owner-only — see restowner. The Complet
+             flag on the hero still signals a full event to diners. -->
 
         <div class="ed-actions">
           <button

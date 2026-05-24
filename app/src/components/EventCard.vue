@@ -68,12 +68,9 @@ const rebateText = computed(() => {
         <p class="ev-desc">{{ event.description }}</p>
 
         <div class="ev-foot">
-          <span class="ev-count">
-            <template v-if="max != null">{{ attendees }} / {{ max }} participants</template>
-            <template v-else>
-              {{ attendees }} {{ attendees > 1 ? 'personnes intéressées' : 'personne intéressée' }}
-            </template>
-          </span>
+          <!-- Attendee count intentionally hidden on the diner side —
+               only the owner needs to see "X inscrits". The Complet
+               badge on the image still communicates a full event. -->
           <!-- .stop / .prevent so tapping the action button doesn't also
                navigate to the detail page (the whole card is a link). -->
           <button
