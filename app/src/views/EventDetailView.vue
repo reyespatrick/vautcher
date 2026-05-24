@@ -109,9 +109,15 @@ function buildIcs(ev) {
   let dtStart, dtEnd
   if (hm) {
     dtStart = `DTSTART:${dateStr}T${hm.hh}${hm.mm}00`
-    // Default to a 2-hour slot — restaurants rarely advertise an end time.
-    const endHH = String((+hm.hh + 2) % 24).padStart(2, '0')
-    dtEnd = `DTEND:${dateStr}T${endHH}${hm.mm}00`
+    // Prefer the explicit end time when the owner provided one;
+    // otherwise default to a 2-hour slot.
+    const endHm = ev.event_end_time ? parseHM(ev.event_end_time) : null
+    if (endHm) {
+      dtEnd = `DTEND:${dateStr}T${endHm.hh}${endHm.mm}00`
+    } else {
+      const endHH = String((+hm.hh + 2) % 24).padStart(2, '0')
+      dtEnd = `DTEND:${dateStr}T${endHH}${hm.mm}00`
+    }
   } else {
     dtStart = `DTSTART;VALUE=DATE:${dateStr}`
     dtEnd = ''
@@ -183,7 +189,9 @@ async function addToCalendar() {
 
         <ul class="ed-meta">
           <li><span class="ic">📅</span>{{ fullDate }}</li>
-          <li v-if="event.event_time"><span class="ic">🕖</span>{{ event.event_time }}</li>
+          <li v-if="event.event_time">
+            <span class="ic">🕖</span>{{ event.event_time }}<template v-if="event.event_end_time"> – {{ event.event_end_time }}</template>
+          </li>
           <li v-if="event.location"><span class="ic">📍</span>{{ event.location }}</li>
           <li v-if="event.price"><span class="ic">🎟️</span>{{ event.price }}</li>
         </ul>

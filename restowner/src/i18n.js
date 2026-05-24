@@ -123,6 +123,8 @@ const fr = {
     description: 'Description',
     descriptionPlaceholder: 'Tout ce que le client doit savoir sur l’événement…',
     date: 'Date', time: 'Heure', timePlaceholder: '19h00',
+    endTime: 'Heure de fin', endTimePlaceholder: '22h00 (facultatif)',
+    endTimeHint: 'Utilisée pour préremplir le rendez-vous dans le calendrier du client.',
     place: 'Lieu', placePlaceholder: 'La Terrasse',
     price: 'Prix', pricePlaceholder: '45 CHF — ou « Entrée libre »',
     visual: 'Visuel', preview: 'Aperçu', addImage: 'Ajouter',

@@ -54,7 +54,9 @@ const rebateText = computed(() => {
 
         <ul class="ev-meta">
           <li><span class="ic">📅</span>{{ fullDate }}</li>
-          <li v-if="event.event_time"><span class="ic">🕖</span>{{ event.event_time }}</li>
+          <li v-if="event.event_time">
+            <span class="ic">🕖</span>{{ event.event_time }}<template v-if="event.event_end_time"> – {{ event.event_end_time }}</template>
+          </li>
           <li v-if="event.location"><span class="ic">📍</span>{{ event.location }}</li>
           <li v-if="event.price"><span class="ic">🎟️</span>{{ event.price }}</li>
         </ul>

@@ -24,7 +24,8 @@ function todayStr() {
 }
 
 const form = ref({
-  title: '', description: '', event_date: todayStr(), event_time: '',
+  title: '', description: '', event_date: todayStr(),
+  event_time: '', event_end_time: '',
   location: '', price: '', image_url: '/assets/photo1.jpg',
   age_min: null, age_max: null, points_min: null, points_max: null,
   notify_days_before: 1,
@@ -51,7 +52,8 @@ const error = ref('')
 function fillFrom(ev) {
   form.value = {
     title: ev.title || '', description: ev.description || '',
-    event_date: ev.event_date || '', event_time: ev.event_time || '',
+    event_date: ev.event_date || '',
+    event_time: ev.event_time || '', event_end_time: ev.event_end_time || '',
     location: ev.location || '', price: ev.price || '',
     image_url: ev.image_url || '/assets/photo1.jpg',
     age_min: ev.age_min, age_max: ev.age_max,
@@ -289,6 +291,7 @@ async function save() {
       description: form.value.description.trim(),
       event_date: form.value.event_date,
       event_time: form.value.event_time.trim() || null,
+      event_end_time: form.value.event_end_time.trim() || null,
       location: form.value.location.trim() || null,
       price: form.value.price.trim() || null,
       image_url: form.value.image_url,
@@ -383,6 +386,19 @@ async function onCancelEvent() {
         <div class="field">
           <label>{{ t('editor.time') }}</label>
           <input v-model="form.event_time" type="text" :placeholder="t('editor.timePlaceholder')" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>{{ t('editor.endTime') }}</label>
+          <input
+            v-model="form.event_end_time" type="text"
+            :placeholder="t('editor.endTimePlaceholder')"
+          />
+        </div>
+        <div class="field field--hint">
+          <span class="opt-help" style="margin: 0;">{{ t('editor.endTimeHint') }}</span>
         </div>
       </div>
 
