@@ -4,7 +4,11 @@
 import { ref } from 'vue'
 import { saveProfile } from '../lib/api'
 
-const STORAGE_KEY = 'lagioconda.profile'
+// Tenant-agnostic storage key. localStorage is already scoped per-
+// origin (each tenant has its own <slug>.pages.dev), so no risk of
+// bleed between restaurants. The neutral prefix just keeps the key
+// honest when reading devtools across multiple tenants.
+const STORAGE_KEY = 'vautcher.profile'
 
 function load() {
   try {

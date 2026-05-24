@@ -13,7 +13,7 @@ export const isSupabaseConfigured = !!supabase
 
 if (!isSupabaseConfigured) {
   console.info(
-    '[La Gioconda] Supabase non configuré — données locales utilisées. ' +
+    '[vautcher] Supabase non configuré — données locales utilisées. ' +
     'Renseignez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans app/.env'
   )
 }

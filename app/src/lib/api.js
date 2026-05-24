@@ -150,25 +150,11 @@ export async function fetchVoucher(profileId) {
   }
 }
 
-// Demo events so the section looks alive when there is no backend.
-const DEMO_EVENTS = [
-  { id: 'e1', title: 'Aperitivo Italiano',
-    description: "Chaque vendredi soir, un apéritif à l'italienne : planches de charcuteries et fromages, spritz maison et ambiance napolitaine au bar.",
-    event_date: '2026-05-30', event_time: '18h30', location: 'Le Bar',
-    price: 'Entrée libre', image_url: '/assets/photo2.jpg', attendees: 12, joined: false },
-  { id: 'e2', title: 'Soirée Pizza au feu de bois',
-    description: 'Notre pizzaïolo revisite les grands classiques napolitains : pâte maturée 48h, mozzarella di bufala et produits du marché. Menu pizza + dessert.',
-    event_date: '2026-06-13', event_time: '19h00', location: 'Salle principale',
-    price: '45 CHF / personne', image_url: '/assets/photo1.jpg', attendees: 8, joined: false },
-  { id: 'e3', title: 'Fête de la Musique',
-    description: "Musique live sur la terrasse pour célébrer l'été, accompagnée d'un menu spécial et de vins d'Italie.",
-    event_date: '2026-06-21', event_time: '19h30', location: 'La Terrasse',
-    price: 'Entrée libre', image_url: '/assets/photo3.jpg', attendees: 23, joined: false },
-  { id: 'e4', title: 'Dégustation de vins italiens',
-    description: 'Une soirée au Bar à Vin Da Vinci pour découvrir notre sélection, guidée par notre sommelier.',
-    event_date: '2026-06-27', event_time: '18h30', location: 'Bar à Vin Da Vinci',
-    price: '38 CHF / personne', image_url: '/assets/photo4.jpg', attendees: 5, joined: false }
-]
+// Empty demo fallback — used when Supabase isn't configured (dev only).
+// Kept empty to avoid tenant-flavoured placeholder copy (was previously
+// napolitain / pizza-themed La Gioconda content). New tenants scaffolded
+// without a backend connection will see the "no events" empty state.
+const DEMO_EVENTS = []
 
 /**
  * Today-or-future published events, each with its attendee count and whether
