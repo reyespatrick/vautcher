@@ -416,6 +416,43 @@ async function onCancelEvent() {
         </div>
       </div>
 
+      <!-- Rebate — sits next to the price so the "regular price"
+           and the "discount on it" controls live together. -->
+      <div class="opt">
+        <label class="toggle">
+          <input type="checkbox" v-model="rebateOn" />
+          <span class="track"></span>
+          <span class="tg-text">{{ t('editor.rebate') }}</span>
+        </label>
+        <div v-if="rebateOn" class="opt-body rebate-body">
+          <div class="rebate-line">
+            <span>{{ t('editor.rebateOf') }}</span>
+            <input v-model="form.rebate_value" type="number" min="0" step="any"
+              class="rb-val" placeholder="20" />
+            <div class="rb-unit-seg">
+              <button type="button" :class="{ on: form.rebate_unit === 'percent' }"
+                @click="form.rebate_unit = 'percent'">%</button>
+              <button type="button" :class="{ on: form.rebate_unit === 'chf' }"
+                @click="form.rebate_unit = 'chf'">CHF</button>
+            </div>
+          </div>
+
+          <label class="toggle sub">
+            <input type="checkbox" v-model="rebateLimited" />
+            <span class="track"></span>
+            <span class="tg-text">{{ t('editor.rebateLimit') }}</span>
+          </label>
+          <div v-if="rebateLimited" class="rebate-line">
+            <span>{{ t('editor.rebateForFirst') }}</span>
+            <input v-model="form.rebate_first_n" type="number" min="1"
+              class="rb-val" placeholder="30" />
+            <span>{{ t('editor.rebateFirstSuffix') }}</span>
+          </div>
+          <span v-else class="rebate-note">{{ t('editor.rebateNoLimit') }}</span>
+        </div>
+        <span class="opt-help">{{ t('editor.rebateHint') }}</span>
+      </div>
+
       <div class="field">
         <label>{{ t('editor.visual') }}</label>
         <div class="img-preview" :style="{ backgroundImage: `url(${form.image_url})` }">
@@ -504,42 +541,6 @@ async function onCancelEvent() {
           <span>{{ t('editor.capacitySuffix') }}</span>
         </div>
         <span v-else class="opt-help">{{ t('editor.capacityOpen') }}</span>
-      </div>
-
-      <!-- Rebate -->
-      <div class="opt">
-        <label class="toggle">
-          <input type="checkbox" v-model="rebateOn" />
-          <span class="track"></span>
-          <span class="tg-text">{{ t('editor.rebate') }}</span>
-        </label>
-        <div v-if="rebateOn" class="opt-body rebate-body">
-          <div class="rebate-line">
-            <span>{{ t('editor.rebateOf') }}</span>
-            <input v-model="form.rebate_value" type="number" min="0" step="any"
-              class="rb-val" placeholder="20" />
-            <div class="rb-unit-seg">
-              <button type="button" :class="{ on: form.rebate_unit === 'percent' }"
-                @click="form.rebate_unit = 'percent'">%</button>
-              <button type="button" :class="{ on: form.rebate_unit === 'chf' }"
-                @click="form.rebate_unit = 'chf'">CHF</button>
-            </div>
-          </div>
-
-          <label class="toggle sub">
-            <input type="checkbox" v-model="rebateLimited" />
-            <span class="track"></span>
-            <span class="tg-text">{{ t('editor.rebateLimit') }}</span>
-          </label>
-          <div v-if="rebateLimited" class="rebate-line">
-            <span>{{ t('editor.rebateForFirst') }}</span>
-            <input v-model="form.rebate_first_n" type="number" min="1"
-              class="rb-val" placeholder="30" />
-            <span>{{ t('editor.rebateFirstSuffix') }}</span>
-          </div>
-          <span v-else class="rebate-note">{{ t('editor.rebateNoLimit') }}</span>
-        </div>
-        <span class="opt-help">{{ t('editor.rebateHint') }}</span>
       </div>
 
       <!-- Recurrence — themed as an opt-in toggle, like "Offrir un rabais". -->
