@@ -82,6 +82,83 @@ function goBack() {
   if (window.history.length > 1) router.back()
   else router.push({ name: 'events' })
 }
+
+// ---- Add to calendar ----
+// One .ics per single occurrence — recurring events are already split
+// into separate DB rows server-side, so the diner only adds the dates
+// they actually plan to attend (no fifty-entry series dump).
+function escIcs(s) {
+  return (s || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\r?\n/g, '\\n')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;')
+}
+function parseHM(timeStr) {
+  // Accepts "19h30", "19:30", "19h", "19h 30" — common Swiss/French formats.
+  const m = (timeStr || '').match(/(\d{1,2})\s*[h:]\s*(\d{2})?/)
+  if (!m) return null
+  return { hh: m[1].padStart(2, '0'), mm: (m[2] || '00').padStart(2, '0') }
+}
+function buildIcs(ev) {
+  const dateStr = ev.event_date.replace(/-/g, '') // YYYYMMDD
+  const hm = parseHM(ev.event_time)
+  const dtStamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z'
+
+  // DTSTART/DTEND — timed or all-day.
+  let dtStart, dtEnd
+  if (hm) {
+    dtStart = `DTSTART:${dateStr}T${hm.hh}${hm.mm}00`
+    // Default to a 2-hour slot — restaurants rarely advertise an end time.
+    const endHH = String((+hm.hh + 2) % 24).padStart(2, '0')
+    dtEnd = `DTEND:${dateStr}T${endHH}${hm.mm}00`
+  } else {
+    dtStart = `DTSTART;VALUE=DATE:${dateStr}`
+    dtEnd = ''
+  }
+
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Vautcher//Events//FR',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:event-${ev.id}@vautcher`,
+    `DTSTAMP:${dtStamp}`,
+    dtStart,
+    dtEnd,
+    `SUMMARY:${escIcs(ev.title)}`,
+    ev.description ? `DESCRIPTION:${escIcs(ev.description)}` : '',
+    ev.location ? `LOCATION:${escIcs(ev.location)}` : '',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(Boolean)
+  return lines.join('\r\n')
+}
+
+const calBusy = ref(false)
+async function addToCalendar() {
+  if (!event.value || calBusy.value) return
+  calBusy.value = true
+  try {
+    const ics = buildIcs(event.value)
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const slug = (event.value.title || 'evenement')
+      .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'evenement'
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${slug}-${event.value.event_date}.ics`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    // Revoke later — Safari sometimes needs the URL alive briefly.
+    setTimeout(() => URL.revokeObjectURL(url), 2000)
+  } finally {
+    calBusy.value = false
+  }
+}
 </script>
 
 <template>
@@ -144,6 +221,22 @@ function goBack() {
             @click="onJoin"
           >Je participe</button>
         </div>
+
+        <button
+          type="button"
+          class="ed-btn-secondary"
+          :disabled="calBusy"
+          @click="addToCalendar"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <rect x="3" y="4.5" width="18" height="17" rx="2.5" />
+            <path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
+            <path d="M9 14h6M12 11v6" />
+          </svg>
+          Ajouter à mon calendrier
+        </button>
       </div>
     </article>
   </div>
@@ -270,4 +363,26 @@ function goBack() {
   border: 2px solid var(--burgundy);
 }
 .ed-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.ed-btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid var(--burgundy);
+  background: transparent;
+  color: var(--burgundy);
+  border-radius: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 13px 18px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.ed-btn-secondary svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.ed-btn-secondary:hover { background: rgba(158, 5, 61, 0.07); }
+.ed-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
