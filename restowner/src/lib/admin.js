@@ -42,6 +42,17 @@ export async function createRestaurant(name, slug) {
   return { data, error }
 }
 
+/**
+ * Replace a scaffold-provisioned owner's placeholder email with the
+ * real one. Moderator-only (the RPC checks).
+ */
+export async function setOwnerEmail(oldEmail, newEmail) {
+  const { error } = await supabase.rpc('vautcher_admin_set_owner_email', {
+    p_old_email: oldEmail, p_new_email: newEmail
+  })
+  return { error }
+}
+
 export async function setOwnerFlags(email, trusted, locked) {
   const { error } = await supabase.rpc('vautcher_admin_set_owner_flags', {
     p_email: email, p_trusted: trusted, p_locked: locked

@@ -44,6 +44,8 @@ jobs:
             restowner/supabase/restaurant-clients.sql \
             restowner/supabase/event-attendees.sql \
             restowner/supabase/scaffold-fields.sql \
+            restowner/supabase/scaffold-owner.sql \
+            restowner/supabase/admin-restaurants-claim.sql \
             restowner/supabase/root-account-schema.sql \
             restowner/supabase/owner-stats.sql \
             restowner/supabase/voucher-schema.sql \

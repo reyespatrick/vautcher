@@ -67,6 +67,26 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, '')
     .slice(0, 48) || 'restaurant'
 }
+// 6-char uppercase code (no O/0/I/1/Z/2 ambiguity).
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXY3456789'
+function generateClaimCode(): string {
+  let s = ''
+  const bytes = new Uint8Array(6)
+  crypto.getRandomValues(bytes)
+  for (const b of bytes) s += CODE_ALPHABET[b % CODE_ALPHABET.length]
+  return s
+}
+async function uniqueClaimCode(): Promise<string> {
+  for (let i = 0; i < 8; i++) {
+    const code = generateClaimCode()
+    const { data } = await admin.from('vautcher_owners')
+      .select('email').eq('claim_code', code).maybeSingle()
+    if (!data) return code
+  }
+  // Astronomical odds we ever get here, but fall back deterministically.
+  return generateClaimCode() + Date.now().toString(36).slice(-2).toUpperCase()
+}
+
 async function uniqueSlug(base: string): Promise<string> {
   const { data: existing } = await admin.from('vautcher_restaurants')
     .select('slug').like('slug', `${base}%`)
@@ -450,14 +470,36 @@ Deno.serve(async (req: Request) => {
     source_url: target
   }
 
-  // 2. Insert the row (uniqueified slug).
+  // 2. Insert the restaurant row (uniqueified slug).
   const slug = await uniqueSlug(slugify(cfg.name))
   const { data: inserted, error } = await admin.from('vautcher_restaurants').insert({
     name: cfg.name, slug, config, deploy_status: GITHUB_TOKEN ? 'pending' : 'idle'
   }).select('id, slug, name').single()
   if (error) return json({ error: error.message }, 500)
 
-  // 3. Optionally dispatch the Cloudflare Pages build.
+  // 3. Provision a pre-claimed admin user.
+  //   email = 'pending+<code>@<slug>.vautcher.local' (placeholder PK)
+  //   claim_code = 6-char code the moderator hands to the future owner
+  //   trusted = true (scaffolded tenants come pre-vetted by the
+  //     moderator running this flow)
+  const claimCode = await uniqueClaimCode()
+  const placeholderEmail = `pending+${claimCode.toLowerCase()}@${slug}.vautcher.local`
+  const { error: ownerErr } = await admin.from('vautcher_owners').insert({
+    email: placeholderEmail,
+    restaurant_id: inserted.id,
+    name: `Propriétaire ${cfg.name}`,
+    trusted: true,
+    locked: false,
+    claim_code: claimCode
+  })
+  if (ownerErr) {
+    // Don't blow away the restaurant row if owner creation failed —
+    // the moderator can still use the existing "+ Ajouter un
+    // propriétaire" flow once they have an email.
+    console.error('owner provisioning failed', ownerErr.message)
+  }
+
+  // 4. Optionally dispatch the Cloudflare Pages build.
   const workflowUrl = await dispatchDeploy(slug)
   if (workflowUrl) {
     await admin.from('vautcher_restaurants')
@@ -473,6 +515,10 @@ Deno.serve(async (req: Request) => {
     pages_crawled: pages.length,
     deploy: workflowUrl ? 'dispatched' : 'manual',
     deploy_log_url: workflowUrl,
-    pages_url: `https://${inserted.slug}.pages.dev`
+    pages_url: `https://${inserted.slug}.pages.dev`,
+    owner: ownerErr ? null : {
+      placeholder_email: placeholderEmail,
+      claim_code: claimCode
+    }
   })
 })

@@ -9,7 +9,7 @@ import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import {
   adminRestaurants, createRestaurant,
-  setOwnerFlags, provisionOwner, scaffoldTenant
+  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant
 } from '../lib/admin'
 
 const { t } = useI18n()
@@ -130,6 +130,35 @@ async function toggleTrusted(owner) {
   }
 }
 
+// Inline email rebind for scaffold-provisioned owners (placeholder
+// email starts with "pending+"). One field, one Save button.
+const emailFormFor = ref(null)
+const emailNew = ref('')
+function openEmailForm(owner) {
+  emailFormFor.value = owner.email
+  emailNew.value = ''
+}
+async function submitEmailRebind(owner) {
+  const next = emailNew.value.trim().toLowerCase()
+  if (busy.value || !next) return
+  busy.value = true
+  try {
+    const { error } = await setOwnerEmail(owner.email, next)
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
+    emailFormFor.value = null
+    emailNew.value = ''
+    await load()
+  } finally {
+    busy.value = false
+  }
+}
+function isPlaceholderEmail(email) {
+  return typeof email === 'string' && email.startsWith('pending+')
+}
+
 async function toggleOwnerLock(owner) {
   if (busy.value) return
   busy.value = true
@@ -215,6 +244,14 @@ async function copyLink() {
           {{ scaffoldResult.pages_crawled }} {{ t('admin.scaffoldPages') }}
         </p>
         <code class="prov-link">{{ scaffoldResult.pages_url }}</code>
+
+        <!-- Owner claim code — what the moderator hands to the future owner. -->
+        <div v-if="scaffoldResult.owner" class="claim-block">
+          <span class="claim-label">{{ t('admin.scaffoldCodeLabel') }}</span>
+          <code class="claim-code">{{ scaffoldResult.owner.claim_code }}</code>
+          <p class="claim-hint">{{ t('admin.scaffoldCodeHint') }}</p>
+        </div>
+
         <div class="prov-actions">
           <span v-if="scaffoldResult.deploy === 'dispatched'" class="badge badge--pending">
             {{ t('admin.scaffoldDeploying') }}
@@ -271,10 +308,46 @@ async function copyLink() {
           <ul v-else class="owners">
             <li v-for="o in r.owners" :key="o.email" :class="{ locked: o.locked }">
               <div class="owner-id">
-                <span class="owner-email">{{ o.email }}</span>
+                <!-- Scaffold-provisioned: show the claim code, hide the
+                     placeholder email, offer an inline rebind. -->
+                <template v-if="isPlaceholderEmail(o.email)">
+                  <span class="owner-email owner-email--pending">{{ t('admin.emailPending') }}</span>
+                  <span v-if="o.claim_code" class="owner-claim">
+                    {{ t('admin.codeLabel') }} <code>{{ o.claim_code }}</code>
+                  </span>
+                </template>
+                <template v-else>
+                  <span class="owner-email">{{ o.email }}</span>
+                </template>
                 <span v-if="o.name" class="owner-name">{{ o.name }}</span>
+
+                <!-- Inline rebind form, opened by the "Définir" button. -->
+                <form
+                  v-if="emailFormFor === o.email"
+                  class="owner-rebind"
+                  @submit.prevent="submitEmailRebind(o)"
+                >
+                  <input
+                    v-model="emailNew" type="email"
+                    :placeholder="t('admin.ownerEmail')"
+                    required autofocus
+                  />
+                  <button class="btn btn--sm" type="submit" :disabled="busy">
+                    {{ t('admin.emailSetBtn') }}
+                  </button>
+                  <button
+                    type="button" class="btn btn--plain btn--sm"
+                    @click="emailFormFor = null"
+                  >{{ t('admin.cancel') }}</button>
+                </form>
               </div>
               <div class="owner-flags">
+                <button
+                  v-if="isPlaceholderEmail(o.email) && emailFormFor !== o.email"
+                  class="chip"
+                  :disabled="busy"
+                  @click="openEmailForm(o)"
+                >{{ t('admin.emailDefineBtn') }}</button>
                 <button
                   class="chip" :class="{ on: o.trusted }"
                   :disabled="busy" @click="toggleTrusted(o)"
@@ -395,6 +468,73 @@ async function copyLink() {
   font-size: 0.8rem;
   color: var(--mut);
   margin: 6px 0 10px;
+}
+
+/* Owner claim-code block inside the scaffold result */
+.claim-block {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+}
+.claim-label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+.claim-code {
+  display: block;
+  font-family: 'Rufina', serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.22em;
+  color: var(--accent-dark);
+  text-align: center;
+  padding: 8px 0 6px;
+  user-select: all;
+}
+.claim-hint {
+  font-size: 0.74rem;
+  color: var(--mut);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Owner-row placeholder rendering */
+.owner-email--pending {
+  font-style: italic;
+  color: var(--mut);
+}
+.owner-claim {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--mut);
+  margin-top: 2px;
+}
+.owner-claim code {
+  font-family: 'Rufina', serif;
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.18em;
+  color: var(--accent-dark);
+  margin-left: 4px;
+}
+.owner-rebind {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.owner-rebind input {
+  flex: 1 1 200px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
 .form-actions { display: flex; gap: 8px; margin-top: 4px; }
 
