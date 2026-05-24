@@ -126,7 +126,7 @@ const fr = {
     endTime: 'Jusqu’à', endTimePlaceholder: '22h00 (facultatif)',
     endTimeHint: 'Utilisée pour préremplir le rendez-vous dans le calendrier du client.',
     place: 'Lieu', placePlaceholder: 'La Terrasse',
-    price: 'Prix de l’événement', pricePlaceholder: '45 CHF — ou « Entrée libre »',
+    price: 'Prix d’entrée', pricePlaceholder: '45 CHF — ou « Entrée libre »',
     visual: 'Visuel', preview: 'Aperçu', addImage: 'Ajouter',
     imageHint: 'Choisissez ici la photo affichée pour cet événement. Touchez une vignette pour la sélectionner — elle apparaît dans l’aperçu ci-dessus. Les vignettes proposées sont des exemples ; « Ajouter » téléverse votre propre photo, et le × retire une photo importée de votre bibliothèque.',
     ageTarget: 'Cibler une tranche d’âge', ageOpen: 'Ouvert à tous les âges.',
