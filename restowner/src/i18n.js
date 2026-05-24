@@ -154,6 +154,7 @@ const fr = {
     recurHint: 'La série s’étale sur ~1 mois (hebdo), ~3 mois (bimensuel) ou 12 mois (mensuel). Chaque occurrence est un événement modifiable séparément.',
     recurLocked: 'La récurrence ne peut être modifiée qu’à la création de l’événement.',
     recurDow: 'Jour de la semaine',
+    recurDuration: 'Pendant',
     recurFirst: 'Premier événement :',
     save: 'Enregistrer', saving: 'Enregistrement…', createBtn: 'Créer l’événement',
     resubmitNote: 'Toute modification renvoie l’événement en validation : il sera de nouveau visible par les clients une fois approuvé.',

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
@@ -32,6 +32,8 @@ const form = ref({
   max_participants: null,
   recurrence: 'none',
   recurrence_pattern: 'date',
+  recurrence_duration_n: 1,
+  recurrence_duration_unit: 'mois',     // 'semaines' or 'mois'
   published: true, status: 'active'
 })
 const ageTargeted = ref(false)
@@ -209,6 +211,37 @@ const monthlyNth = computed({
   get() { return recurNthOfMonth.value || 1 },
   set(v) { snapToNthWeekday(v, selectedDow.value) }
 })
+// When the recurrence type changes, pick a sensible default duration
+// for that frequency so the owner doesn't have to think about it.
+watch(() => form.value.recurrence, (r) => {
+  if (r === 'weekly') {
+    form.value.recurrence_duration_n = 1
+    form.value.recurrence_duration_unit = 'mois'
+  } else if (r === 'biweekly') {
+    form.value.recurrence_duration_n = 3
+    form.value.recurrence_duration_unit = 'mois'
+  } else if (r === 'monthly') {
+    form.value.recurrence_duration_n = 12
+    form.value.recurrence_duration_unit = 'mois'
+  }
+})
+
+// Convert "pendant X (semaines|mois)" → occurrences to materialise.
+const recurCount = computed(() => {
+  const n = Math.max(1, Number(form.value.recurrence_duration_n) || 1)
+  const u = form.value.recurrence_duration_unit
+  switch (form.value.recurrence) {
+    case 'weekly':
+      return u === 'semaines' ? n : n * 4
+    case 'biweekly':
+      return u === 'semaines' ? Math.max(1, Math.ceil(n / 2)) : n * 2
+    case 'monthly':
+      return n
+    default:
+      return 0
+  }
+})
+
 const recurFirstLabel = computed(() => {
   if (!recurDate.value) return ''
   return new Intl.DateTimeFormat('fr-FR', {
@@ -219,16 +252,18 @@ const recurFirstLabel = computed(() => {
 const recurPreview = computed(() => {
   if (!recurDate.value || form.value.recurrence === 'none') return ''
   const wd = recurWeekday.value
+  const n = recurCount.value
+  const occ = `${n} occurrence${n > 1 ? 's' : ''}`
   switch (form.value.recurrence) {
     case 'weekly':
-      return `Tous les ${wd}s — 4 occurrences sur ~1 mois.`
+      return `Tous les ${wd}s — ${occ}.`
     case 'biweekly':
-      return `Tous les deux ${wd}s — 6 occurrences sur ~3 mois.`
+      return `Tous les deux ${wd}s — ${occ}.`
     case 'monthly':
       if (form.value.recurrence_pattern === 'weekday') {
-        return `Le ${nthLabel(recurNthOfMonth.value)} ${wd} de chaque mois — 12 occurrences sur 12 mois.`
+        return `Le ${nthLabel(recurNthOfMonth.value)} ${wd} de chaque mois — ${occ}.`
       }
-      return `Le ${recurDate.value.getDate()} de chaque mois — 12 occurrences sur 12 mois.`
+      return `Le ${recurDate.value.getDate()} de chaque mois — ${occ}.`
     default:
       return ''
   }
@@ -297,11 +332,11 @@ async function save() {
       : await createEvent(payload)
     if (res.error) { error.value = res.error.message; return }
 
-    // For a brand-new recurring event, ask the SQL function to pick the
-    // recurrence-appropriate horizon (4 weekly / 6 biweekly / 12 monthly).
+    // For a brand-new recurring event, materialise the number of
+    // occurrences the owner asked for via the duration picker.
     // Editing an existing event never re-materialises (would dupe rows).
     if (!editingId.value && form.value.recurrence !== 'none' && res.data?.id) {
-      await materializeSeries(res.data.id, null)
+      await materializeSeries(res.data.id, recurCount.value)
     }
     router.push({ name: 'dashboard' })
   } catch (e) {
@@ -553,6 +588,28 @@ async function onCancelEvent() {
           </div>
         </div>
 
+        <!-- Duration: "Pendant X semaine(s) / mois" -->
+        <div
+          v-if="form.recurrence !== 'none' && !editingId"
+          class="opt-body opt-sub"
+        >
+          <label class="sub-label">{{ t('editor.recurDuration') }}</label>
+          <div class="duration-row">
+            <input
+              v-model.number="form.recurrence_duration_n"
+              type="number" min="1" max="52"
+              class="dur-n"
+            />
+            <select v-model="form.recurrence_duration_unit" class="opt-select">
+              <option
+                v-if="form.recurrence !== 'monthly'"
+                value="semaines"
+              >{{ form.recurrence_duration_n > 1 ? 'semaines' : 'semaine' }}</option>
+              <option value="mois">mois</option>
+            </select>
+          </div>
+        </div>
+
         <p v-if="recurPreview && !editingId" class="recur-preview">{{ recurPreview }}</p>
         <p v-if="recurPreview && !editingId" class="recur-first">
           {{ t('editor.recurFirst') }} <strong>{{ recurFirstLabel }}</strong>.
@@ -729,6 +786,24 @@ async function onCancelEvent() {
   margin-top: 6px;
 }
 .monthly-pickers .opt-select { flex: 1; }
+.duration-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.dur-n {
+  flex: 0 0 90px;
+  width: 90px;
+  text-align: center;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.duration-row .opt-select { flex: 1; }
 .recur-preview {
   margin: 10px 0 0;
   padding: 8px 11px;
