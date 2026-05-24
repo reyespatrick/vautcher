@@ -26,6 +26,21 @@ export async function adminClients(restaurantId = null) {
  *   { data: { id, name, slug, blocks, deploy, deploy_log_url, pages_url } }
  * or { error }.
  */
+/**
+ * Hard-delete a tenant. The moderator must pass the restaurant's
+ * slug back as a confirmation string — the DB RPC re-validates it.
+ * Returns { data: { id, slug, name, deleted, cleanup, cleanup_log_url } }
+ * or { error }.
+ */
+export async function deleteTenant(restaurantId, confirmSlug) {
+  const { data, error } = await supabase.functions.invoke('delete-tenant', {
+    body: { restaurant_id: restaurantId, confirm_slug: confirmSlug }
+  })
+  if (error) return { error }
+  if (data && data.error) return { error: { message: data.error } }
+  return { data }
+}
+
 export async function scaffoldTenant(url) {
   const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
     body: { url }

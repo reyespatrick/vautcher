@@ -9,7 +9,7 @@ import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import {
   adminRestaurants, createRestaurant,
-  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant
+  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, deleteTenant
 } from '../lib/admin'
 
 const { t } = useI18n()
@@ -159,6 +159,62 @@ function isPlaceholderEmail(email) {
   return typeof email === 'string' && email.startsWith('pending+')
 }
 
+// ---- DELETE TENANT (2-step confirm) ----
+// Step 1: a danger dialog naming everything that gets nuked.
+// Step 2: a second danger dialog asking the moderator to type the
+//         slug back — the same string is sent to the edge function,
+//         which the DB RPC re-validates.
+const deleteConfirmFor = ref(null) // restaurant id while typing
+const deleteSlugTyped = ref('')
+const deleteBusy = ref(false)
+
+async function startDelete(r) {
+  const counts = (r.owners?.length || 0) + ' propriétaire(s)'
+  const ok1 = await confirm({
+    title: t('admin.deleteStep1Title', { name: r.name }),
+    body: t('admin.deleteStep1Body', { name: r.name, counts }),
+    confirmLabel: t('admin.deleteStep1Btn'),
+    cancelLabel: t('common.keep'),
+    danger: true
+  })
+  if (!ok1) return
+  deleteConfirmFor.value = r.id
+  deleteSlugTyped.value = ''
+}
+
+async function submitDelete(r) {
+  const typed = deleteSlugTyped.value.trim()
+  if (typed !== r.slug) {
+    await alert({
+      title: t('admin.deleteSlugMismatchTitle'),
+      body: t('admin.deleteSlugMismatchBody', { slug: r.slug })
+    })
+    return
+  }
+  deleteBusy.value = true
+  try {
+    const { data, error } = await deleteTenant(r.id, typed)
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
+    deleteConfirmFor.value = null
+    deleteSlugTyped.value = ''
+    await load()
+    await alert({
+      title: t('admin.deleteDoneTitle'),
+      body: t('admin.deleteDoneBody', {
+        name: data?.name || '',
+        events: data?.deleted?.events ?? 0,
+        owners: data?.deleted?.owners ?? 0,
+        vouchers: data?.deleted?.vouchers ?? 0
+      })
+    })
+  } finally {
+    deleteBusy.value = false
+  }
+}
+
 async function toggleOwnerLock(owner) {
   if (busy.value) return
   busy.value = true
@@ -302,6 +358,12 @@ async function copyLink() {
                         class="btn btn--ghost btn--sm resto-cfg">
               {{ t('config.edit') }}
             </RouterLink>
+            <button
+              type="button"
+              class="btn btn--danger btn--sm resto-del"
+              :disabled="deleteBusy"
+              @click="startDelete(r)"
+            >{{ t('admin.deleteBtn') }}</button>
           </div>
 
           <!-- Tenant URLs: where it lives (pages.dev) + where it came
@@ -323,6 +385,42 @@ async function copyLink() {
               <span class="ic">🔗</span>{{ t('admin.sourceUrl') }}
             </a>
           </div>
+
+          <!-- Step 2 of delete: type the slug to confirm. -->
+          <form
+            v-if="deleteConfirmFor === r.id"
+            class="del-confirm"
+            @submit.prevent="submitDelete(r)"
+          >
+            <label class="del-label">
+              {{ t('admin.deleteStep2Label', { slug: r.slug }) }}
+            </label>
+            <div class="del-row">
+              <input
+                v-model="deleteSlugTyped"
+                type="text"
+                class="del-input"
+                :placeholder="r.slug"
+                autocomplete="off"
+                autocorrect="off"
+                spellcheck="false"
+                autofocus
+              />
+              <button
+                class="btn btn--danger btn--sm"
+                type="submit"
+                :disabled="deleteBusy || deleteSlugTyped.trim() !== r.slug"
+              >
+                {{ deleteBusy ? t('admin.deleteRunning') : t('admin.deleteFinalBtn') }}
+              </button>
+              <button
+                type="button"
+                class="btn btn--plain btn--sm"
+                :disabled="deleteBusy"
+                @click="deleteConfirmFor = null"
+              >{{ t('admin.cancel') }}</button>
+            </div>
+          </form>
 
           <p v-if="!r.owners.length" class="owners-empty">{{ t('admin.noOwners') }}</p>
           <ul v-else class="owners">
@@ -591,6 +689,49 @@ async function copyLink() {
 .resto-url:hover { border-color: var(--accent); color: var(--accent); }
 .resto-url .ic { font-size: 0.84rem; }
 .resto-url--live { color: var(--accent); border-color: rgba(158, 5, 61, 0.25); }
+
+/* Two-step delete confirmation inside the restaurant card */
+.resto-del { margin-left: 6px; }
+.del-confirm {
+  margin: 12px 0 4px;
+  padding: 12px 14px;
+  background: rgba(220, 38, 38, 0.06);
+  border: 1px dashed var(--danger);
+  border-radius: 10px;
+}
+.del-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--ink);
+  margin-bottom: 8px;
+  line-height: 1.45;
+}
+.del-label code {
+  font-family: 'Rufina', serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: #fff;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+.del-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.del-input {
+  flex: 1 1 180px;
+  min-width: 0;
+  font-family: 'Rufina', serif;
+  font-size: 0.95rem;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.del-input:focus { outline: none; border-color: var(--danger); }
 
 .owners { list-style: none; margin: 10px 0 4px; }
 .owners-empty { font-size: 0.8rem; color: var(--mut); margin: 8px 0 4px; }

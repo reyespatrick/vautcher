@@ -1,0 +1,47 @@
+# Per-tenant cleanup. Called from the scaffold-tenant edge function
+# right after the DB-side delete. Removes the Cloudflare Pages project
+# for the slug so its URL stops resolving.
+name: Delete tenant
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Tenant slug to remove from Cloudflare Pages'
+        required: true
+        type: string
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete Cloudflare Pages project
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          SLUG='${{ inputs.slug }}'
+          # Reserved tenants we never want a script to nuke by accident.
+          case "$SLUG" in
+            la-gioconda|la-gioconda-restaurant|restowner)
+              echo "::error::refusing to delete reserved tenant '$SLUG'"
+              exit 1
+              ;;
+          esac
+          URL="https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${SLUG}"
+          RES=$(curl -sS -X DELETE "$URL" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json")
+          echo "$RES" | jq .
+          OK=$(echo "$RES" | jq -r '.success')
+          if [ "$OK" != "true" ]; then
+            # 404 (project never existed) is treated as a success — the
+            # tenant might have been deleted before its first deploy.
+            CODE=$(echo "$RES" | jq -r '.errors[0].code // empty')
+            if [ "$CODE" = "8000007" ] || [ "$CODE" = "1004" ] || echo "$RES" | grep -qi "not found"; then
+              echo "Pages project not found — treating as already gone."
+              exit 0
+            fi
+            exit 1
+          fi

@@ -47,6 +47,7 @@ jobs:
             restowner/supabase/scaffold-owner.sql \
             restowner/supabase/admin-restaurants-claim.sql \
             restowner/supabase/admin-restaurants-source.sql \
+            restowner/supabase/delete-restaurant.sql \
             restowner/supabase/root-account-schema.sql \
             restowner/supabase/owner-stats.sql \
             restowner/supabase/voucher-schema.sql \
@@ -144,3 +145,4 @@ jobs:
           supabase functions deploy provision-owner --project-ref yfyfoqrautdogivalimb
           supabase functions deploy event-notifier --project-ref yfyfoqrautdogivalimb
           supabase functions deploy scaffold-tenant --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy delete-tenant --project-ref yfyfoqrautdogivalimb
