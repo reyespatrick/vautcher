@@ -472,6 +472,21 @@ async function onCancelEvent() {
         <span v-else class="opt-help">{{ t('editor.pointsOpen') }}</span>
       </div>
 
+      <!-- Participant cap (grouped with the other audience-shaping options) -->
+      <div class="opt">
+        <label class="toggle">
+          <input type="checkbox" v-model="capacityOn" />
+          <span class="track"></span>
+          <span class="tg-text">{{ t('editor.capacity') }}</span>
+        </label>
+        <div v-if="capacityOn" class="opt-body rebate-line">
+          <input v-model="form.max_participants" type="number" min="1"
+            class="rb-val" placeholder="30" />
+          <span>{{ t('editor.capacitySuffix') }}</span>
+        </div>
+        <span v-else class="opt-help">{{ t('editor.capacityOpen') }}</span>
+      </div>
+
       <!-- Rebate -->
       <div class="opt">
         <label class="toggle">
@@ -618,21 +633,6 @@ async function onCancelEvent() {
         <span class="opt-help">
           {{ editingId ? t('editor.recurLocked') : t('editor.recurHint') }}
         </span>
-      </div>
-
-      <!-- Participant cap -->
-      <div class="opt">
-        <label class="toggle">
-          <input type="checkbox" v-model="capacityOn" />
-          <span class="track"></span>
-          <span class="tg-text">{{ t('editor.capacity') }}</span>
-        </label>
-        <div v-if="capacityOn" class="opt-body rebate-line">
-          <input v-model="form.max_participants" type="number" min="1"
-            class="rb-val" placeholder="30" />
-          <span>{{ t('editor.capacitySuffix') }}</span>
-        </div>
-        <span v-else class="opt-help">{{ t('editor.capacityOpen') }}</span>
       </div>
 
       <p v-if="editingId" class="resubmit-note">{{ t('editor.resubmitNote') }}</p>
