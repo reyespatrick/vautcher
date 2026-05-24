@@ -16,6 +16,7 @@ function emptyConfig() {
     address: '', phone: '', phone_href: '', email: '', maps_href: '',
     logo_url: '/assets/logo.jpg',
     brand_primary: '#9e053d', brand_dark: '#6f032b', theme_color: '#9e053d',
+    heading_font: '', google_fonts_families: [],
     pwa_name: '', pwa_short_name: '', pwa_description: '',
     hours: [],
     hero: { eyebrow: '', title: '', lead: '' },
@@ -172,20 +173,51 @@ function removeItem(list, i) { list.splice(i, 1) }
         <input v-model="form.config.tagline" type="text" />
       </div>
 
-      <!-- Branding -->
+      <!-- Branding — root/moderator-only via the route guard. Owners
+           never reach this view, so the visual-identity overrides only
+           ever go through a moderator. -->
       <h3 class="grp">{{ t('config.branding') }}</h3>
       <div class="row3">
         <div class="field">
           <label>{{ t('config.brandPrimary') }}</label>
-          <input v-model="form.config.brand_primary" type="text" placeholder="#9e053d" />
+          <div class="color-row">
+            <input v-model="form.config.brand_primary" type="color" class="color-swatch" />
+            <input v-model="form.config.brand_primary" type="text" placeholder="#9e053d" />
+          </div>
         </div>
         <div class="field">
           <label>{{ t('config.brandDark') }}</label>
-          <input v-model="form.config.brand_dark" type="text" placeholder="#6f032b" />
+          <div class="color-row">
+            <input v-model="form.config.brand_dark" type="color" class="color-swatch" />
+            <input v-model="form.config.brand_dark" type="text" placeholder="#6f032b" />
+          </div>
         </div>
         <div class="field">
           <label>{{ t('config.themeColor') }}</label>
-          <input v-model="form.config.theme_color" type="text" placeholder="#9e053d" />
+          <div class="color-row">
+            <input v-model="form.config.theme_color" type="color" class="color-swatch" />
+            <input v-model="form.config.theme_color" type="text" placeholder="#9e053d" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Heading font — Google Fonts family name. Scaffolder fills this
+           when it spots fonts.googleapis.com links in the source HTML. -->
+      <div class="row2">
+        <div class="field">
+          <label>{{ t('config.headingFont') }}</label>
+          <input v-model="form.config.heading_font" type="text" placeholder="Playfair Display" />
+          <p class="hint">{{ t('config.headingFontHint') }}</p>
+        </div>
+        <div class="field">
+          <label>{{ t('config.googleFontsFamilies') }}</label>
+          <input
+            :value="(form.config.google_fonts_families || []).join(', ')"
+            @input="form.config.google_fonts_families = $event.target.value.split(',').map(s => s.trim()).filter(Boolean)"
+            type="text"
+            placeholder="Playfair Display, Inter"
+          />
+          <p class="hint">{{ t('config.googleFontsFamiliesHint') }}</p>
         </div>
       </div>
 
@@ -353,6 +385,27 @@ function removeItem(list, i) { list.splice(i, 1) }
   display: block; font-size: 0.74rem; color: var(--mut);
   font-weight: 400; margin-top: 6px;
 }
+.hint {
+  font-size: 0.74rem; color: var(--mut);
+  margin-top: 6px;
+}
+.color-row {
+  display: flex; gap: 8px; align-items: center;
+}
+.color-row input[type="text"] {
+  flex: 1; min-width: 0;
+}
+.color-swatch {
+  flex: 0 0 38px;
+  width: 38px; height: 38px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+.color-swatch::-webkit-color-swatch-wrapper { padding: 4px; }
+.color-swatch::-webkit-color-swatch { border: none; border-radius: 5px; }
 
 .logo-row { display: flex; gap: 12px; align-items: flex-start; }
 .logo-preview {

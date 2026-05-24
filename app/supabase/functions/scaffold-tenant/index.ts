@@ -289,7 +289,9 @@ function darken(hex: string, amount = 0.3): string {
   const b = Math.max(0, Math.floor(parseInt(h.slice(4, 6), 16) * (1 - amount)))
   return '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('')
 }
-async function sampleBrandColor($: cheerio.CheerioAPI, baseUrl: string): Promise<string | null> {
+// Fetches all same-origin stylesheets + inline <style> content and
+// returns the concatenated CSS string. Cached at the call site.
+async function loadAllCss($: cheerio.CheerioAPI, baseUrl: string): Promise<string> {
   const cssUrls: string[] = []
   $('link[rel="stylesheet"][href]').each((_: number, el: cheerio.Element) => {
     const href = $(el).attr('href')
@@ -307,6 +309,12 @@ async function sampleBrandColor($: cheerio.CheerioAPI, baseUrl: string): Promise
       if (r.ok) css += '\n' + await r.text()
     } catch { /* skip */ }
   }
+  return css
+}
+
+// Most-frequent saturated colour in the site's CSS — used as a body
+// brand colour. Falls back to null when there are no saturated hits.
+function frequencyBrandColor(css: string): string | null {
   if (!css) return null
   const tally = new Map<string, number>()
   const re = /(?:color|background(?:-color)?)\s*:\s*(#[0-9a-fA-F]{3,8})/g
@@ -318,6 +326,71 @@ async function sampleBrandColor($: cheerio.CheerioAPI, baseUrl: string): Promise
   }
   if (!tally.size) return null
   return [...tally.entries()].sort((a, b) => b[1] - a[1])[0][0]
+}
+
+// Pulls the background-color from header-ish CSS selectors. Tries the
+// usual suspects (header, .site-header, .navbar, etc.) and returns
+// the first hex it finds. This is the "tenant's dark header" colour
+// the frequency tally tends to miss because the header CSS only
+// declares it once or twice vs. body colours used everywhere.
+function headerBgFromCss(css: string): string | null {
+  if (!css) return null
+  // Walk every rule and only consider ones whose selector list contains
+  // a header-like token. The regex captures: full selector, declarations
+  // block. Then we scan the block for background-color.
+  const ruleRe = /([^{}]+)\{([^}]+)\}/g
+  let r
+  while ((r = ruleRe.exec(css))) {
+    const sel = r[1].trim().toLowerCase()
+    const body = r[2]
+    // Skip @media wrappers (they don't have direct declarations).
+    if (sel.startsWith('@')) continue
+    if (!/(^|[\s,>+~])(header|\.header|\.site-header|\.main-header|\.page-header|\.navbar|\.navbar-default|\.topbar|\.site-nav|\.masthead)([\s,>+~:.#\[]|$)/.test(sel)) continue
+    const m = body.match(/background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,8})/i)
+    if (!m) continue
+    const hex = m[1].toLowerCase().slice(0, 7)
+    if (isNeutralHex(hex)) continue
+    return hex
+  }
+  return null
+}
+
+// Parses <link href="https://fonts.googleapis.com/css...?family=..."> tags
+// and returns the list of font families. Skips webfont sources we can't
+// safely redistribute (Adobe, MyFonts, self-hosted commercial paths).
+function extractGoogleFonts($: cheerio.CheerioAPI): { families: string[]; href: string | null } {
+  const families: string[] = []
+  let href: string | null = null
+  $('link[rel="stylesheet"][href], link[rel="preconnect"][href]').each((_: number, el: cheerio.Element) => {
+    const h = $(el).attr('href') || ''
+    if (!/fonts\.googleapis\.com\/css/.test(h)) return
+    href = h
+    // family=Name|Name2 (css1) or family=Name&family=Name2 (css2)
+    const params = new URLSearchParams(h.split('?')[1] || '')
+    for (const v of params.getAll('family')) {
+      const name = v.split(':')[0].replace(/\+/g, ' ').trim()
+      if (name && !families.includes(name)) families.push(name)
+    }
+  })
+  return { families, href }
+}
+
+// Picks the "decorative" / heading family from the captured Google
+// Fonts. Heuristic: scripty / serif-decorative families have markers
+// like "Vibes", "Script", "Display", "Cursive", common decorative
+// surnames; otherwise default to the LAST family declared (sites
+// typically declare body first, decorative second).
+const DECORATIVE_HINTS = [
+  'Vibes', 'Script', 'Display', 'Cursive', 'Handwriting',
+  'Allura', 'Dancing', 'Lobster', 'Pacifico', 'Sacramento',
+  'Tangerine', 'Rufina', 'Playfair', 'Cinzel', 'Italianno',
+  'Great', 'Yellowtail', 'Cookie', 'Kalam', 'Caveat'
+]
+function pickHeadingFont(families: string[]): string | null {
+  if (!families.length) return null
+  const decorative = families.find((f) => DECORATIVE_HINTS.some((h) => f.includes(h)))
+  if (decorative) return decorative
+  return families[families.length - 1]
 }
 
 // ---------- HELPERS ----------
@@ -471,8 +544,22 @@ Deno.serve(async (req: Request) => {
   // theme-color that would tint every PWA chrome to off-brand.
   const rawThemeColor = $h('meta[name="theme-color"]').attr('content') || null
   const themeColor = rawThemeColor && !isNeutralHex(rawThemeColor) ? rawThemeColor : null
-  const cssBrand = await sampleBrandColor($h, baseUrl)
+  const allCss = await loadAllCss($h, baseUrl)
+  const headerBg = headerBgFromCss(allCss)
+  const cssBrand = frequencyBrandColor(allCss)
   const brand = themeColor || cssBrand || null
+  // brand_dark prefers the actual header background colour (what the
+  // user sees on the top of the site) over a darker-tinted brand.
+  const brandDark = headerBg
+    || (cssBrand ? darken(cssBrand, 0.35) : null)
+    || (brand ? darken(brand, 0.35) : null)
+    || null
+
+  // Google Fonts pass-through — capture families + the link tag so the
+  // diner app can inject the same stylesheet and apply the decorative
+  // face to its headings.
+  const gf = extractGoogleFonts($h)
+  const headingFont = pickHeadingFont(gf.families)
 
   // Pick a logo: highest-res favicon > og:image.
   const icons = $h('link[rel*="icon"]').toArray()
@@ -511,8 +598,10 @@ Deno.serve(async (req: Request) => {
       : null,
     logo_url: logoUrl,
     brand_primary: brand,
-    brand_dark: cssBrand ? darken(cssBrand, 0.35) : null,
+    brand_dark: brandDark,
     theme_color: themeColor || cssBrand || null,
+    heading_font: headingFont,
+    google_fonts_families: gf.families,
     pwa_name: cfg.name,
     pwa_short_name: cfg.name,
     pwa_description: cfg.og.description || null,

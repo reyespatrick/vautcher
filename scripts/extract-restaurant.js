@@ -183,7 +183,7 @@ function darken(hex, amount = 0.3) {
   return '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('')
 }
 
-async function sampleBrandColorFromCss() {
+async function loadAllCss() {
   const cssUrls = []
   $h('link[rel="stylesheet"][href]').each((_, el) => {
     const href = $h(el).attr('href')
@@ -192,28 +192,79 @@ async function sampleBrandColorFromCss() {
       if (sameOrigin(abs, baseUrl)) cssUrls.push(abs)
     } catch { /* ignore */ }
   })
-  // Inline styles on the home page too.
   let css = ''
   $h('style').each((_, el) => { css += '\n' + $h(el).text() })
   for (const u of cssUrls.slice(0, 6)) {
     const r = await fetch(u, { headers: { 'User-Agent': UA } }).catch(() => null)
     if (r && r.ok) css += '\n' + await r.text()
   }
+  return css
+}
+function frequencyBrandColor(css) {
   if (!css) return null
-
   const tally = new Map()
-  const colorRe = /(?:color|background(?:-color)?)\s*:\s*(#[0-9a-fA-F]{3,8})/g
+  const re = /(?:color|background(?:-color)?)\s*:\s*(#[0-9a-fA-F]{3,8})/g
   let m
-  while ((m = colorRe.exec(css))) {
-    const hex = m[1].toLowerCase().slice(0, 7) // drop alpha if any
+  while ((m = re.exec(css))) {
+    const hex = m[1].toLowerCase().slice(0, 7)
     if (isNeutralHex(hex)) continue
     tally.set(hex, (tally.get(hex) || 0) + 1)
   }
   if (!tally.size) return null
-  const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0][0]
-  return top
+  return [...tally.entries()].sort((a, b) => b[1] - a[1])[0][0]
 }
-const cssBrand = await sampleBrandColorFromCss()
+// Header-aware background-colour extraction. The frequency tally
+// underweights header colours (declared once vs. body colours used
+// everywhere); this pulls them directly.
+function headerBgFromCss(css) {
+  if (!css) return null
+  const ruleRe = /([^{}]+)\{([^}]+)\}/g
+  let r
+  while ((r = ruleRe.exec(css))) {
+    const sel = r[1].trim().toLowerCase()
+    const body = r[2]
+    if (sel.startsWith('@')) continue
+    if (!/(^|[\s,>+~])(header|\.header|\.site-header|\.main-header|\.page-header|\.navbar|\.navbar-default|\.topbar|\.site-nav|\.masthead)([\s,>+~:.#\[]|$)/.test(sel)) continue
+    const m = body.match(/background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,8})/i)
+    if (!m) continue
+    const hex = m[1].toLowerCase().slice(0, 7)
+    if (isNeutralHex(hex)) continue
+    return hex
+  }
+  return null
+}
+// Google Fonts pass-through.
+function extractGoogleFonts() {
+  const families = []
+  let href = null
+  $h('link[rel="stylesheet"][href], link[rel="preconnect"][href]').each((_, el) => {
+    const h = $h(el).attr('href') || ''
+    if (!/fonts\.googleapis\.com\/css/.test(h)) return
+    href = h
+    const params = new URLSearchParams(h.split('?')[1] || '')
+    for (const v of params.getAll('family')) {
+      const name = v.split(':')[0].replace(/\+/g, ' ').trim()
+      if (name && !families.includes(name)) families.push(name)
+    }
+  })
+  return { families, href }
+}
+const DECORATIVE_HINTS = [
+  'Vibes', 'Script', 'Display', 'Cursive', 'Handwriting',
+  'Allura', 'Dancing', 'Lobster', 'Pacifico', 'Sacramento',
+  'Tangerine', 'Rufina', 'Playfair', 'Cinzel', 'Italianno',
+  'Great', 'Yellowtail', 'Cookie', 'Kalam', 'Caveat'
+]
+function pickHeadingFont(families) {
+  if (!families.length) return null
+  const decorative = families.find((f) => DECORATIVE_HINTS.some((h) => f.includes(h)))
+  return decorative || families[families.length - 1]
+}
+const allCss = await loadAllCss()
+const cssBrand = frequencyBrandColor(allCss)
+const headerBg = headerBgFromCss(allCss)
+const gFonts = extractGoogleFonts()
+const headingFont = pickHeadingFont(gFonts.families)
 
 // ---------- logo (highest-res favicon → og:image) ----------
 function pickLogo() {
@@ -519,8 +570,15 @@ const config = {
   // frequency-count of `color:`/`background:` declarations in the site's
   // own stylesheets (excluding neutrals). Never picked by eye.
   brand_primary: themeColor || cssBrand || null,
-  brand_dark: cssBrand ? darken(cssBrand, 0.35) : null,
+  // Prefer the source's actual header background colour (what users
+  // see at the top of the original site) over a darkened brand tint.
+  brand_dark: headerBg
+    || (cssBrand ? darken(cssBrand, 0.35) : null)
+    || (themeColor ? darken(themeColor, 0.35) : null)
+    || null,
   theme_color: themeColor || cssBrand || null,
+  heading_font: headingFont,
+  google_fonts_families: gFonts.families,
   pwa_name: name,
   pwa_short_name: name,
   pwa_description: og.description || r.description || null,

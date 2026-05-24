@@ -9,15 +9,33 @@
 //   { type: 'heading', level, text }
 //   { type: 'text', text }
 //   { type: 'image', src, alt }
-defineProps({
-  blocks: { type: Array, default: () => [] }
+//
+// imageLimit caps how many image blocks are rendered. The home page
+// uses the default (5) so the page doesn't stretch endlessly when the
+// scraper found a 50-image gallery; the Gallery view passes Infinity.
+import { computed } from 'vue'
+const props = defineProps({
+  blocks: { type: Array, default: () => [] },
+  imageLimit: { type: Number, default: 5 }
+})
+
+// Filter the block list so only the first `imageLimit` image blocks
+// survive. Text/heading blocks pass through unchanged.
+const renderedBlocks = computed(() => {
+  let images = 0
+  return props.blocks.filter((b) => {
+    if (b.type !== 'image') return true
+    if (images >= props.imageLimit) return false
+    images++
+    return true
+  })
 })
 </script>
 
 <template>
-  <section v-if="blocks.length" class="site-blocks">
+  <section v-if="renderedBlocks.length" class="site-blocks">
     <div class="container">
-      <template v-for="(b, i) in blocks" :key="i">
+      <template v-for="(b, i) in renderedBlocks" :key="i">
         <h2 v-if="b.type === 'heading' && b.level <= 2" class="sb-h2">{{ b.text }}</h2>
         <h3 v-else-if="b.type === 'heading'" class="sb-h3">{{ b.text }}</h3>
         <p v-else-if="b.type === 'text'" class="sb-text">{{ b.text }}</p>

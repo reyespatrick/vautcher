@@ -115,6 +115,8 @@ function flatten(payload) {
     logoUrl: c.logo_url ?? FALLBACK.logoUrl,
     brandPrimary: c.brand_primary ?? FALLBACK.brandPrimary,
     brandDark: c.brand_dark ?? FALLBACK.brandDark,
+    headingFont: c.heading_font ?? null,
+    googleFontsFamilies: c.google_fonts_families ?? [],
     hours: c.hours ?? FALLBACK.hours,
     reservationSlots: c.reservation_slots ?? FALLBACK.reservationSlots,
     hero: c.hero ?? FALLBACK.hero,
@@ -134,11 +136,53 @@ function loadCached() {
 
 // Push brand tokens onto :root so the existing stylesheets (which use
 // --burgundy etc.) pick up the tenant's colors without any view change.
+// Also injects the tenant's Google Fonts (link + h1-h4 override) when
+// the scaffolder captured a heading family.
 function applyBrand(s) {
   if (typeof document === 'undefined') return
   const r = document.documentElement.style
   r.setProperty('--burgundy', s.brandPrimary)
   r.setProperty('--burgundy-dark', s.brandDark)
+
+  applyHeadingFont(s)
+}
+
+let appliedFontFamily = null
+function applyHeadingFont(s) {
+  const family = s.headingFont
+  if (!family || family === appliedFontFamily) return
+  appliedFontFamily = family
+
+  // 1. Add a stylesheet <link> pointing at fonts.googleapis.com for
+  //    every captured family. Idempotent — replaced on each call.
+  const linkId = 'vautcher-google-fonts'
+  document.getElementById(linkId)?.remove()
+  const families = (s.googleFontsFamilies && s.googleFontsFamilies.length)
+    ? s.googleFontsFamilies
+    : [family]
+  const familyQs = families
+    .map((f) => 'family=' + encodeURIComponent(f).replace(/%20/g, '+'))
+    .join('&')
+  const link = document.createElement('link')
+  link.id = linkId
+  link.rel = 'stylesheet'
+  link.href = `https://fonts.googleapis.com/css2?${familyQs}&display=swap`
+  document.head.appendChild(link)
+
+  // 2. Override h1-h4 font-family. Keep Rufina as a fallback so
+  //    page styling stays sane while the webfont is loading.
+  const styleId = 'vautcher-heading-font'
+  document.getElementById(styleId)?.remove()
+  const style = document.createElement('style')
+  style.id = styleId
+  // Quote family names that contain spaces.
+  const cssFamily = /\s/.test(family) ? `"${family}"` : family
+  style.textContent = `
+    h1, h2, h3, h4, .sb-h2, .sb-h3, .brand-txt {
+      font-family: ${cssFamily}, 'Rufina', Georgia, serif;
+    }
+  `
+  document.head.appendChild(style)
 }
 
 // Priority for the first paint:
