@@ -385,18 +385,16 @@ async function onCancelEvent() {
           :placeholder="t('editor.descriptionPlaceholder')"></textarea>
       </div>
 
+      <div class="field">
+        <label>{{ t('editor.date') }} *</label>
+        <input v-model="form.event_date" type="date" required />
+      </div>
+
       <div class="row2">
-        <div class="field">
-          <label>{{ t('editor.date') }} *</label>
-          <input v-model="form.event_date" type="date" required />
-        </div>
         <div class="field">
           <label>{{ t('editor.time') }}</label>
           <input v-model="form.event_time" type="text" :placeholder="t('editor.timePlaceholder')" />
         </div>
-      </div>
-
-      <div class="row2">
         <div class="field">
           <label>{{ t('editor.endTime') }}</label>
           <input
@@ -404,10 +402,8 @@ async function onCancelEvent() {
             :placeholder="t('editor.endTimePlaceholder')"
           />
         </div>
-        <div class="field field--hint">
-          <span class="opt-help" style="margin: 0;">{{ t('editor.endTimeHint') }}</span>
-        </div>
       </div>
+      <p class="field-hint">{{ t('editor.endTimeHint') }}</p>
 
       <div class="row2">
         <div class="field">
@@ -796,6 +792,12 @@ async function onCancelEvent() {
   color: var(--ink);
 }
 .opt-select:disabled { opacity: 0.55; cursor: not-allowed; }
+.field-hint {
+  margin: -8px 0 16px;
+  font-size: 0.74rem;
+  color: var(--mut);
+  line-height: 1.45;
+}
 .recur-body {
   margin-left: 56px;
   display: flex;
