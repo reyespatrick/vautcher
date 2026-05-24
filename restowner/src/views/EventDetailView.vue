@@ -1,8 +1,9 @@
 <script setup>
-// Owner / moderator read-only event view. Mirrors the diner's
-// EventDetailView visually but adds the inscrits count (owner-only)
-// and two action buttons at the bottom: Modifier (→ editor) and
-// Annuler l'événement/offre.
+// Owner / moderator event preview. The top half intentionally mirrors
+// what the diner sees pixel-for-pixel (hero + meta list + rebate +
+// description + a Je-participe button that's disabled here) so the
+// owner can vet exactly what's published. The bottom half is the
+// owner-only zone: inscrits count + Modifier + Annuler actions.
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -116,6 +117,11 @@ async function onCancel() {
   <div class="page">
     <RouterLink :to="{ name: 'dashboard' }" class="back-link">‹ {{ t('nav.events') }}</RouterLink>
 
+    <div class="preview-flag">
+      <span class="dot"></span>
+      {{ t('detail.previewBanner') }}
+    </div>
+
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 
     <div v-else-if="loadError || !event" class="empty">
@@ -123,50 +129,70 @@ async function onCancel() {
       <button class="btn btn--plain btn--sm retry" @click="load">{{ t('common.retry') }}</button>
     </div>
 
-    <article v-else class="evd">
-      <div
-        class="evd-hero"
-        :style="event.image_url ? { backgroundImage: `url(${event.image_url})` } : null"
-      >
-        <span v-if="statusBadge" class="evd-status" :class="statusBadge.cls">
-          {{ statusBadge.label }}
-        </span>
-      </div>
+    <template v-else>
+      <!-- ============================================
+           Client-facing preview — visually mirrors the
+           diner app's EventDetailView.
+           ============================================ -->
+      <article class="client-preview">
+        <div
+          class="cp-hero"
+          :style="event.image_url ? { backgroundImage: `url(${event.image_url})` } : null"
+        >
+          <span v-if="statusBadge" class="cp-status" :class="statusBadge.cls">
+            {{ statusBadge.label }}
+          </span>
+        </div>
 
-      <div class="evd-body">
-        <h1>{{ event.title }}</h1>
+        <div class="cp-body">
+          <h1>{{ event.title }}</h1>
 
-        <ul class="evd-meta">
-          <li><span class="ic">📅</span>{{ fullDate }}</li>
-          <li v-if="event.event_time">
-            <span class="ic">🕖</span>{{ event.event_time }}<template v-if="event.event_end_time"> – {{ event.event_end_time }}</template>
-          </li>
-          <li v-if="event.location"><span class="ic">📍</span>{{ event.location }}</li>
-          <li v-if="event.price"><span class="ic">🎟️</span>{{ event.price }}</li>
-          <li v-if="recurLabel"><span class="ic">🔁</span>{{ recurLabel }}</li>
-        </ul>
+          <ul class="cp-meta">
+            <li><span class="ic">📅</span>{{ fullDate }}</li>
+            <li v-if="event.event_time">
+              <span class="ic">🕖</span>{{ event.event_time }}<template v-if="event.event_end_time"> – {{ event.event_end_time }}</template>
+            </li>
+            <li v-if="event.location"><span class="ic">📍</span>{{ event.location }}</li>
+            <li v-if="event.price"><span class="ic">🎟️</span>{{ event.price }}</li>
+            <li v-if="recurLabel"><span class="ic">🔁</span>{{ recurLabel }}</li>
+          </ul>
 
-        <p v-if="rebateText" class="evd-rebate">🎁 {{ rebateText }}</p>
+          <p v-if="rebateText" class="cp-rebate">🎁 {{ rebateText }}</p>
 
-        <!-- Owner-only "X inscrit(s)" line. -->
-        <p class="evd-count">
+          <p v-if="event.description" class="cp-desc">{{ event.description }}</p>
+
+          <!-- The diner's call-to-action, rendered disabled so the
+               owner sees exactly the button their customer will see. -->
+          <button type="button" class="cp-btn" disabled>
+            {{ event.max_participants && attendees >= event.max_participants
+              ? 'Complet'
+              : 'Je participe' }}
+          </button>
+        </div>
+      </article>
+
+      <!-- ============================================
+           Owner-only zone — only restowner shows this.
+           ============================================ -->
+      <section class="owner-zone">
+        <h2 class="owner-zone-title">{{ t('detail.ownerZoneTitle') }}</h2>
+
+        <p class="owner-stat">
           <strong>{{ attendees }}</strong>
           {{ attendees === 1 ? t('event.attendeesOne') : t('event.attendeesMany') }}
         </p>
 
-        <p v-if="event.description" class="evd-desc">{{ event.description }}</p>
-
-        <div v-if="ageText || pointsText" class="evd-target">
-          <span v-if="ageText" class="evd-tag">{{ t('event.age') }} : {{ ageText }}</span>
-          <span v-if="pointsText" class="evd-tag">{{ t('event.loyaltyPoints') }} : {{ pointsText }}</span>
+        <div v-if="ageText || pointsText" class="owner-targets">
+          <span v-if="ageText" class="owner-tag">{{ t('event.age') }} : {{ ageText }}</span>
+          <span v-if="pointsText" class="owner-tag">{{ t('event.loyaltyPoints') }} : {{ pointsText }}</span>
         </div>
 
         <p
           v-if="event.moderation_status === 'refused' && event.refusal_reason"
-          class="evd-refused"
+          class="owner-refused"
         >{{ t('event.refusedReason', { reason: event.refusal_reason }) }}</p>
 
-        <div class="evd-actions">
+        <div class="owner-actions">
           <button type="button" class="btn btn--full" @click="goEdit">
             {{ t('common.edit') }}
           </button>
@@ -178,25 +204,58 @@ async function onCancel() {
             @click="onCancel"
           >{{ t('editor.cancelEvent') }}</button>
         </div>
-      </div>
-    </article>
+      </section>
+    </template>
   </div>
 </template>
 
 <style scoped>
-.evd {
+.back-link { display: inline-block; margin-bottom: 8px; }
+.retry { display: block; margin: 14px auto 0; }
+
+/* ---- Preview banner ---- */
+.preview-flag {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #fdf3f6;
+  border: 1px solid #f3d3df;
+  color: var(--accent-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 9px 13px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.preview-flag .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: 0 0 auto;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.8); }
+}
+
+/* ---- Client-facing preview ----
+   Class prefix .cp- + neutral burgundy tones so the look reads as
+   the diner-side, not as a restowner form. */
+.client-preview {
   background: #fff;
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
-  margin-top: 8px;
 }
-.evd-hero {
+.cp-hero {
   position: relative;
   height: 220px;
   background: #ece4d5 center/cover no-repeat;
 }
-.evd-status {
+.cp-status {
   position: absolute; top: 14px; right: 14px;
   font-size: 0.7rem;
   font-weight: 700;
@@ -207,15 +266,16 @@ async function onCancel() {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
 
-.evd-body { padding: 22px 20px 24px; }
-.evd-body h1 {
+.cp-body { padding: 22px 20px 24px; }
+.cp-body h1 {
+  font-family: 'Rufina', Georgia, serif;
   font-size: clamp(1.5rem, 5vw, 2rem);
   margin: 0 0 14px;
   line-height: 1.15;
   color: var(--ink);
 }
 
-.evd-meta {
+.cp-meta {
   list-style: none;
   display: flex;
   flex-direction: column;
@@ -223,16 +283,16 @@ async function onCancel() {
   padding: 0;
   margin: 0 0 14px;
 }
-.evd-meta li {
+.cp-meta li {
   display: flex;
   align-items: center;
   gap: 9px;
   font-size: 0.92rem;
-  color: var(--ink);
+  color: var(--mut);
 }
-.evd-meta .ic { font-size: 1rem; flex: 0 0 22px; text-align: center; }
+.cp-meta .ic { font-size: 1rem; flex: 0 0 22px; text-align: center; }
 
-.evd-rebate {
+.cp-rebate {
   display: inline-block;
   background: linear-gradient(135deg, #fbeec4, #f3d98c);
   color: #6e5414;
@@ -242,56 +302,83 @@ async function onCancel() {
   border-radius: 10px;
   margin-bottom: 14px;
 }
-
-.evd-count {
-  font-size: 0.94rem;
-  font-weight: 600;
-  color: var(--accent);
-  margin: 0 0 14px;
-}
-.evd-count strong {
-  font-family: 'Rufina', serif;
-  font-size: 1.15rem;
-  margin-right: 4px;
-}
-
-.evd-desc {
+.cp-desc {
   font-size: 0.96rem;
   color: var(--ink);
   line-height: 1.6;
   white-space: pre-wrap;
   margin: 0 0 18px;
 }
-.evd-target {
+.cp-btn {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 14px 22px;
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+/* ---- Owner-only zone ---- */
+.owner-zone {
+  margin-top: 22px;
+  background: #faf4ea;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 16px 18px 20px;
+}
+.owner-zone-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mut);
+  margin: 0 0 10px;
+}
+.owner-stat {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 12px;
+}
+.owner-stat strong {
+  font-family: 'Rufina', serif;
+  font-size: 1.2rem;
+  margin-right: 4px;
+}
+.owner-targets {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
-.evd-tag {
+.owner-tag {
   font-size: 0.78rem;
-  background: #faf4ea;
+  background: #fff;
   color: var(--mut);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 5px 10px;
 }
-.evd-refused {
+.owner-refused {
   font-size: 0.84rem;
   font-weight: 600;
   color: var(--danger);
-  margin: 6px 0 18px;
+  margin: 0 0 14px;
   padding: 9px 11px;
   background: rgba(220, 38, 38, 0.07);
   border-radius: 8px;
 }
-
-.evd-actions {
+.owner-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 6px;
 }
-
-.back-link { display: inline-block; margin-bottom: 6px; }
-.retry { display: block; margin: 14px auto 0; }
 </style>

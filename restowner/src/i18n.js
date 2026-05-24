@@ -218,6 +218,10 @@ const fr = {
     title: 'Événements/offres à approuver', empty: 'Aucun événement/offre en attente.',
     at: 'chez', approveBtn: 'Approuver', refuseBtn: 'Refuser'
   },
+  detail: {
+    previewBanner: 'Aperçu — voici ce que voient vos clients',
+    ownerZoneTitle: 'Informations propriétaire'
+  },
   admin: {
     title: 'Administration',
     subtitle: 'Restaurants, propriétaires et clients de la plateforme.',
