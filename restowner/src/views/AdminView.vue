@@ -406,27 +406,16 @@ async function copyLink() {
 
       <div v-else class="r-list">
         <div v-for="r in restaurants" :key="r.id" class="card resto">
-          <div class="resto-head">
-            <div class="resto-ident">
-              <strong>{{ r.name }}</strong>
-              <span class="resto-slug">{{ r.slug }}</span>
-            </div>
-            <div class="resto-actions">
-              <RouterLink :to="{ name: 'restaurant-config', params: { id: r.id } }"
-                          class="btn btn--ghost btn--sm">
-                {{ t('config.edit') }}
-              </RouterLink>
-              <button
-                type="button"
-                class="btn btn--danger btn--sm"
-                :disabled="deleteBusy"
-                @click="startDelete(r)"
-              >{{ t('admin.deleteBtn') }}</button>
-            </div>
+          <!-- Identity row: name + slug. -->
+          <div class="resto-ident">
+            <strong>{{ r.name }}</strong>
+            <span class="resto-slug">{{ r.slug }}</span>
           </div>
 
           <!-- Tenant URLs: where it lives (pages.dev) + where it came
-               from (the scaffolded source website). -->
+               from (the scaffolded source website). Sits above the
+               action buttons so it reads "this is the site → here's
+               what you can do to it". -->
           <div class="resto-urls">
             <a
               :href="`https://${r.slug}.pages.dev`"
@@ -443,6 +432,21 @@ async function copyLink() {
             >
               <span class="ic">🔗</span>{{ t('admin.sourceUrl') }}
             </a>
+          </div>
+
+          <!-- Action row: full-width strip, Configurer pinned left,
+               Supprimer pinned right. -->
+          <div class="resto-actions">
+            <RouterLink :to="{ name: 'restaurant-config', params: { id: r.id } }"
+                        class="btn btn--ghost btn--sm">
+              {{ t('config.edit') }}
+            </RouterLink>
+            <button
+              type="button"
+              class="btn btn--danger btn--sm"
+              :disabled="deleteBusy"
+              @click="startDelete(r)"
+            >{{ t('admin.deleteBtn') }}</button>
           </div>
 
           <p v-if="!r.owners.length" class="owners-empty">{{ t('admin.noOwners') }}</p>
@@ -752,30 +756,31 @@ async function copyLink() {
 /* Restaurants */
 .r-list { display: flex; flex-direction: column; gap: 12px; }
 .resto { padding: 14px 16px; }
-/* Two rows: identity (name + slug) on top, action buttons on a tight
-   row underneath. Keeps Configurer + Supprimer aligned no matter how
-   long the restaurant name is. */
-.resto-head {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  align-items: baseline;
-}
+/* Stacked layout, in order:
+   1. .resto-ident — name + slug
+   2. .resto-urls  — pages.dev + source link chips
+   3. .resto-actions — full-width strip with Configurer left, Supprimer right */
 .resto-ident {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 8px;
   min-width: 0;
+  margin-bottom: 10px;
 }
+.resto-ident strong { font-family: 'Rufina', serif; font-size: 1.1rem; }
+.resto-slug { font-size: 0.74rem; color: var(--mut); }
+
 .resto-actions {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
-.resto-head strong { font-family: 'Rufina', serif; font-size: 1.1rem; }
-.resto-slug { font-size: 0.74rem; color: var(--mut); }
+.resto-actions .btn { flex: 0 0 auto; }
 
 /* URL chips under the restaurant title — pages.dev (always) +
    scaffolded source URL (only when present). */

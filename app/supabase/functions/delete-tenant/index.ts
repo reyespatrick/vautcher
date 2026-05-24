@@ -39,19 +39,26 @@ function json(body: unknown, status = 200): Response {
   })
 }
 
-async function callerIsModerator(req: Request): Promise<boolean> {
+// Returns a per-request supabase client that forwards the caller's JWT
+// (so server-side `auth.jwt()` inside SECURITY DEFINER RPCs resolves to
+// the actual user). Also returns the resolved moderator email or null.
+async function userClientIfModerator(req: Request): Promise<{
+  client: ReturnType<typeof createClient> | null
+  email: string | null
+}> {
   const auth = req.headers.get('authorization') || ''
   const token = auth.replace(/^Bearer\s+/i, '')
-  if (!token) return false
+  if (!token) return { client: null, email: null }
   const userClient = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: `Bearer ${token}` } }
   })
   const { data: u } = await userClient.auth.getUser()
   const email = (u?.user?.email || '').toLowerCase()
-  if (!email) return false
+  if (!email) return { client: null, email: null }
   const { data } = await admin.from('vautcher_moderators')
     .select('email').eq('email', email).maybeSingle()
-  return !!data
+  if (!data) return { client: null, email }
+  return { client: userClient, email }
 }
 
 async function dispatchCleanup(slug: string): Promise<string | null> {
@@ -80,8 +87,9 @@ Deno.serve(async (req: Request) => {
   }
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
 
-  if (!(await callerIsModerator(req))) {
-    return json({ error: 'forbidden' }, 403)
+  const { client: userClient, email } = await userClientIfModerator(req)
+  if (!userClient) {
+    return json({ error: email ? 'not a moderator' : 'unauthenticated' }, 403)
   }
 
   let body: any
@@ -92,8 +100,12 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'restaurant_id and confirm_slug required' }, 400)
   }
 
-  // 1. DB-side delete (RPC re-checks moderator + slug match).
-  const { data, error } = await admin.rpc('vautcher_admin_delete_restaurant', {
+  // 1. DB-side delete (RPC re-checks moderator + slug match). MUST be
+  //    called with the caller's JWT so vautcher_is_moderator() — which
+  //    reads auth.jwt() ->> 'email' — sees the right email. Calling it
+  //    via the service-role admin client makes auth.jwt() empty and the
+  //    RPC raises "not authorized".
+  const { data, error } = await userClient.rpc('vautcher_admin_delete_restaurant', {
     p_restaurant_id: restaurantId,
     p_confirm_slug: confirmSlug
   })
