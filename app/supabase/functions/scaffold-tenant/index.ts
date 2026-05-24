@@ -186,6 +186,40 @@ function looksLikeNav($: cheerio.CheerioAPI, el: cheerio.Element): boolean {
   }
   return false
 }
+// Resolve the "real" image URL from an <img> element. WordPress
+// lazy-loading replaces src with a data:image/svg placeholder and
+// stuffs the real URL into data-lazy-src / data-lazy-srcset (and
+// srcset for non-lazy fallback). Walk the candidates in order.
+function realImageUrl($el: cheerio.Cheerio<cheerio.Element>): string | null {
+  const candidates = [
+    $el.attr('data-lazy-src'),
+    $el.attr('data-src'),
+    $el.attr('data-original'),
+    $el.attr('src')
+  ]
+  for (const c of candidates) {
+    if (c && !c.startsWith('data:')) return c
+  }
+  // Parse srcset / data-lazy-srcset: "url1 480w, url2 768w" — take the
+  // largest entry.
+  const sets = [$el.attr('data-lazy-srcset'), $el.attr('srcset')]
+  for (const s of sets) {
+    if (!s) continue
+    const entries = s.split(',').map((e) => e.trim()).filter(Boolean)
+      .map((e) => {
+        const [url, sizeStr] = e.split(/\s+/)
+        const size = parseInt((sizeStr || '0').replace(/[^\d]/g, ''), 10) || 0
+        return { url, size }
+      })
+      .filter((e) => e.url && !e.url.startsWith('data:'))
+    if (entries.length) {
+      entries.sort((a, b) => b.size - a.size)
+      return entries[0].url
+    }
+  }
+  return null
+}
+
 function extractBlocks($: cheerio.CheerioAPI, pageUrl: string) {
   const out: any[] = []
   $('header, nav, footer, script, style, noscript').remove()
@@ -193,12 +227,15 @@ function extractBlocks($: cheerio.CheerioAPI, pageUrl: string) {
     const tag = (el.tagName || '').toLowerCase()
     const $el = $(el)
     if (tag === 'img') {
-      const src = $el.attr('src') || $el.attr('data-src')
+      const src = realImageUrl($el)
       if (!src) return
       let abs: string
       try { abs = new URL(src, pageUrl).href } catch { return }
       if (isIconImage(abs)) return
-      if (!/\.(jpe?g|png|webp|gif)(\?|$)/i.test(abs)) return
+      // Relaxed extension check — accept a content-image path even if
+      // there's a query string or no extension (CDN-style URLs). Still
+      // reject obvious assets we know aren't useful.
+      if (/\.(svg|ico|webmanifest)(\?|$)/i.test(abs)) return
       out.push({ type: 'image', src: abs, alt: ($el.attr('alt') || '').trim() })
     } else if (/^h[1-4]$/.test(tag)) {
       const text = $el.text().replace(/\s+/g, ' ').trim()
@@ -326,6 +363,18 @@ function buildConfig(pages: { url: string; html: string; $: cheerio.CheerioAPI }
 
   const pageTitle = ($h('title').first().text() || '').trim()
   const name = og.title || og.site_name || pageTitle || 'Restaurant'
+
+  // og:description is sometimes a single nav word ("Adresse", "Menu")
+  // because the site author left the WordPress default. Skip values
+  // that look like nav copy so they don't become the hero lead.
+  function safeLead(s: string | null): string {
+    if (!s) return ''
+    const t = s.trim()
+    if (t.length < 20) return ''
+    if (isNavLikeText(t)) return ''
+    return t
+  }
+  og.description = safeLead(og.description)
 
   // Aggregate blocks across pages, dedupe, drop orphan headings.
   const all: any[] = []
@@ -470,12 +519,14 @@ Deno.serve(async (req: Request) => {
       eyebrow: null,
       title: heroTitle,
       lead: heroLead,
-      image_url: cfg.images[0]?.src || null
+      // Prefer an extracted image; fall back to og:image so the hero
+      // is never empty for sites that only declare images via meta.
+      image_url: cfg.images[0]?.src || cfg.og.image || null
     },
     about: {
       kicker: '',
       title: '',
-      image_url: cfg.images[0]?.src || null,
+      image_url: cfg.images[1]?.src || cfg.images[0]?.src || cfg.og.image || null,
       paragraphs: cfg.texts.slice(0, 4).map((t: any) => t.text)
     },
     specialties: [],
