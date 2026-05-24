@@ -2,7 +2,7 @@
 // Cross-restaurant overview — restaurants and their owners.
 // The clients view has moved to its own /clients tab using the shared
 // <ClientList /> component, so the segmented control here is gone.
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
@@ -209,13 +209,8 @@ const deleteBusy = ref(false)
 const deleteDebug = ref('')
 
 async function startDelete(r) {
-  deleteDebug.value = `clic Supprimer reçu pour ${r?.name || '?'} (${r?.slug || '?'})…`
   try {
     const counts = (r.owners?.length || 0) + ' propriétaire(s)'
-    if (typeof confirm !== 'function') {
-      deleteDebug.value = '❌ confirm() est undefined — useDialog n’a pas exporté la fonction.'
-      return
-    }
     const ok1 = await confirm({
       title: t('admin.deleteStep1Title', { name: r.name }),
       body: t('admin.deleteStep1Body', { name: r.name, counts }),
@@ -223,10 +218,19 @@ async function startDelete(r) {
       cancelLabel: t('common.keep'),
       danger: true
     })
-    deleteDebug.value = `confirm résolu → ${ok1 ? 'OK, on passe à l’étape 2' : 'annulé'}`
     if (!ok1) return
     deleteConfirmFor.value = r.id
     deleteSlugTyped.value = ''
+    // After Vue re-renders to expose the inline slug-typing form, scroll
+    // it into view and focus the input so the moderator can't miss it
+    // (previously the form appeared mid-card and the user thought
+    // nothing had happened after confirming step 1).
+    await nextTick()
+    const el = document.querySelector(`[data-del-form="${r.id}"]`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.querySelector('input')?.focus()
+    }
   } catch (e) {
     deleteDebug.value = '❌ erreur startDelete: ' + (e && e.message ? e.message : String(e))
     console.error('startDelete threw', e)
@@ -449,18 +453,22 @@ async function copyLink() {
       <div v-else class="r-list">
         <div v-for="r in restaurants" :key="r.id" class="card resto">
           <div class="resto-head">
-            <strong>{{ r.name }}</strong>
-            <span class="resto-slug">{{ r.slug }}</span>
-            <RouterLink :to="{ name: 'restaurant-config', params: { id: r.id } }"
-                        class="btn btn--ghost btn--sm resto-cfg">
-              {{ t('config.edit') }}
-            </RouterLink>
-            <button
-              type="button"
-              class="btn btn--danger btn--sm resto-del"
-              :disabled="deleteBusy"
-              @click="startDelete(r)"
-            >{{ t('admin.deleteBtn') }}</button>
+            <div class="resto-ident">
+              <strong>{{ r.name }}</strong>
+              <span class="resto-slug">{{ r.slug }}</span>
+            </div>
+            <div class="resto-actions">
+              <RouterLink :to="{ name: 'restaurant-config', params: { id: r.id } }"
+                          class="btn btn--ghost btn--sm">
+                {{ t('config.edit') }}
+              </RouterLink>
+              <button
+                type="button"
+                class="btn btn--danger btn--sm"
+                :disabled="deleteBusy"
+                @click="startDelete(r)"
+              >{{ t('admin.deleteBtn') }}</button>
+            </div>
           </div>
 
           <!-- Tenant URLs: where it lives (pages.dev) + where it came
@@ -487,6 +495,7 @@ async function copyLink() {
           <form
             v-if="deleteConfirmFor === r.id"
             class="del-confirm"
+            :data-del-form="r.id"
             @submit.prevent="submitDelete(r)"
           >
             <label class="del-label">
@@ -826,8 +835,28 @@ async function copyLink() {
 /* Restaurants */
 .r-list { display: flex; flex-direction: column; gap: 12px; }
 .resto { padding: 14px 16px; }
-.resto-head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
-.resto-cfg { margin-left: auto; }
+/* Two rows: identity (name + slug) on top, action buttons on a tight
+   row underneath. Keeps Configurer + Supprimer aligned no matter how
+   long the restaurant name is. */
+.resto-head {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+.resto-ident {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.resto-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
 .resto-head strong { font-family: 'Rufina', serif; font-size: 1.1rem; }
 .resto-slug { font-size: 0.74rem; color: var(--mut); }
 
@@ -886,10 +915,18 @@ async function copyLink() {
 }
 .del-confirm {
   margin: 12px 0 4px;
-  padding: 12px 14px;
-  background: rgba(220, 38, 38, 0.06);
-  border: 1px dashed var(--danger);
-  border-radius: 10px;
+  padding: 14px 16px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 2px solid var(--danger);
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.18);
+  /* Subtle pulse so the moderator's eye catches it after step 1. */
+  animation: delPulse 1.6s ease-out 0s 2;
+}
+@keyframes delPulse {
+  0%   { box-shadow: 0 4px 18px rgba(220, 38, 38, 0.18); }
+  50%  { box-shadow: 0 4px 28px rgba(220, 38, 38, 0.55); }
+  100% { box-shadow: 0 4px 18px rgba(220, 38, 38, 0.18); }
 }
 .del-label {
   display: block;
