@@ -40,7 +40,6 @@ const form = ref({
 const ageTargeted = ref(false)
 const pointsTargeted = ref(false)
 const rebateOn = ref(false)
-const rebateLimited = ref(false)
 const capacityOn = ref(false)
 const fileInput = ref(null)
 const uploadedImages = ref([])
@@ -69,7 +68,6 @@ function fillFrom(ev) {
   ageTargeted.value = !!(ev.age_min || ev.age_max)
   pointsTargeted.value = !!(ev.points_min || ev.points_max)
   rebateOn.value = ev.rebate_value != null
-  rebateLimited.value = ev.rebate_first_n != null
   capacityOn.value = ev.max_participants != null
 }
 
@@ -318,9 +316,10 @@ async function save() {
       })(),
       rebate_value: rebateOn.value ? (Number(form.value.rebate_value) || null) : null,
       rebate_unit: form.value.rebate_unit,
-      rebate_first_n: (rebateOn.value && rebateLimited.value)
-        ? (Number(form.value.rebate_first_n) || null)
-        : null,
+      // rebate_first_n was the "rabais pour les N premiers" coupling.
+      // The standalone "Limiter aux premiers inscrits" toggle now uses
+      // max_participants exclusively, so this column is always cleared.
+      rebate_first_n: null,
       max_participants: capacityOn.value
         ? (Number(form.value.max_participants) || null)
         : null,
@@ -436,21 +435,23 @@ async function onCancelEvent() {
                 @click="form.rebate_unit = 'chf'">CHF</button>
             </div>
           </div>
-
-          <label class="toggle sub">
-            <input type="checkbox" v-model="rebateLimited" />
-            <span class="track"></span>
-            <span class="tg-text">{{ t('editor.rebateLimit') }}</span>
-          </label>
-          <div v-if="rebateLimited" class="rebate-line">
-            <span>{{ t('editor.rebateForFirst') }}</span>
-            <input v-model="form.rebate_first_n" type="number" min="1"
-              class="rb-val" placeholder="30" />
-            <span>{{ t('editor.rebateFirstSuffix') }}</span>
-          </div>
-          <span v-else class="rebate-note">{{ t('editor.rebateNoLimit') }}</span>
         </div>
         <span class="opt-help">{{ t('editor.rebateHint') }}</span>
+      </div>
+
+      <!-- Limit registration to the first N — independent of the rebate. -->
+      <div class="opt">
+        <label class="toggle">
+          <input type="checkbox" v-model="capacityOn" />
+          <span class="track"></span>
+          <span class="tg-text">{{ t('editor.capacity') }}</span>
+        </label>
+        <div v-if="capacityOn" class="opt-body rebate-line">
+          <input v-model="form.max_participants" type="number" min="1"
+            class="rb-val" placeholder="30" />
+          <span>{{ t('editor.capacitySuffix') }}</span>
+        </div>
+        <span v-else class="opt-help">{{ t('editor.capacityOpen') }}</span>
       </div>
 
       <div class="field">
@@ -526,21 +527,6 @@ async function onCancelEvent() {
           <span class="opt-help" style="margin-left:0">{{ t('editor.pointsHint') }}</span>
         </div>
         <span v-else class="opt-help">{{ t('editor.pointsOpen') }}</span>
-      </div>
-
-      <!-- Participant cap (grouped with the other audience-shaping options) -->
-      <div class="opt">
-        <label class="toggle">
-          <input type="checkbox" v-model="capacityOn" />
-          <span class="track"></span>
-          <span class="tg-text">{{ t('editor.capacity') }}</span>
-        </label>
-        <div v-if="capacityOn" class="opt-body rebate-line">
-          <input v-model="form.max_participants" type="number" min="1"
-            class="rb-val" placeholder="30" />
-          <span>{{ t('editor.capacitySuffix') }}</span>
-        </div>
-        <span v-else class="opt-help">{{ t('editor.capacityOpen') }}</span>
       </div>
 
       <!-- Recurrence — themed as an opt-in toggle, like "Offrir un rabais". -->
