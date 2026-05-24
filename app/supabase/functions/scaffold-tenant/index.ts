@@ -33,10 +33,21 @@ const GITHUB_REPO = Deno.env.get('GITHUB_REPO') || 'reyespatrick/vautcher'
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 const UA = 'Mozilla/5.0 (compatible; vautcher-scaffold/1.0)'
 
+// CORS headers — the function is called from restowner's browser
+// origin (https://restowner.pages.dev), so it must answer the
+// preflight OPTIONS and echo back Access-Control-Allow-* on every
+// response. Without these the browser refuses to even send the POST.
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400'
+}
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json' }
+    headers: { 'content-type': 'application/json', ...CORS_HEADERS }
   })
 }
 
@@ -379,6 +390,11 @@ async function dispatchDeploy(slug: string): Promise<string | null> {
 
 // ---------- HANDLER ----------
 Deno.serve(async (req: Request) => {
+  // CORS preflight — answered before any auth check so browsers
+  // don't reject the actual POST.
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS_HEADERS })
+  }
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
 
   if (!(await callerIsModerator(req))) {
