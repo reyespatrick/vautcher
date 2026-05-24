@@ -40,6 +40,7 @@ const form = ref({
 const ageTargeted = ref(false)
 const pointsTargeted = ref(false)
 const rebateOn = ref(false)
+const paidOn = ref(false)
 const capacityOn = ref(false)
 const fileInput = ref(null)
 const uploadedImages = ref([])
@@ -68,6 +69,7 @@ function fillFrom(ev) {
   ageTargeted.value = !!(ev.age_min || ev.age_max)
   pointsTargeted.value = !!(ev.points_min || ev.points_max)
   rebateOn.value = ev.rebate_value != null
+  paidOn.value = !!ev.price
   capacityOn.value = ev.max_participants != null
 }
 
@@ -298,7 +300,7 @@ async function save() {
       event_time: form.value.event_time.trim() || null,
       event_end_time: form.value.event_end_time.trim() || null,
       location: form.value.location.trim() || null,
-      price: form.value.price.trim() || null,
+      price: paidOn.value ? (form.value.price.trim() || null) : null,
       image_url: form.value.image_url,
       age_min: ageTargeted.value ? (Number(form.value.age_min) || null) : null,
       age_max: ageTargeted.value ? (Number(form.value.age_max) || null) : null,
@@ -410,15 +412,27 @@ async function onCancelEvent() {
       </div>
       <p class="field-hint">{{ t('editor.endTimeHint') }}</p>
 
-      <div class="row2">
-        <div class="field">
-          <label>{{ t('editor.place') }}</label>
-          <input v-model="form.location" type="text" :placeholder="t('editor.placePlaceholder')" />
+      <div class="field">
+        <label>{{ t('editor.place') }}</label>
+        <input v-model="form.location" type="text" :placeholder="t('editor.placePlaceholder')" />
+      </div>
+
+      <!-- Paid event toggle — by default the event is free (entrée libre). -->
+      <div class="opt">
+        <label class="toggle">
+          <input type="checkbox" v-model="paidOn" />
+          <span class="track"></span>
+          <span class="tg-text">{{ t('editor.paid') }}</span>
+        </label>
+        <div v-if="paidOn" class="opt-body rebate-body">
+          <input
+            v-model="form.price"
+            type="text"
+            class="opt-select"
+            :placeholder="t('editor.pricePlaceholder')"
+          />
         </div>
-        <div class="field">
-          <label>{{ t('editor.price') }}</label>
-          <input v-model="form.price" type="text" :placeholder="t('editor.pricePlaceholder')" />
-        </div>
+        <span v-else class="opt-help">{{ t('editor.paidOpen') }}</span>
       </div>
 
       <!-- Rebate — sits next to the price so the "regular price"
@@ -736,9 +750,12 @@ async function onCancelEvent() {
 /* ---- Toggle option rows ---- */
 .opt {
   border-top: 1px solid var(--line);
-  padding: 14px 0 4px;
+  padding: 18px 0 18px;
   margin-top: 4px;
 }
+/* Extra breathing room when an .opt is immediately followed by a
+   plain .field (e.g. Visuel right after the last opt-toggle). */
+.opt + .field { margin-top: 8px; }
 .toggle {
   display: flex;
   align-items: center;

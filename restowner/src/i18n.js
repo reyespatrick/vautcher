@@ -80,8 +80,8 @@ const fr = {
     useAnother: 'Utiliser une autre adresse'
   },
   dashboard: {
-    title: 'Événements à venir', create: 'Créer un événement',
-    empty: 'Aucun événement à venir.',
+    title: 'Événements/offres à venir', create: 'Créer un événement/offre',
+    empty: 'Aucun événement/offre à venir.',
     emptyHint: 'Créez-en un pour qu’il apparaisse dans l’app cliente.'
   },
   clients: {
@@ -97,8 +97,8 @@ const fr = {
   },
   history: {
     title: 'Historique',
-    subtitle: 'Événements passés et annulés — réutilisez-les en un clic.',
-    empty: 'Aucun événement passé.', duplicate: 'Dupliquer'
+    subtitle: 'Événements/offres passés et annulés — réutilisez-les en un clic.',
+    empty: 'Aucun événement/offre passé.', duplicate: 'Dupliquer'
   },
   event: {
     edit: 'Modifier', cancel: 'Annuler',
@@ -118,17 +118,19 @@ const fr = {
     }
   },
   editor: {
-    newTitle: 'Nouvel événement', editTitle: 'Modifier l’événement',
+    newTitle: 'Nouvel événement/offre', editTitle: 'Modifier l’événement/offre',
     title: 'Titre', titlePlaceholder: 'Soirée dégustation…',
     description: 'Description',
-    descriptionPlaceholder: 'Tout ce que le client doit savoir sur l’événement…',
-    date: 'Date de l’événement', time: 'À partir de', timePlaceholder: '19h00',
+    descriptionPlaceholder: 'Tout ce que le client doit savoir sur l’événement/offre…',
+    date: 'Date de l’événement/offre', time: 'À partir de', timePlaceholder: '19h00',
     endTime: 'Jusqu’à', endTimePlaceholder: '22h00 (facultatif)',
     endTimeHint: 'Utilisée pour préremplir le rendez-vous dans le calendrier du client.',
     place: 'Lieu', placePlaceholder: 'La Terrasse',
+    paid: 'Événement payant',
+    paidOpen: 'Entrée libre.',
     price: 'Prix d’entrée', pricePlaceholder: '45 CHF — ou « Entrée libre »',
     visual: 'Visuel', preview: 'Aperçu', addImage: 'Ajouter',
-    imageHint: 'Choisissez ici la photo affichée pour cet événement. Touchez une vignette pour la sélectionner — elle apparaît dans l’aperçu ci-dessus. Les vignettes proposées sont des exemples ; « Ajouter » téléverse votre propre photo, et le × retire une photo importée de votre bibliothèque.',
+    imageHint: 'Choisissez ici la photo affichée pour cet événement/offre. Touchez une vignette pour la sélectionner — elle apparaît dans l’aperçu ci-dessus. Les vignettes proposées sont des exemples ; « Ajouter » téléverse votre propre photo, et le × retire une photo importée de votre bibliothèque.',
     ageTarget: 'Cibler une tranche d’âge', ageOpen: 'Ouvert à tous les âges.',
     ageMin: 'Âge min.', ageMax: 'Âge max.',
     pointsTarget: 'Cibler selon les points de fidélité',
@@ -146,25 +148,25 @@ const fr = {
     notify: 'Notification push',
     notifyNone: 'Aucune notification',
     notifyNow: 'Tout de suite (à l’approbation)',
-    notifyDays: '{n} jour(s) avant l’événement',
-    notifyHint: '« Tout de suite » prévient tous les diners abonnés dès qu’un modérateur valide l’événement. Les autres options envoient un rappel ciblé aux inscrits.',
-    recur: 'Répéter cet événement',
-    recurOff: 'Événement unique — pas de répétition.',
+    notifyDays: '{n} jour(s) avant l’événement/offre',
+    notifyHint: '« Tout de suite » prévient tous les diners abonnés dès qu’un modérateur valide l’événement/offre. Les autres options envoient un rappel ciblé aux inscrits.',
+    recur: 'Répéter cet événement/offre',
+    recurOff: 'Événement/offre unique — pas de répétition.',
     recurNone: 'Aucune — événement unique',
     recurWeekly: 'Chaque semaine',
     recurBiweekly: 'Toutes les deux semaines',
     recurMonthly: 'Tous les mois',
-    recurHint: 'Chaque occurrence est un événement modifiable séparément. Les clients ajoutent à leur calendrier une occurrence à la fois.',
-    recurLocked: 'La récurrence ne peut être modifiée qu’à la création de l’événement.',
+    recurHint: 'Chaque occurrence est un événement/offre modifiable séparément. Les clients ajoutent à leur calendrier une occurrence à la fois.',
+    recurLocked: 'La récurrence ne peut être modifiée qu’à la création de l’événement/offre.',
     recurDow: 'Jour de la semaine',
     recurDuration: 'Pendant',
-    recurFirst: 'Premier événement :',
-    save: 'Enregistrer', saving: 'Enregistrement…', createBtn: 'Créer l’événement',
-    resubmitNote: 'Toute modification renvoie l’événement en validation : il sera de nouveau visible par les clients une fois approuvé.',
-    cancelEvent: 'Annuler l’événement',
-    confirmCancel: 'Annuler cet événement ? Il ne sera plus visible par les clients.',
+    recurFirst: 'Premier événement/offre :',
+    save: 'Enregistrer', saving: 'Enregistrement…', createBtn: 'Créer l’événement/offre',
+    resubmitNote: 'Toute modification renvoie l’événement/offre en validation : il sera de nouveau visible par les clients une fois approuvé.',
+    cancelEvent: 'Annuler l’événement/offre',
+    confirmCancel: 'Annuler cet événement/offre ? Il ne sera plus visible par les clients.',
     loadFailed: 'Le chargement a échoué. Vérifiez votre connexion et réessayez.',
-    loadError: 'Impossible de charger l’événement.',
+    loadError: 'Impossible de charger l’événement/offre.',
     saveFailed: 'L’enregistrement a échoué. Réessayez.',
     uploadFailed: 'Échec de l’envoi de l’image. Réessayez.',
     confirmDeleteImage: 'Supprimer cette image ?'
@@ -206,7 +208,7 @@ const fr = {
     saveFailed: 'L’enregistrement a échoué. Réessayez.'
   },
   approve: {
-    title: 'Événements à approuver', empty: 'Aucun événement en attente.',
+    title: 'Événements/offres à approuver', empty: 'Aucun événement/offre en attente.',
     at: 'chez', approveBtn: 'Approuver', refuseBtn: 'Refuser'
   },
   admin: {
