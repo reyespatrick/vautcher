@@ -327,16 +327,48 @@ function extractBlocksFromPage($, pageUrl) {
     return false
   }
 
+  // WordPress lazy-loading swaps src for a data:image/svg placeholder
+  // and stores the real URL in data-lazy-src / data-lazy-srcset. Walk
+  // the candidates so we don't end up with a gallery of SVG blanks.
+  function realImageUrl($el) {
+    const candidates = [
+      $el.attr('data-lazy-src'),
+      $el.attr('data-src'),
+      $el.attr('data-original'),
+      $el.attr('src')
+    ]
+    for (const c of candidates) {
+      if (c && !c.startsWith('data:')) return c
+    }
+    for (const s of [$el.attr('data-lazy-srcset'), $el.attr('srcset')]) {
+      if (!s) continue
+      const entries = s.split(',').map((e) => e.trim()).filter(Boolean)
+        .map((e) => {
+          const [url, sizeStr] = e.split(/\s+/)
+          const size = parseInt((sizeStr || '0').replace(/[^\d]/g, ''), 10) || 0
+          return { url, size }
+        })
+        .filter((e) => e.url && !e.url.startsWith('data:'))
+      if (entries.length) {
+        entries.sort((a, b) => b.size - a.size)
+        return entries[0].url
+      }
+    }
+    return null
+  }
+
   $body.find('*').each((_, el) => {
     const tag = (el.tagName || '').toLowerCase()
     const $el = $(el)
     if (tag === 'img') {
-      const src = $el.attr('src') || $el.attr('data-src')
+      const src = realImageUrl($el)
       if (!src) return
       let abs
       try { abs = new URL(src, pageUrl).href } catch { return }
       if (isIconImage(abs)) return
-      if (!/\.(jpe?g|png|webp|gif)(\?|$)/i.test(abs)) return
+      // Reject only assets we know aren't useful; accept CDN-style URLs
+      // without an explicit content-image extension.
+      if (/\.(svg|ico|webmanifest)(\?|$)/i.test(abs)) return
       out.push({ type: 'image', src: abs, alt: ($el.attr('alt') || '').trim() })
     } else if (/^h[1-4]$/.test(tag)) {
       const text = $el.text().replace(/\s+/g, ' ').trim()
@@ -421,7 +453,16 @@ const images = sections.filter((s) => s.type === 'image')
 
 const pageTitle = ($h('title').first().text() || '').trim()
 const heroTitle = headings.find((h) => h.level === 1)?.text || og.title || pageTitle || ''
-const heroLead = headings.find((h) => h.level === 2)?.text || og.description || ''
+// Drop og:description fallbacks that look like nav copy ("Adresse",
+// "Menu") — single-word leads make the hero look broken.
+function safeLead(s) {
+  if (!s) return ''
+  const t = s.trim()
+  if (t.length < 20) return ''
+  if (isNavLikeText(t)) return ''
+  return t
+}
+const heroLead = safeLead(headings.find((h) => h.level === 2)?.text) || safeLead(og.description) || ''
 
 const aboutParagraphs = texts.slice(0, 4).map((t) => t.text)
 const gallery = images.slice(0, 12).map((img) => ({ src: img.src, caption: img.alt || '' }))
