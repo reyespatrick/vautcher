@@ -36,16 +36,31 @@ export async function deleteTenant(restaurantId, confirmSlug) {
   const { data, error } = await supabase.functions.invoke('delete-tenant', {
     body: { restaurant_id: restaurantId, confirm_slug: confirmSlug }
   })
-  if (error) return { error }
+  if (error) return { error: await unwrapFunctionError(error) }
   if (data && data.error) return { error: { message: data.error } }
   return { data }
+}
+
+// Unwraps a supabase.functions.invoke() error so the caller sees the
+// actual server message instead of the generic "Edge Function returned
+// a non-2xx status code" wrapper. The function's JSON {error: "..."}
+// lives on err.context.json().
+async function unwrapFunctionError(err) {
+  if (!err) return null
+  try {
+    if (err.context && typeof err.context.json === 'function') {
+      const body = await err.context.json()
+      if (body && body.error) return { message: body.error, status: err.context.status }
+    }
+  } catch { /* couldn't parse; fall through */ }
+  return { message: err.message || String(err) }
 }
 
 export async function scaffoldTenant(url) {
   const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
     body: { url }
   })
-  if (error) return { error }
+  if (error) return { error: await unwrapFunctionError(error) }
   if (data && data.error) return { error: { message: data.error } }
   return { data }
 }
