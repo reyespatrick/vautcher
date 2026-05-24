@@ -47,12 +47,25 @@ import { site } from '../data/site'
         </div>
       </div>
 
-      <!-- Map -->
-      <a v-if="site.mapsHref" :href="site.mapsHref" target="_blank" rel="noopener" class="map">
-        <img :src="site.gallery?.[2]?.src || site.about?.image_url || '/assets/logo.jpg'"
-             :alt="site.name" />
-        <span class="map-pin">📍 Ouvrir dans Google Maps</span>
-      </a>
+      <!-- Map: real embedded Google Maps view of the address, with a
+           "Ouvrir dans Google Maps" overlay link that pops the full
+           native maps app on tap. No API key needed when output=embed. -->
+      <div v-if="site.address" class="map">
+        <iframe
+          class="map-frame"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          :src="`https://www.google.com/maps?q=${encodeURIComponent(site.address)}&output=embed`"
+          :title="`Carte de ${site.name}`"
+        ></iframe>
+        <a
+          v-if="site.mapsHref"
+          :href="site.mapsHref"
+          target="_blank"
+          rel="noopener"
+          class="map-pin"
+        >📍 Ouvrir dans Google Maps</a>
+      </div>
     </div>
   </div>
 </template>
@@ -94,12 +107,19 @@ import { site } from '../data/site'
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: var(--shadow);
-  min-height: 280px;
+  min-height: 320px;
+  background: #ece4d5;
 }
-.map img { width: 100%; height: 100%; object-fit: cover; min-height: 280px; }
+.map-frame {
+  display: block;
+  width: 100%;
+  height: 360px;
+  border: 0;
+}
 .map-pin {
   position: absolute;
-  left: 50%; bottom: 18px;
+  left: 50%;
+  bottom: 18px;
   transform: translateX(-50%);
   background: #fff;
   color: var(--burgundy);
@@ -109,7 +129,9 @@ import { site } from '../data/site'
   border-radius: 20px;
   box-shadow: var(--shadow);
   white-space: nowrap;
+  text-decoration: none;
 }
+.map-pin:hover { color: var(--burgundy-dark); }
 
 @media (max-width: 720px) {
   .info-grid { grid-template-columns: 1fr; gap: 24px; }
