@@ -386,7 +386,13 @@ async function onCancelEvent() {
 
       <div class="field">
         <label>{{ t('editor.date') }} *</label>
-        <input v-model="form.event_date" type="date" required />
+        <input
+          v-model="form.event_date"
+          type="date"
+          :min="todayStr()"
+          class="date-input"
+          required
+        />
       </div>
 
       <div class="row2">
@@ -784,6 +790,13 @@ async function onCancelEvent() {
   font-size: 0.74rem;
   color: var(--mut);
   line-height: 1.45;
+}
+/* iOS Safari centers a type=date input by default. Pull the value
+   text back left so it reads consistently with the other fields. */
+.date-input {
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .recur-body {
   margin-left: 56px;
