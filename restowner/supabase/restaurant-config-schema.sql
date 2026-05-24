@@ -95,12 +95,24 @@ grant execute on function public.vautcher_get_restaurant(uuid) to anon, authenti
 -- Multi-tenant overload of vautcher_upcoming_events: filters by
 -- restaurant_id so each tenant's diner app sees only its own events.
 -- The legacy 1-arg version remains for backward compat.
-create or replace function public.vautcher_upcoming_events(
+--
+-- IMPORTANT: this migration is re-applied on every CI deploy. If the
+-- function's return shape ever changes (added/removed columns), this
+-- file MUST stay in sync with the latest migration that updates it —
+-- otherwise CREATE OR REPLACE fails with "cannot change return type".
+-- event_end_time was added by event-end-time.sql; ensure the column
+-- exists here too so the projection below is always safe.
+alter table public.vautcher_events
+  add column if not exists event_end_time text;
+
+drop function if exists public.vautcher_upcoming_events(uuid, uuid);
+create function public.vautcher_upcoming_events(
   p_profile_id    uuid,
   p_restaurant_id uuid
 )
 returns table (
-  id uuid, title text, description text, event_date date, event_time text,
+  id uuid, title text, description text, event_date date,
+  event_time text, event_end_time text,
   location text, price text, image_url text, attendees bigint, joined boolean,
   rebate_value numeric, rebate_unit text, rebate_first_n int,
   max_participants int
@@ -110,7 +122,8 @@ stable
 security definer
 set search_path = public
 as $$
-  select e.id, e.title, e.description, e.event_date, e.event_time,
+  select e.id, e.title, e.description, e.event_date,
+         e.event_time, e.event_end_time,
          e.location, e.price, e.image_url,
          (select count(*) from public.vautcher_event_rsvps r where r.event_id = e.id),
          exists (select 1 from public.vautcher_event_rsvps r
