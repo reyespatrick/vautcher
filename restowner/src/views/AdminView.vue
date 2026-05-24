@@ -191,6 +191,24 @@ async function submitDelete(r) {
     })
     return
   }
+  // Step 3 — terminal confirmation. Slug typed correctly, danger
+  // dialog spells out exactly what's about to be deleted (tenant,
+  // owners, events, vouchers, deployed pages.dev site) and that the
+  // action is irreversible.
+  const ownersCount = r.owners?.length || 0
+  const ok3 = await confirm({
+    title: t('admin.deleteFinalTitle', { name: r.name }),
+    body: t('admin.deleteFinalBody', {
+      name: r.name,
+      slug: r.slug,
+      owners: ownersCount
+    }),
+    confirmLabel: t('admin.deleteFinalConfirm'),
+    cancelLabel: t('common.keep'),
+    danger: true
+  })
+  if (!ok3) return
+
   deleteBusy.value = true
   try {
     const { data, error } = await deleteTenant(r.id, typed)
