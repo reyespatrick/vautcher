@@ -18,6 +18,36 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Hard rule (see ~/.claude memory no-native-dialogs): no native
+  # window.confirm/alert/prompt calls in either app. This grep fails
+  # the build if anyone reintroduces them, so cache-bust artefacts
+  # from old bundles can't be the user's fault forever.
+  no-native-dialogs:
+    name: No native dialogs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan restowner/src + app/src
+        run: |
+          set -euo pipefail
+          # Match: window.confirm/alert/prompt OR bare `confirm(/alert(/prompt(`
+          # not preceded by a dot/letter (would be a method or composable
+          # destructure). Excludes the AppDialog composable + memory files.
+          PATTERN='(^|[^a-zA-Z_.])(window\.)?(confirm|alert|prompt)[[:space:]]*\('
+          HITS=$(grep -rnE "$PATTERN" \
+            restowner/src app/src \
+            --include='*.vue' --include='*.js' --include='*.ts' \
+            | grep -vE 'composables/useDialog|components/AppDialog' \
+            | grep -vE 'confirmLabel|cancelLabel|confirmation|confirmed|confirmCancel|confirmDelete|confirmArchive|confirmDeleteImage' \
+            | grep -vE '\.alert\(|\.confirm\(|\.prompt\(' \
+            || true)
+          if [ -n "$HITS" ]; then
+            echo "::error::Native dialog calls found — use useDialog().confirm/alert instead:"
+            echo "$HITS"
+            exit 1
+          fi
+          echo "✓ no native dialog calls."
+
   migrate:
     name: Apply database migrations
     runs-on: ubuntu-latest
