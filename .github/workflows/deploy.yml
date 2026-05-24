@@ -43,6 +43,7 @@ jobs:
             restowner/supabase/my-restaurants.sql \
             restowner/supabase/restaurant-clients.sql \
             restowner/supabase/event-attendees.sql \
+            restowner/supabase/scaffold-fields.sql \
             restowner/supabase/root-account-schema.sql \
             restowner/supabase/owner-stats.sql \
             restowner/supabase/voucher-schema.sql \
@@ -139,3 +140,4 @@ jobs:
           supabase functions deploy vautcher-pass --project-ref yfyfoqrautdogivalimb
           supabase functions deploy provision-owner --project-ref yfyfoqrautdogivalimb
           supabase functions deploy event-notifier --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy scaffold-tenant --project-ref yfyfoqrautdogivalimb

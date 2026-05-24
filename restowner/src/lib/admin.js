@@ -20,6 +20,21 @@ export async function adminClients(restaurantId = null) {
   return { data: data || [], error }
 }
 
+/**
+ * Scaffold a brand-new tenant from a public website URL.
+ * Invokes the scaffold-tenant edge function. Returns
+ *   { data: { id, name, slug, blocks, deploy, deploy_log_url, pages_url } }
+ * or { error }.
+ */
+export async function scaffoldTenant(url) {
+  const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
+    body: { url }
+  })
+  if (error) return { error }
+  if (data && data.error) return { error: { message: data.error } }
+  return { data }
+}
+
 export async function createRestaurant(name, slug) {
   const { data, error } = await supabase.rpc('vautcher_admin_create_restaurant', {
     p_name: name, p_slug: slug

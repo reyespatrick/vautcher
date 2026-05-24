@@ -14,3 +14,9 @@ verify_jwt = true
 # JWT; it gates itself on the CRON_SECRET header instead.
 [functions.event-notifier]
 verify_jwt = false
+
+# scaffold-tenant is called from restowner's admin UI by a signed-in
+# moderator. JWT is required; the function additionally re-checks the
+# caller is in vautcher_moderators server-side before inserting.
+[functions.scaffold-tenant]
+verify_jwt = true

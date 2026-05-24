@@ -9,7 +9,7 @@ import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import {
   adminRestaurants, createRestaurant,
-  setOwnerFlags, provisionOwner
+  setOwnerFlags, provisionOwner, scaffoldTenant
 } from '../lib/admin'
 
 const { t } = useI18n()
@@ -28,6 +28,34 @@ const ownerFormFor = ref(null)        // restaurant id with its add-owner form o
 const newO = ref({ email: '', name: '' })
 const provisionResult = ref(null)     // { email, action_link, code }
 const copied = ref(false)
+
+// "From URL" scaffolder
+const scaffoldUrl = ref('')
+const scaffoldBusy = ref(false)
+const scaffoldResult = ref(null)      // { id, name, slug, blocks, deploy, deploy_log_url, pages_url }
+const scaffoldError = ref('')
+
+async function submitScaffold() {
+  const u = scaffoldUrl.value.trim()
+  if (!u || scaffoldBusy.value) return
+  scaffoldBusy.value = true
+  scaffoldError.value = ''
+  scaffoldResult.value = null
+  try {
+    const { data, error } = await scaffoldTenant(u)
+    if (error) {
+      scaffoldError.value = error.message || t('admin.error')
+      return
+    }
+    scaffoldResult.value = data
+    scaffoldUrl.value = ''
+    await load()
+  } catch (e) {
+    scaffoldError.value = (e && e.message) || String(e)
+  } finally {
+    scaffoldBusy.value = false
+  }
+}
 
 async function load() {
   loading.value = true
@@ -154,9 +182,57 @@ async function copyLink() {
         <button class="prov-x" @click="provisionResult = null">✕</button>
       </div>
 
+      <!-- ============ Scaffold from URL ============ -->
+      <form
+        v-if="!scaffoldResult"
+        class="card scaffold"
+        @submit.prevent="submitScaffold"
+      >
+        <strong class="scaffold-title">{{ t('admin.scaffoldTitle') }}</strong>
+        <p class="scaffold-hint">{{ t('admin.scaffoldHint') }}</p>
+        <div class="scaffold-row">
+          <input
+            v-model="scaffoldUrl"
+            type="url"
+            class="scaffold-input"
+            :placeholder="t('admin.scaffoldPlaceholder')"
+            :disabled="scaffoldBusy"
+            required
+          />
+          <button
+            class="btn btn--sm scaffold-btn"
+            type="submit"
+            :disabled="scaffoldBusy || !scaffoldUrl.trim()"
+          >{{ scaffoldBusy ? t('admin.scaffoldRunning') : t('admin.scaffoldBtn') }}</button>
+        </div>
+        <p v-if="scaffoldError" class="scaffold-err">{{ scaffoldError }}</p>
+      </form>
+
+      <div v-else class="card scaffold scaffold--done">
+        <strong>{{ t('admin.scaffoldDone') }} — {{ scaffoldResult.name }}</strong>
+        <p class="scaffold-result-meta">
+          {{ scaffoldResult.blocks }} {{ t('admin.scaffoldBlocks') }} ·
+          {{ scaffoldResult.pages_crawled }} {{ t('admin.scaffoldPages') }}
+        </p>
+        <code class="prov-link">{{ scaffoldResult.pages_url }}</code>
+        <div class="prov-actions">
+          <span v-if="scaffoldResult.deploy === 'dispatched'" class="badge badge--pending">
+            {{ t('admin.scaffoldDeploying') }}
+          </span>
+          <span v-else class="badge badge--off">{{ t('admin.scaffoldManual') }}</span>
+          <a
+            v-if="scaffoldResult.deploy_log_url"
+            :href="scaffoldResult.deploy_log_url"
+            target="_blank" rel="noopener"
+            class="prov-code"
+          >{{ t('admin.scaffoldLogs') }} ↗</a>
+        </div>
+        <button class="prov-x" @click="scaffoldResult = null">✕</button>
+      </div>
+
       <button
         v-if="!showNewRestaurant"
-        class="btn btn--full create-btn"
+        class="btn btn--ghost btn--full create-btn"
         @click="showNewRestaurant = true"
       ><span class="plus">+</span> {{ t('admin.newRestaurant') }}</button>
 
@@ -272,6 +348,54 @@ async function copyLink() {
 
 /* Forms */
 .form-card { padding: 16px 18px; margin-bottom: 18px; }
+
+/* "Scaffold from URL" card */
+.scaffold {
+  position: relative;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+.scaffold-title {
+  font-family: 'Rufina', serif;
+  font-size: 1.02rem;
+  color: var(--ink);
+  display: block;
+}
+.scaffold-hint {
+  font-size: 0.8rem;
+  color: var(--mut);
+  margin: 4px 0 12px;
+  line-height: 1.45;
+}
+.scaffold-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.scaffold-input {
+  flex: 1 1 auto;
+  font-family: inherit;
+  font-size: 0.92rem;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.scaffold-input:focus { outline: none; border-color: var(--accent); }
+.scaffold-input:disabled { opacity: 0.6; }
+.scaffold-btn { flex: 0 0 auto; }
+.scaffold-err {
+  margin-top: 8px;
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.scaffold--done { background: #fdf3f6; border-color: var(--accent); }
+.scaffold-result-meta {
+  font-size: 0.8rem;
+  color: var(--mut);
+  margin: 6px 0 10px;
+}
 .form-actions { display: flex; gap: 8px; margin-top: 4px; }
 
 /* Restaurants */
