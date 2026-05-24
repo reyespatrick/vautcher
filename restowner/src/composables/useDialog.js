@@ -6,6 +6,16 @@
 //   const ok = await confirm({ title, body, confirmLabel, danger: true })
 //   if (!ok) return
 //
+// For destructive actions, pass `requireText` to force the user to type
+// a specific word (e.g. 'effacer') before the confirm button enables —
+// no separate slug-typing form needed:
+//
+//   await confirm({
+//     title: '…', body: '…', danger: true,
+//     requireText: 'effacer',
+//     inputLabel: 'Tapez « effacer » pour confirmer'
+//   })
+//
 import { ref } from 'vue'
 
 // One slot only — the dialog is modal, so it never needs to queue.
@@ -23,9 +33,15 @@ export function useDialog() {
     body = '',
     confirmLabel = 'Confirmer',
     cancelLabel = 'Annuler',
-    danger = false
+    danger = false,
+    requireText = null,
+    inputLabel = '',
+    inputPlaceholder = ''
   } = {}) {
-    return open({ kind: 'confirm', title, body, confirmLabel, cancelLabel, danger })
+    return open({
+      kind: 'confirm', title, body, confirmLabel, cancelLabel, danger,
+      requireText, inputLabel, inputPlaceholder
+    })
   }
 
   function alert({ title = '', body = '', confirmLabel = 'OK' } = {}) {

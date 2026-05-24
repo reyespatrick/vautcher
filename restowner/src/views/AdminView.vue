@@ -2,7 +2,7 @@
 // Cross-restaurant overview — restaurants and their owners.
 // The clients view has moved to its own /clients tab using the shared
 // <ClientList /> component, so the segmented control here is gone.
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
@@ -193,98 +193,52 @@ function isPlaceholderEmail(email) {
   return typeof email === 'string' && email.startsWith('pending+')
 }
 
-// ---- DELETE TENANT (2-step confirm) ----
-// Step 1: a danger dialog naming everything that gets nuked.
-// Step 2: a second danger dialog asking the moderator to type the
-//         slug back — the same string is sent to the edge function,
-//         which the DB RPC re-validates.
-const deleteConfirmFor = ref(null) // restaurant id while typing
-const deleteSlugTyped = ref('')
+// ---- DELETE TENANT ----
+// One dialog, two confirmations: the moderator has to type "effacer"
+// AND tap the danger button. The slug is no longer requested in the
+// UI because the user shouldn't have to look it up; the edge function
+// re-validates the slug server-side anyway.
 const deleteBusy = ref(false)
-
-// Visible debug strip — temporary diagnostic for the "Supprimer does
-// nothing" report. If the click fires we set this; if confirm() resolves
-// we update it; if it throws we surface the message. Once the bug is
-// pinned down this can go.
-const deleteDebug = ref('')
+const deleteDebug = ref('')   // shown only on caught errors
 
 async function startDelete(r) {
   try {
     const counts = (r.owners?.length || 0) + ' propriétaire(s)'
-    const ok1 = await confirm({
+    const ok = await confirm({
       title: t('admin.deleteStep1Title', { name: r.name }),
       body: t('admin.deleteStep1Body', { name: r.name, counts }),
-      confirmLabel: t('admin.deleteStep1Btn'),
+      confirmLabel: t('admin.deleteFinalConfirm'),
       cancelLabel: t('common.keep'),
-      danger: true
+      danger: true,
+      requireText: 'effacer',
+      inputLabel: t('admin.deleteTypeToConfirm'),
+      inputPlaceholder: 'effacer'
     })
-    if (!ok1) return
-    deleteConfirmFor.value = r.id
-    deleteSlugTyped.value = ''
-    // After Vue re-renders to expose the inline slug-typing form, scroll
-    // it into view and focus the input so the moderator can't miss it
-    // (previously the form appeared mid-card and the user thought
-    // nothing had happened after confirming step 1).
-    await nextTick()
-    const el = document.querySelector(`[data-del-form="${r.id}"]`)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      el.querySelector('input')?.focus()
+    if (!ok) return
+
+    deleteBusy.value = true
+    try {
+      const { data, error } = await deleteTenant(r.id, r.slug)
+      if (error) {
+        await alert({ title: t('admin.error'), body: error.message || '' })
+        return
+      }
+      await load()
+      await alert({
+        title: t('admin.deleteDoneTitle'),
+        body: t('admin.deleteDoneBody', {
+          name: data?.name || '',
+          events: data?.deleted?.events ?? 0,
+          owners: data?.deleted?.owners ?? 0,
+          vouchers: data?.deleted?.vouchers ?? 0
+        })
+      })
+    } finally {
+      deleteBusy.value = false
     }
   } catch (e) {
     deleteDebug.value = '❌ erreur startDelete: ' + (e && e.message ? e.message : String(e))
     console.error('startDelete threw', e)
-  }
-}
-
-async function submitDelete(r) {
-  const typed = deleteSlugTyped.value.trim()
-  if (typed !== r.slug) {
-    await alert({
-      title: t('admin.deleteSlugMismatchTitle'),
-      body: t('admin.deleteSlugMismatchBody', { slug: r.slug })
-    })
-    return
-  }
-  // Step 3 — terminal confirmation. Slug typed correctly, danger
-  // dialog spells out exactly what's about to be deleted (tenant,
-  // owners, events, vouchers, deployed pages.dev site) and that the
-  // action is irreversible.
-  const ownersCount = r.owners?.length || 0
-  const ok3 = await confirm({
-    title: t('admin.deleteFinalTitle', { name: r.name }),
-    body: t('admin.deleteFinalBody', {
-      name: r.name,
-      slug: r.slug,
-      owners: ownersCount
-    }),
-    confirmLabel: t('admin.deleteFinalConfirm'),
-    cancelLabel: t('common.keep'),
-    danger: true
-  })
-  if (!ok3) return
-
-  deleteBusy.value = true
-  try {
-    const { data, error } = await deleteTenant(r.id, typed)
-    if (error) {
-      await alert({ title: t('admin.error'), body: error.message || '' })
-      return
-    }
-    deleteConfirmFor.value = null
-    deleteSlugTyped.value = ''
-    await load()
-    await alert({
-      title: t('admin.deleteDoneTitle'),
-      body: t('admin.deleteDoneBody', {
-        name: data?.name || '',
-        events: data?.deleted?.events ?? 0,
-        owners: data?.deleted?.owners ?? 0,
-        vouchers: data?.deleted?.vouchers ?? 0
-      })
-    })
-  } finally {
-    deleteBusy.value = false
   }
 }
 
@@ -490,43 +444,6 @@ async function copyLink() {
               <span class="ic">🔗</span>{{ t('admin.sourceUrl') }}
             </a>
           </div>
-
-          <!-- Step 2 of delete: type the slug to confirm. -->
-          <form
-            v-if="deleteConfirmFor === r.id"
-            class="del-confirm"
-            :data-del-form="r.id"
-            @submit.prevent="submitDelete(r)"
-          >
-            <label class="del-label">
-              {{ t('admin.deleteStep2Label', { slug: r.slug }) }}
-            </label>
-            <div class="del-row">
-              <input
-                v-model="deleteSlugTyped"
-                type="text"
-                class="del-input"
-                :placeholder="r.slug"
-                autocomplete="off"
-                autocorrect="off"
-                spellcheck="false"
-                autofocus
-              />
-              <button
-                class="btn btn--danger btn--sm"
-                type="submit"
-                :disabled="deleteBusy || deleteSlugTyped.trim() !== r.slug"
-              >
-                {{ deleteBusy ? t('admin.deleteRunning') : t('admin.deleteFinalBtn') }}
-              </button>
-              <button
-                type="button"
-                class="btn btn--plain btn--sm"
-                :disabled="deleteBusy"
-                @click="deleteConfirmFor = null"
-              >{{ t('admin.cancel') }}</button>
-            </div>
-          </form>
 
           <p v-if="!r.owners.length" class="owners-empty">{{ t('admin.noOwners') }}</p>
           <ul v-else class="owners">
@@ -913,55 +830,6 @@ async function copyLink() {
   cursor: pointer;
   padding: 0 4px;
 }
-.del-confirm {
-  margin: 12px 0 4px;
-  padding: 14px 16px;
-  background: rgba(220, 38, 38, 0.08);
-  border: 2px solid var(--danger);
-  border-radius: 12px;
-  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.18);
-  /* Subtle pulse so the moderator's eye catches it after step 1. */
-  animation: delPulse 1.6s ease-out 0s 2;
-}
-@keyframes delPulse {
-  0%   { box-shadow: 0 4px 18px rgba(220, 38, 38, 0.18); }
-  50%  { box-shadow: 0 4px 28px rgba(220, 38, 38, 0.55); }
-  100% { box-shadow: 0 4px 18px rgba(220, 38, 38, 0.18); }
-}
-.del-label {
-  display: block;
-  font-size: 0.82rem;
-  color: var(--ink);
-  margin-bottom: 8px;
-  line-height: 1.45;
-}
-.del-label code {
-  font-family: 'Rufina', serif;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  background: #fff;
-  padding: 1px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--line);
-}
-.del-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.del-input {
-  flex: 1 1 180px;
-  min-width: 0;
-  font-family: 'Rufina', serif;
-  font-size: 0.95rem;
-  padding: 8px 11px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-}
-.del-input:focus { outline: none; border-color: var(--danger); }
-
 .owners { list-style: none; margin: 10px 0 4px; }
 .owners-empty { font-size: 0.8rem; color: var(--mut); margin: 8px 0 4px; }
 .owners li {
