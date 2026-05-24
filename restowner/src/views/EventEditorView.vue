@@ -425,6 +425,8 @@ async function onCancelEvent() {
           <span class="tg-text">{{ t('editor.paid') }}</span>
         </label>
         <div v-if="paidOn" class="opt-body rebate-body">
+          <label class="sub-label">{{ t('editor.priceLabel') }}</label>
+          <p class="sub-hint">{{ t('editor.priceHint') }}</p>
           <input
             v-model="form.price"
             type="text"
@@ -828,6 +830,12 @@ async function onCancelEvent() {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--mut);
+}
+.sub-hint {
+  font-size: 0.78rem;
+  color: var(--mut);
+  line-height: 1.45;
+  margin: 4px 0 8px;
 }
 .rad { display: flex; align-items: center; gap: 9px; font-size: 0.9rem; cursor: pointer; }
 .rad input { accent-color: var(--accent); }
