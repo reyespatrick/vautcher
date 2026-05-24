@@ -85,6 +85,10 @@ const recurrenceBadge = computed(() => {
         <p class="ev-meta">
           {{ dateText }}<template v-if="event.event_time"> · {{ event.event_time }}</template><template v-if="event.location"> · {{ event.location }}</template>
         </p>
+        <p class="ev-attendees">
+          <strong>{{ attendees }}</strong>
+          {{ attendees === 1 ? t('event.attendeesOne') : t('event.attendeesMany') }}
+        </p>
         <p
           v-if="event.moderation_status === 'refused' && event.refusal_reason"
           class="ev-refused"
@@ -107,7 +111,6 @@ const recurrenceBadge = computed(() => {
         <div v-if="ageText"><dt>{{ t('event.age') }}</dt><dd>{{ ageText }}</dd></div>
         <div v-if="pointsBadge"><dt>{{ t('event.loyaltyPoints') }}</dt><dd>{{ pointsBadge }}</dd></div>
         <div v-if="rebateText"><dt>{{ t('event.rebate') }}</dt><dd>{{ rebateText }}</dd></div>
-        <div><dt>{{ t('event.attendees') }}</dt><dd>{{ attendees }}</dd></div>
       </dl>
     </div>
 
@@ -145,6 +148,17 @@ const recurrenceBadge = computed(() => {
 .ev-titleline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .ev-titleline h3 { font-size: 1.02rem; color: var(--ink); }
 .ev-meta { color: var(--mut); font-size: 0.8rem; margin-top: 3px; }
+.ev-attendees {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--mut);
+}
+.ev-attendees strong {
+  font-family: 'Rufina', serif;
+  font-size: 0.96rem;
+  color: var(--accent);
+  margin-right: 4px;
+}
 .ev-refused {
   margin-top: 5px;
   font-size: 0.78rem;
