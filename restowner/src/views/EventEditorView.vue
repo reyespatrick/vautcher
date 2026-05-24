@@ -31,6 +31,7 @@ const form = ref({
   rebate_value: null, rebate_unit: 'percent', rebate_first_n: null,
   max_participants: null,
   recurrence: 'none',
+  recurrence_pattern: 'date',
   published: true, status: 'active'
 })
 const ageTargeted = ref(false)
@@ -58,6 +59,7 @@ function fillFrom(ev) {
     rebate_first_n: ev.rebate_first_n,
     max_participants: ev.max_participants,
     recurrence: ev.recurrence || 'none',
+    recurrence_pattern: ev.recurrence_pattern || 'date',
     published: ev.published, status: ev.status || 'active'
   }
   ageTargeted.value = !!(ev.age_min || ev.age_max)
@@ -133,6 +135,41 @@ onMounted(async () => {
 
 const valid = computed(() => form.value.title.trim() && form.value.event_date)
 
+// ---- Recurrence preview ----
+// Derive day-of-week / week-of-month from the event_date so the owner
+// sees exactly what the series will look like before saving.
+const WEEKDAYS_FR = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
+function nthLabel(n) {
+  if (n === 1) return '1ᵉʳ'
+  return n + 'ᵉ'
+}
+const recurDate = computed(() =>
+  form.value.event_date ? new Date(form.value.event_date + 'T00:00:00') : null
+)
+const recurWeekday = computed(() =>
+  recurDate.value ? WEEKDAYS_FR[recurDate.value.getDay()] : ''
+)
+const recurNthOfMonth = computed(() =>
+  recurDate.value ? Math.ceil(recurDate.value.getDate() / 7) : 0
+)
+const recurPreview = computed(() => {
+  if (!recurDate.value || form.value.recurrence === 'none') return ''
+  const wd = recurWeekday.value
+  switch (form.value.recurrence) {
+    case 'weekly':
+      return `Tous les ${wd}s — 4 occurrences sur ~1 mois.`
+    case 'biweekly':
+      return `Tous les deux ${wd}s — 6 occurrences sur ~3 mois.`
+    case 'monthly':
+      if (form.value.recurrence_pattern === 'weekday') {
+        return `Le ${nthLabel(recurNthOfMonth.value)} ${wd} de chaque mois — 12 occurrences sur 12 mois.`
+      }
+      return `Le ${recurDate.value.getDate()} de chaque mois — 12 occurrences sur 12 mois.`
+    default:
+      return ''
+  }
+})
+
 async function save() {
   if (!valid.value || saving.value) return
   saving.value = true
@@ -179,6 +216,9 @@ async function save() {
         ? (Number(form.value.max_participants) || null)
         : null,
       recurrence: form.value.recurrence || 'none',
+      recurrence_pattern: form.value.recurrence === 'monthly'
+        ? (form.value.recurrence_pattern || 'date')
+        : 'date',
       published: true,
       status: form.value.status,
       // Creating or editing an event (re-)enters the moderation queue:
@@ -193,10 +233,11 @@ async function save() {
       : await createEvent(payload)
     if (res.error) { error.value = res.error.message; return }
 
-    // For a brand-new recurring event, generate the next 8 occurrences.
+    // For a brand-new recurring event, ask the SQL function to pick the
+    // recurrence-appropriate horizon (4 weekly / 6 biweekly / 12 monthly).
     // Editing an existing event never re-materialises (would dupe rows).
     if (!editingId.value && form.value.recurrence !== 'none' && res.data?.id) {
-      await materializeSeries(res.data.id, 8)
+      await materializeSeries(res.data.id, null)
     }
     router.push({ name: 'dashboard' })
   } catch (e) {
@@ -396,6 +437,21 @@ async function onCancelEvent() {
             <option value="monthly">{{ t('editor.recurMonthly') }}</option>
           </select>
         </div>
+
+        <!-- Monthly sub-mode: same date vs same Nth weekday -->
+        <div v-if="form.recurrence === 'monthly' && !editingId" class="opt-body opt-sub">
+          <label class="rad">
+            <input type="radio" v-model="form.recurrence_pattern" value="date" />
+            <span>Le {{ recurDate ? recurDate.getDate() : '?' }} de chaque mois</span>
+          </label>
+          <label class="rad">
+            <input type="radio" v-model="form.recurrence_pattern" value="weekday" />
+            <span>Le {{ nthLabel(recurNthOfMonth) }} {{ recurWeekday }} de chaque mois</span>
+          </label>
+        </div>
+
+        <p v-if="recurPreview && !editingId" class="recur-preview">{{ recurPreview }}</p>
+
         <span class="opt-help">
           {{ editingId ? t('editor.recurLocked') : t('editor.recurHint') }}
         </span>
@@ -551,6 +607,18 @@ async function onCancelEvent() {
   color: var(--ink);
 }
 .opt-select:disabled { opacity: 0.55; cursor: not-allowed; }
+.opt-sub { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.rad { display: flex; align-items: center; gap: 9px; font-size: 0.9rem; cursor: pointer; }
+.rad input { accent-color: var(--accent); }
+.recur-preview {
+  margin: 10px 0 0;
+  padding: 8px 11px;
+  background: #fdf3f6;
+  border: 1px solid #f3d3df;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  color: var(--accent-dark);
+}
 .opt-help {
   display: block;
   font-size: 0.74rem;
