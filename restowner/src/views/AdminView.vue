@@ -34,6 +34,38 @@ const scaffoldUrl = ref('')
 const scaffoldBusy = ref(false)
 const scaffoldResult = ref(null)      // { id, name, slug, blocks, deploy, deploy_log_url, pages_url }
 const scaffoldError = ref('')
+const scaffoldStatus = ref('')        // human-readable current step
+let scaffoldTickHandle = null
+
+// The edge function call is one network round-trip from the browser's
+// perspective, but the function itself runs ~20-60s of work (crawl,
+// extract, DB insert, GitHub workflow dispatch). We can't read its
+// real progress mid-flight, so we cycle through plausible step labels
+// on a timer just to give the moderator something animated to watch.
+const SCAFFOLD_STEPS = [
+  { at: 0,     key: 'admin.scaffoldStep1' },  // contacting the site
+  { at: 4000,  key: 'admin.scaffoldStep2' },  // extracting content
+  { at: 10000, key: 'admin.scaffoldStep3' },  // creating the tenant
+  { at: 16000, key: 'admin.scaffoldStep4' },  // dispatching the deploy
+  { at: 26000, key: 'admin.scaffoldStep5' }   // waiting for pages.dev
+]
+function startScaffoldTicker() {
+  const t0 = Date.now()
+  const tick = () => {
+    const elapsed = Date.now() - t0
+    // Pick the latest step whose `at` is <= elapsed.
+    const step = SCAFFOLD_STEPS.reduce(
+      (acc, s) => (elapsed >= s.at ? s : acc), SCAFFOLD_STEPS[0]
+    )
+    scaffoldStatus.value = t(step.key)
+  }
+  tick()
+  scaffoldTickHandle = setInterval(tick, 1000)
+}
+function stopScaffoldTicker() {
+  if (scaffoldTickHandle) clearInterval(scaffoldTickHandle)
+  scaffoldTickHandle = null
+}
 
 async function submitScaffold() {
   const u = scaffoldUrl.value.trim()
@@ -41,6 +73,7 @@ async function submitScaffold() {
   scaffoldBusy.value = true
   scaffoldError.value = ''
   scaffoldResult.value = null
+  startScaffoldTicker()
   try {
     const { data, error } = await scaffoldTenant(u)
     if (error) {
@@ -53,6 +86,7 @@ async function submitScaffold() {
   } catch (e) {
     scaffoldError.value = (e && e.message) || String(e)
   } finally {
+    stopScaffoldTicker()
     scaffoldBusy.value = false
   }
 }
@@ -309,9 +343,24 @@ async function copyLink() {
           />
           <button
             class="btn btn--sm scaffold-btn"
+            :class="{ 'scaffold-btn--busy': scaffoldBusy }"
             type="submit"
             :disabled="scaffoldBusy || !scaffoldUrl.trim()"
-          >{{ scaffoldBusy ? t('admin.scaffoldRunning') : t('admin.scaffoldBtn') }}</button>
+          >
+            <span v-if="scaffoldBusy" class="spinner" aria-hidden="true"></span>
+            <span class="scaffold-btn-label">
+              {{ scaffoldBusy ? t('admin.scaffoldRunning') : t('admin.scaffoldBtn') }}
+            </span>
+          </button>
+        </div>
+        <!-- Live status while the edge function + GitHub workflow run.
+             scaffoldStatus is the human-readable step we're currently on
+             (extraction, DB insert, deploy dispatch, …). The shimmer bar
+             below gives the user something to watch instead of a frozen
+             button. -->
+        <div v-if="scaffoldBusy" class="scaffold-progress" role="status" aria-live="polite">
+          <div class="scaffold-progress-bar"><span></span></div>
+          <p class="scaffold-progress-step">{{ scaffoldStatus }}</p>
         </div>
         <p v-if="scaffoldError" class="scaffold-err">{{ scaffoldError }}</p>
       </form>
@@ -597,7 +646,77 @@ async function copyLink() {
 }
 .scaffold-input:focus { outline: none; border-color: var(--accent); }
 .scaffold-input:disabled { opacity: 0.6; }
-.scaffold-btn { flex: 0 0 auto; }
+.scaffold-btn { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; }
+.scaffold-btn--busy { animation: scaffoldPulse 1.6s ease-in-out infinite; }
+.scaffold-btn-label::after {
+  content: '';
+}
+.scaffold-btn--busy .scaffold-btn-label::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: scaffoldDots 1.4s steps(4, end) infinite;
+}
+@keyframes scaffoldDots {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+@keyframes scaffoldPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(158, 5, 61, 0.35); }
+  50%      { box-shadow: 0 0 0 6px rgba(158, 5, 61, 0); }
+}
+
+/* Inline spinner that sits before the button label while busy. */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Live status block below the row — shimmer bar + step label. */
+.scaffold-progress {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.scaffold-progress-bar {
+  position: relative;
+  height: 4px;
+  background: rgba(158, 5, 61, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.scaffold-progress-bar span {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scaffoldShimmer 1.4s ease-in-out infinite;
+}
+@keyframes scaffoldShimmer {
+  0%   { left: -40%; }
+  100% { left: 100%; }
+}
+.scaffold-progress-step {
+  font-size: 0.84rem;
+  color: var(--mut);
+  margin: 0;
+  transition: opacity 0.3s;
+}
 .scaffold-err {
   margin-top: 8px;
   color: var(--danger);
