@@ -1,19 +1,20 @@
 <script setup>
+// Cross-restaurant overview — restaurants and their owners.
+// The clients view has moved to its own /clients tab using the shared
+// <ClientList /> component, so the segmented control here is gone.
 import { ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import {
-  adminRestaurants, adminClients, createRestaurant,
-  setOwnerFlags, setClientLocked, provisionOwner
+  adminRestaurants, createRestaurant,
+  setOwnerFlags, provisionOwner
 } from '../lib/admin'
 
 const { t } = useI18n()
 const { isModerator } = useAuth()
 
-const seg = ref('restaurants')
 const restaurants = ref([])
-const clients = ref([])
 const loading = ref(true)
 const loadError = ref(false)
 const busy = ref(false)
@@ -33,11 +34,9 @@ async function load() {
     if (loading.value) { loading.value = false; loadError.value = true }
   }, 9000)
   try {
-    // Admin is always the cross-restaurant overview — no scope filter.
-    const [r, c] = await Promise.all([adminRestaurants(), adminClients()])
-    if (r.error) throw r.error
-    restaurants.value = r.data
-    clients.value = c.data
+    const { data, error } = await adminRestaurants()
+    if (error) throw error
+    restaurants.value = data
   } catch (e) {
     loadError.value = true
   } finally {
@@ -107,18 +106,6 @@ async function toggleOwnerLock(owner) {
   }
 }
 
-async function toggleClientLock(client) {
-  if (busy.value) return
-  busy.value = true
-  try {
-    const next = !client.locked
-    const { error } = await setClientLocked(client.id, next)
-    if (!error) client.locked = next
-  } finally {
-    busy.value = false
-  }
-}
-
 async function copyLink() {
   try {
     await navigator.clipboard.writeText(provisionResult.value.action_link)
@@ -135,15 +122,6 @@ async function copyLink() {
       <p>{{ t('admin.subtitle') }}</p>
     </div>
 
-    <div class="seg">
-      <button :class="{ on: seg === 'restaurants' }" @click="seg = 'restaurants'">
-        {{ t('admin.tabRestaurants') }}
-      </button>
-      <button :class="{ on: seg === 'clients' }" @click="seg = 'clients'">
-        {{ t('admin.tabClients') }}
-      </button>
-    </div>
-
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 
     <div v-else-if="loadError" class="empty">
@@ -151,8 +129,7 @@ async function copyLink() {
       <button class="btn btn--plain btn--sm retry" @click="load">{{ t('common.retry') }}</button>
     </div>
 
-    <!-- ============ RESTAURANTS & OWNERS ============ -->
-    <template v-else-if="seg === 'restaurants'">
+    <template v-else>
       <!-- New-owner result panel -->
       <div v-if="provisionResult" class="card prov">
         <strong>{{ t('admin.provisioned') }} — {{ provisionResult.email }}</strong>
@@ -249,23 +226,6 @@ async function copyLink() {
         </div>
       </div>
     </template>
-
-    <!-- ============ CLIENTS ============ -->
-    <template v-else>
-      <p v-if="!clients.length" class="empty">{{ t('admin.clientsEmpty') }}</p>
-      <div v-else class="c-list">
-        <div v-for="c in clients" :key="c.id" class="card client" :class="{ locked: c.locked }">
-          <div class="client-id">
-            <strong>{{ c.name }}</strong>
-            <span class="client-meta">{{ t('admin.stamps', { n: c.stamps }) }}</span>
-          </div>
-          <button
-            class="chip chip--lock" :class="{ on: c.locked }"
-            :disabled="busy" @click="toggleClientLock(c)"
-          >{{ c.locked ? t('admin.locked') : t('admin.lock') }}</button>
-        </div>
-      </div>
-    </template>
   </div>
 </template>
 
@@ -273,28 +233,6 @@ async function copyLink() {
 .retry { display: block; margin: 14px auto 0; }
 .create-btn { margin-bottom: 18px; }
 .plus { font-size: 1.15rem; font-weight: 700; line-height: 0; }
-
-/* Segmented control */
-.seg {
-  display: flex;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 18px;
-}
-.seg button {
-  flex: 1;
-  padding: 10px 0;
-  border: 0;
-  background: var(--surface);
-  color: var(--ink);
-  font-family: inherit;
-  font-weight: 700;
-  font-size: 0.84rem;
-  cursor: pointer;
-}
-.seg button + button { border-left: 1px solid var(--line); }
-.seg button.on { background: var(--accent); color: #fff; }
 
 /* Provisioned-owner result */
 .prov {
@@ -329,7 +267,7 @@ async function copyLink() {
 .form-actions { display: flex; gap: 8px; margin-top: 4px; }
 
 /* Restaurants */
-.r-list, .c-list { display: flex; flex-direction: column; gap: 12px; }
+.r-list { display: flex; flex-direction: column; gap: 12px; }
 .resto { padding: 14px 16px; }
 .resto-head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
 .resto-cfg { margin-left: auto; }
@@ -371,16 +309,4 @@ async function copyLink() {
 .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .chip--lock.on { background: var(--danger); border-color: var(--danger); }
 .chip:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* Clients */
-.client {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 13px 16px;
-}
-.client.locked { opacity: 0.6; }
-.client-id strong { font-family: 'Rufina', serif; font-size: 1rem; }
-.client-meta { display: block; font-size: 0.74rem; color: var(--mut); }
 </style>
