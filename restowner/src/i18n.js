@@ -145,7 +145,7 @@ const fr = {
     capacity: 'Limiter aux premiers inscrits',
     capacityOpen: 'Ouvert à tous, sans limite d’inscrits.',
     capacitySuffix: 'inscrits au maximum',
-    notify: 'Notification push',
+    notify: 'Informer le client',
     notifyNone: 'Aucune notification',
     notifyNow: 'Tout de suite (à l’approbation)',
     notifyDays: '{n} jour(s) avant l’événement/offre',
