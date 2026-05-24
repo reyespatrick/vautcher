@@ -30,11 +30,14 @@ jobs:
       - name: Scan restowner/src + app/src
         run: |
           set -euo pipefail
-          # Two passes:
-          #  1. Always-fail: `window.confirm/alert/prompt(` — unambiguous.
-          #  2. Bare `confirm(/alert(/prompt(` but ONLY in files that don't
-          #     import useDialog; in files that do, the bare names are the
-          #     composable's destructured methods, not the native APIs.
+          # Three passes — every one fails the build:
+          #  1. Any `window.confirm/alert/prompt(` — unambiguous native call.
+          #  2. Any bare `confirm/alert/prompt(` in a file that does NOT
+          #     import useDialog — falls through to the window globals.
+          #  3. Any bare `confirm/alert/prompt(` in a file that DOES import
+          #     useDialog but doesn't destructure THAT NAME — the bug that
+          #     just shipped a "[object Object]" dialog to production
+          #     because AdminView destructured { alert } but called confirm().
           FILES=$(find restowner/src app/src \
             \( -name '*.vue' -o -name '*.js' -o -name '*.ts' \) \
             -not -path '*composables/useDialog*' \
@@ -42,23 +45,42 @@ jobs:
 
           HITS=""
           for f in $FILES; do
-            # Pass 1 — always flag window.<dialog>(
+            # Pass 1 — window.<dialog>(
             H1=$(grep -nE '(^|[^a-zA-Z_.])window\.(confirm|alert|prompt)[[:space:]]*\(' "$f" || true)
-            [ -n "$H1" ] && HITS="${HITS}${f}:\n${H1}\n"
+            [ -n "$H1" ] && HITS="${HITS}${f}: window.X(...)\n${H1}\n"
 
-            # Pass 2 — bare call. Skip files that use useDialog (their bare
-            # `confirm`/`alert`/`prompt` calls are the composable's methods).
-            if ! grep -q 'useDialog' "$f"; then
-              H2=$(grep -nE '(^|[^a-zA-Z_.])(confirm|alert|prompt)[[:space:]]*\(' "$f" \
-                | grep -vE 'confirmLabel|cancelLabel|confirmation|confirmed|confirmCancel|confirmDelete|confirmArchive|confirmDeleteImage' \
-                | grep -vE '\.alert\(|\.confirm\(|\.prompt\(' \
-                || true)
-              [ -n "$H2" ] && HITS="${HITS}${f}:\n${H2}\n"
+            # Determine which names this file calls bare (not method/prop).
+            CALLED=$(grep -oE '(^|[^a-zA-Z_.])(confirm|alert|prompt)[[:space:]]*\(' "$f" \
+              | grep -oE '(confirm|alert|prompt)\b' | sort -u || true)
+            [ -z "$CALLED" ] && continue
+
+            if grep -q 'useDialog' "$f"; then
+              # Pass 3 — file uses useDialog. Extract the destructured names
+              # from `const {...} = useDialog()` and require each CALLED name
+              # to appear in that set.
+              DEST=$(grep -oE 'const[[:space:]]*\{[^}]+\}[[:space:]]*=[[:space:]]*useDialog\(\)' "$f" \
+                | grep -oE '\{[^}]+\}' | tr -d '{}' | tr ',' '\n' \
+                | awk '{print $1}' | tr -d ' ' | sort -u || true)
+              MISSING=""
+              for c in $CALLED; do
+                if ! echo "$DEST" | grep -qx "$c"; then
+                  MISSING="$MISSING $c"
+                fi
+              done
+              if [ -n "$MISSING" ]; then
+                LINES=$(grep -nE "(^|[^a-zA-Z_.])($(echo $MISSING | tr ' ' '|'))[[:space:]]*\(" "$f" || true)
+                HITS="${HITS}${f}: imports useDialog but does not destructure [${MISSING# }] — these calls hit window.<X>(...)\n${LINES}\n"
+              fi
+            else
+              # Pass 2 — no useDialog import; every bare call is native.
+              LINES=$(grep -nE "(^|[^a-zA-Z_.])($(echo $CALLED | tr ' ' '|'))[[:space:]]*\(" "$f" \
+                | grep -vE '\.alert\(|\.confirm\(|\.prompt\(' || true)
+              [ -n "$LINES" ] && HITS="${HITS}${f}: bare call, no useDialog import\n${LINES}\n"
             fi
           done
 
           if [ -n "$HITS" ]; then
-            echo "::error::Native dialog calls found — use useDialog().confirm/alert instead:"
+            echo "::error::Native dialog calls found — fix by destructuring from useDialog():"
             printf "%b" "$HITS"
             exit 1
           fi

@@ -14,7 +14,7 @@ import {
 
 const { t } = useI18n()
 const { isModerator } = useAuth()
-const { alert } = useDialog()
+const { confirm, alert } = useDialog()
 
 const restaurants = ref([])
 const loading = ref(true)
