@@ -159,7 +159,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy restowner/dist --project-name=restowner --branch=main
+          command: pages deploy restowner/dist --project-name=restowner --branch=main --commit-dirty=true --commit-message=deploy-${{ github.sha }}
 
   diner-app:
     name: Build & deploy diner app
@@ -187,13 +187,13 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy app/dist --project-name=la-gioconda --branch=main
+          command: pages deploy app/dist --project-name=la-gioconda --branch=main --commit-dirty=true --commit-message=deploy-${{ github.sha }}
       - name: Deploy to Cloudflare Pages (la-gioconda-restaurant)
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy app/dist --project-name=la-gioconda-restaurant --branch=main
+          command: pages deploy app/dist --project-name=la-gioconda-restaurant --branch=main --commit-dirty=true --commit-message=deploy-${{ github.sha }}
 
   edge-function:
     name: Deploy vautcher-pass edge function
