@@ -177,10 +177,20 @@ async function onCancel() {
       <section class="owner-zone">
         <h2 class="owner-zone-title">{{ t('detail.ownerZoneTitle') }}</h2>
 
-        <p class="owner-stat">
-          <strong>{{ attendees }}</strong>
-          {{ attendees === 1 ? t('event.attendeesOne') : t('event.attendeesMany') }}
-        </p>
+        <RouterLink
+          :to="{ name: 'event-attendees', params: { id: event.id } }"
+          class="owner-stat owner-stat--link"
+        >
+          <span class="os-text">
+            <strong>{{ attendees }}</strong>
+            {{ attendees === 1 ? t('event.attendeesOne') : t('event.attendeesMany') }}
+          </span>
+          <svg class="os-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </RouterLink>
 
         <div v-if="ageText || pointsText" class="owner-targets">
           <span v-if="ageText" class="owner-tag">{{ t('event.age') }} : {{ ageText }}</span>
@@ -353,6 +363,25 @@ async function onCancel() {
   font-size: 1.2rem;
   margin-right: 4px;
 }
+/* Tap-target variant when the count links to the inscrits list. */
+.owner-stat--link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.owner-stat--link:hover {
+  border-color: var(--accent);
+  background: #fdf3f6;
+}
+.os-text { display: flex; align-items: center; }
+.os-chev { width: 18px; height: 18px; color: var(--mut); flex: 0 0 auto; }
 .owner-targets {
   display: flex;
   flex-wrap: wrap;

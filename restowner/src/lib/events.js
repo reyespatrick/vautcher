@@ -152,3 +152,15 @@ export async function listEventStats() {
   for (const row of data) map[row.event_id] = Number(row.attendees) || 0
   return map
 }
+
+/**
+ * Diners who have RSVPed to a single event. Returns
+ * { data: [{ id, name, birth_date, locked, rsvped_at }], error }.
+ */
+export async function eventAttendees(eventId) {
+  if (!eventId) return { data: [], error: null }
+  const { data, error } = await supabase.rpc('vautcher_event_attendees', {
+    p_event_id: eventId
+  })
+  return { data: data || [], error }
+}

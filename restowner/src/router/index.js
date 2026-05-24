@@ -5,6 +5,7 @@ import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import EventEditorView from '../views/EventEditorView.vue'
 import EventDetailView from '../views/EventDetailView.vue'
+import EventAttendeesView from '../views/EventAttendeesView.vue'
 import HistoryView from '../views/HistoryView.vue'
 import ScanView from '../views/ScanView.vue'
 import ShareView from '../views/ShareView.vue'
@@ -20,6 +21,7 @@ const routes = [
   { path: '/', name: 'dashboard', component: DashboardView },
   { path: '/event/new', name: 'event-new', component: EventEditorView },
   { path: '/event/:id', name: 'event-detail', component: EventDetailView },
+  { path: '/event/:id/inscrits', name: 'event-attendees', component: EventAttendeesView },
   { path: '/event/:id/edit', name: 'event-edit', component: EventEditorView },
   { path: '/history', name: 'history', component: HistoryView },
   { path: '/scan', name: 'scan', component: ScanView },

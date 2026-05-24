@@ -42,6 +42,7 @@ jobs:
             restowner/supabase/admin-client-scope.sql \
             restowner/supabase/my-restaurants.sql \
             restowner/supabase/restaurant-clients.sql \
+            restowner/supabase/event-attendees.sql \
             restowner/supabase/root-account-schema.sql \
             restowner/supabase/owner-stats.sql \
             restowner/supabase/voucher-schema.sql \

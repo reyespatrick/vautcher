@@ -222,6 +222,12 @@ const fr = {
     previewBanner: 'Aperçu — voici ce que voient vos clients',
     ownerZoneTitle: 'Informations propriétaire'
   },
+  attendees: {
+    back: 'Retour à l’événement',
+    title: 'Inscrits',
+    empty: 'Personne n’est encore inscrit à cet événement.',
+    rsvpedAt: 'Inscrit le'
+  },
   admin: {
     title: 'Administration',
     subtitle: 'Restaurants, propriétaires et clients de la plateforme.',
