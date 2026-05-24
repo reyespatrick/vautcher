@@ -45,8 +45,10 @@ const rebateText = computed(() => {
           <strong>{{ day }}</strong>
           <small>{{ monthShort }}</small>
         </div>
-        <span v-if="event.joined" class="ev-flag">✓ Inscrit</span>
-        <span v-if="full" class="ev-full">Complet</span>
+        <div v-if="event.joined" class="ev-stamp" aria-label="Inscrit">
+          <span>Inscrit</span>
+        </div>
+        <span v-if="full && !event.joined" class="ev-full">Complet</span>
       </div>
 
       <div class="ev-body">
@@ -149,17 +151,49 @@ const rebateText = computed(() => {
   color: var(--grey);
   margin-top: 3px;
 }
-.ev-flag {
+/* Passport-style "Inscrit" stamp — semi-transparent, slightly rotated,
+   double-bordered, sits on top of the event image so the registration
+   state reads at a glance from across the room. */
+.ev-stamp {
   position: absolute;
-  bottom: 12px;
-  left: 14px;
-  background: var(--burgundy);
-  color: #fff;
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 5px 11px;
-  border-radius: 20px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-14deg);
+  border: 3px double var(--burgundy);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--burgundy);
+  font-family: 'Rufina', serif;
+  font-weight: 800;
+  font-size: 1.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 8px 22px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0.96;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  /* Pop in subtly when state flips to joined. */
+  animation: stamp-in 0.32s cubic-bezier(0.18, 1.2, 0.4, 1) both;
+}
+.ev-stamp::before,
+.ev-stamp::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(158, 5, 61, 0.35);
+  border-radius: 2px;
+  pointer-events: none;
+}
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(1.45);
+  }
+  to {
+    opacity: 0.96;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(1);
+  }
 }
 .ev-full {
   position: absolute;

@@ -180,8 +180,10 @@ async function addToCalendar() {
 
     <article v-else-if="event" class="ed">
       <div class="ed-hero" :style="{ backgroundImage: `url(${event.image_url})` }">
-        <span v-if="event.joined" class="ed-flag">✓ Inscrit·e</span>
-        <span v-if="full" class="ed-flag ed-flag--full">Complet</span>
+        <div v-if="event.joined" class="ed-stamp" aria-label="Inscrit·e">
+          <span>Inscrit·e</span>
+        </div>
+        <span v-if="full && !event.joined" class="ed-flag ed-flag--full">Complet</span>
       </div>
 
       <div class="ed-body">
@@ -298,6 +300,49 @@ async function addToCalendar() {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+}
+
+/* Passport-style "Inscrit·e" stamp — larger than the card variant
+   because the hero image gives us the room. Same diagonal rotation
+   and double-border for visual continuity between list and detail. */
+.ed-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-14deg);
+  border: 4px double var(--burgundy);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--burgundy);
+  font-family: 'Rufina', serif;
+  font-weight: 800;
+  font-size: 2.4rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 12px 32px;
+  border-radius: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0.96;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  animation: ed-stamp-in 0.35s cubic-bezier(0.18, 1.2, 0.4, 1) both;
+}
+.ed-stamp::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(158, 5, 61, 0.35);
+  border-radius: 3px;
+  pointer-events: none;
+}
+@keyframes ed-stamp-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(1.4);
+  }
+  to {
+    opacity: 0.96;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(1);
+  }
 }
 
 .ed-body { padding: 22px 22px 28px; }
