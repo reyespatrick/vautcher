@@ -74,11 +74,14 @@ export function useScope() {
     return null
   })
 
-  // Show the picker only when there's actually a choice to make.
-  // The RPC already filters: a plain owner only ever sees their own
-  // restaurant, a moderator sees every one — so the data alone is a
-  // reliable gate, no need to also wait on isModerator to resolve.
-  const canSwitch = computed(() => restaurants.value.length > 1)
+  // Picker is moderator-only by policy — even if a plain owner ended
+  // up attached to several restaurants someday, they should never see
+  // the switcher. The computed is reactive on both isModerator and the
+  // list, so the picker appears the moment moderator status resolves
+  // AND the restaurants list lands.
+  const canSwitch = computed(() =>
+    isModerator.value && restaurants.value.length > 1
+  )
 
   function setScope(id) {
     scopeRestaurantId.value = id || null
