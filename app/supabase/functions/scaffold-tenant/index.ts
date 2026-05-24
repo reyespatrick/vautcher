@@ -466,8 +466,11 @@ Deno.serve(async (req: Request) => {
   const $h = home.$
   const baseUrl = home.url
 
-  // Brand colour from the site's own CSS.
-  const themeColor = $h('meta[name="theme-color"]').attr('content') || null
+  // Brand colour: site-declared theme-color FIRST, but only when it's
+  // actually a brand colour. Sites often ship a neutral white/black
+  // theme-color that would tint every PWA chrome to off-brand.
+  const rawThemeColor = $h('meta[name="theme-color"]').attr('content') || null
+  const themeColor = rawThemeColor && !isNeutralHex(rawThemeColor) ? rawThemeColor : null
   const cssBrand = await sampleBrandColor($h, baseUrl)
   const brand = themeColor || cssBrand || null
 

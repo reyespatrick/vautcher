@@ -42,6 +42,10 @@ PWA_NAME=$(echo "$CFG" | jq -r '.pwa_name // empty')
 PWA_SHORT=$(echo "$CFG" | jq -r '.pwa_short_name // empty')
 [ -z "$PWA_SHORT" ] && PWA_SHORT="$NAME"
 PWA_DESC=$(echo "$CFG" | jq -r '.pwa_description // empty')
+# Fall back to the restaurant name so vite-plugin-pwa doesn't pick its
+# La-Gioconda-flavoured default ("Restaurant napolitain à Cointrin…")
+# for a tenant that didn't expose a description.
+[ -z "$PWA_DESC" ] && PWA_DESC="$NAME"
 THEME=$(echo "$CFG" | jq -r '.theme_color // "#9e053d"')
 LOGO=$(echo "$CFG" | jq -r '.logo_url // empty')
 

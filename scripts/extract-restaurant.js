@@ -149,7 +149,12 @@ const og = {
   image: meta($h, 'og:image', 'property'),
   site_name: meta($h, 'og:site_name', 'property')
 }
-const themeColor = meta($h, 'theme-color')
+// Reject a site-declared theme-color when it's actually a neutral
+// (white / black / near-gray). Otherwise it'd hijack brand_primary
+// and tint every PWA chrome off-brand. Falls through to the CSS
+// frequency-tally sampler.
+const rawThemeColor = meta($h, 'theme-color')
+const themeColor = rawThemeColor && !isNeutralHex(rawThemeColor) ? rawThemeColor : null
 
 // ---------- brand color from the site's own CSS ----------
 // Extracts hex colors from `color:` and `background[-color]:` declarations
