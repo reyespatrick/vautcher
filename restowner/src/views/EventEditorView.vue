@@ -520,37 +520,6 @@ async function onCancelEvent() {
         <span class="opt-help" style="margin-left:0">{{ t('editor.imageHint') }}</span>
       </div>
 
-      <!-- Age targeting -->
-      <div class="opt">
-        <label class="toggle">
-          <input type="checkbox" v-model="ageTargeted" />
-          <span class="track"></span>
-          <span class="tg-text">{{ t('editor.ageTarget') }}</span>
-        </label>
-        <div v-if="ageTargeted" class="row2 opt-body">
-          <input v-model="form.age_min" type="number" min="0" max="120" :placeholder="t('editor.ageMin')" />
-          <input v-model="form.age_max" type="number" min="0" max="120" :placeholder="t('editor.ageMax')" />
-        </div>
-        <span v-else class="opt-help">{{ t('editor.ageOpen') }}</span>
-      </div>
-
-      <!-- Loyalty-points targeting -->
-      <div class="opt">
-        <label class="toggle">
-          <input type="checkbox" v-model="pointsTargeted" />
-          <span class="track"></span>
-          <span class="tg-text">{{ t('editor.pointsTarget') }}</span>
-        </label>
-        <div v-if="pointsTargeted">
-          <div class="row2 opt-body">
-            <input v-model="form.points_min" type="number" min="0" :placeholder="t('editor.pointsMin')" />
-            <input v-model="form.points_max" type="number" min="0" :placeholder="t('editor.pointsMax')" />
-          </div>
-          <span class="opt-help" style="margin-left:0">{{ t('editor.pointsHint') }}</span>
-        </div>
-        <span v-else class="opt-help">{{ t('editor.pointsOpen') }}</span>
-      </div>
-
       <!-- Recurrence — themed as an opt-in toggle, like "Offrir un rabais". -->
       <div class="opt">
         <label class="toggle">
@@ -649,7 +618,7 @@ async function onCancelEvent() {
         <span v-else class="opt-help">{{ t('editor.recurHint') }}</span>
       </div>
 
-      <!-- Reminder push -->
+      <!-- Informer le client — when to notify + who to target -->
       <div class="opt">
         <span class="tg-text">{{ t('editor.notify') }}</span>
         <div class="opt-body">
@@ -664,6 +633,42 @@ async function onCancelEvent() {
           </select>
         </div>
         <span class="opt-help">{{ t('editor.notifyHint') }}</span>
+
+        <!-- Audience targeting: nested sub-toggles. Same controls as
+             before, just moved inside Informer le client because they
+             only matter for the notification audience. -->
+        <div class="opt-children">
+          <!-- Age targeting -->
+          <div class="opt opt--nested">
+            <label class="toggle">
+              <input type="checkbox" v-model="ageTargeted" />
+              <span class="track"></span>
+              <span class="tg-text">{{ t('editor.ageTarget') }}</span>
+            </label>
+            <div v-if="ageTargeted" class="row2 opt-body">
+              <input v-model="form.age_min" type="number" min="0" max="120" :placeholder="t('editor.ageMin')" />
+              <input v-model="form.age_max" type="number" min="0" max="120" :placeholder="t('editor.ageMax')" />
+            </div>
+            <span v-else class="opt-help">{{ t('editor.ageOpen') }}</span>
+          </div>
+
+          <!-- Loyalty-points targeting -->
+          <div class="opt opt--nested">
+            <label class="toggle">
+              <input type="checkbox" v-model="pointsTargeted" />
+              <span class="track"></span>
+              <span class="tg-text">{{ t('editor.pointsTarget') }}</span>
+            </label>
+            <div v-if="pointsTargeted">
+              <div class="row2 opt-body">
+                <input v-model="form.points_min" type="number" min="0" :placeholder="t('editor.pointsMin')" />
+                <input v-model="form.points_max" type="number" min="0" :placeholder="t('editor.pointsMax')" />
+              </div>
+              <span class="opt-help" style="margin-left:0">{{ t('editor.pointsHint') }}</span>
+            </div>
+            <span v-else class="opt-help">{{ t('editor.pointsOpen') }}</span>
+          </div>
+        </div>
       </div>
 
       <p v-if="editingId" class="resubmit-note">{{ t('editor.resubmitNote') }}</p>
@@ -758,6 +763,25 @@ async function onCancelEvent() {
 /* Extra breathing room when an .opt is immediately followed by a
    plain .field (e.g. Visuel right after the last opt-toggle). */
 .opt + .field { margin-top: 8px; }
+
+/* Nested toggle group (audience targeting inside "Informer le client").
+   Sits indented under the parent's main content, with thinner top
+   borders so the children read as subordinate to the section. */
+.opt-children {
+  margin: 14px 0 0 24px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+}
+.opt-children .opt--nested {
+  border-top-style: dashed;
+  border-top-color: rgba(0, 0, 0, 0.08);
+  padding: 12px 0;
+  margin-top: 0;
+}
+.opt-children .opt--nested:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
 .toggle {
   display: flex;
   align-items: center;
