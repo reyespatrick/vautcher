@@ -213,6 +213,13 @@ const monthlyNth = computed({
   get() { return recurNthOfMonth.value || 1 },
   set(v) { snapToNthWeekday(v, selectedDow.value) }
 })
+// Toggle proxy — themed like the other opt-in sections (Offrir un
+// rabais, Limiter participants). On = something other than 'none'.
+const recurrenceOn = computed({
+  get() { return form.value.recurrence !== 'none' },
+  set(on) { form.value.recurrence = on ? 'weekly' : 'none' }
+})
+
 // When the recurrence type changes, pick a sensible default duration
 // for that frequency so the owner doesn't have to think about it.
 watch(() => form.value.recurrence, (r) => {
@@ -556,58 +563,33 @@ async function onCancelEvent() {
         <span class="opt-help">{{ t('editor.notifyHint') }}</span>
       </div>
 
-      <!-- Recurrence -->
+      <!-- Recurrence — themed as an opt-in toggle, like "Offrir un rabais". -->
       <div class="opt">
-        <span class="tg-text">{{ t('editor.recur') }}</span>
-        <div class="opt-body">
-          <select v-model="form.recurrence" class="opt-select" :disabled="!!editingId">
-            <option value="none">{{ t('editor.recurNone') }}</option>
+        <label class="toggle">
+          <input
+            type="checkbox"
+            v-model="recurrenceOn"
+            :disabled="!!editingId"
+          />
+          <span class="track"></span>
+          <span class="tg-text">{{ t('editor.recur') }}</span>
+        </label>
+
+        <div v-if="recurrenceOn && !editingId" class="opt-body recur-body">
+          <!-- Frequency -->
+          <select v-model="form.recurrence" class="opt-select">
             <option value="weekly">{{ t('editor.recurWeekly') }}</option>
             <option value="biweekly">{{ t('editor.recurBiweekly') }}</option>
             <option value="monthly">{{ t('editor.recurMonthly') }}</option>
           </select>
-        </div>
 
-        <!-- Day-of-week picker for weekly / biweekly. Changing it snaps
-             the event date to the next matching weekday so the owner
-             can plan ahead without hunting for a Tuesday in the calendar. -->
-        <div
-          v-if="!editingId && (form.recurrence === 'weekly' || form.recurrence === 'biweekly')"
-          class="opt-body opt-sub"
-        >
-          <label class="sub-label">{{ t('editor.recurDow') }}</label>
-          <select v-model.number="selectedDow" class="opt-select">
-            <option :value="1">lundi</option>
-            <option :value="2">mardi</option>
-            <option :value="3">mercredi</option>
-            <option :value="4">jeudi</option>
-            <option :value="5">vendredi</option>
-            <option :value="6">samedi</option>
-            <option :value="0">dimanche</option>
-          </select>
-        </div>
-
-        <!-- Monthly sub-mode: same date vs same Nth weekday -->
-        <div v-if="form.recurrence === 'monthly' && !editingId" class="opt-body opt-sub">
-          <label class="rad">
-            <input type="radio" v-model="form.recurrence_pattern" value="date" />
-            <span>Le {{ recurDate ? recurDate.getDate() : '?' }} de chaque mois</span>
-          </label>
-          <label class="rad">
-            <input type="radio" v-model="form.recurrence_pattern" value="weekday" />
-            <span>Le {{ nthLabel(recurNthOfMonth) }} {{ recurWeekday }} de chaque mois</span>
-          </label>
-
-          <!-- Explicit week + weekday pickers when weekday-pattern is on. -->
-          <div v-if="form.recurrence_pattern === 'weekday'" class="monthly-pickers">
-            <select v-model.number="monthlyNth" class="opt-select">
-              <option :value="1">1ᵉʳ</option>
-              <option :value="2">2ᵉ</option>
-              <option :value="3">3ᵉ</option>
-              <option :value="4">4ᵉ</option>
-              <option :value="5">5ᵉ (ou dernier)</option>
-            </select>
-            <select v-model.number="monthlyDow" class="opt-select">
+          <!-- Day-of-week picker for weekly / biweekly. -->
+          <div
+            v-if="form.recurrence === 'weekly' || form.recurrence === 'biweekly'"
+            class="opt-sub"
+          >
+            <label class="sub-label">{{ t('editor.recurDow') }}</label>
+            <select v-model.number="selectedDow" class="opt-select">
               <option :value="1">lundi</option>
               <option :value="2">mardi</option>
               <option :value="3">mercredi</option>
@@ -617,38 +599,66 @@ async function onCancelEvent() {
               <option :value="0">dimanche</option>
             </select>
           </div>
-        </div>
 
-        <!-- Duration: "Pendant X semaine(s) / mois" -->
-        <div
-          v-if="form.recurrence !== 'none' && !editingId"
-          class="opt-body opt-sub"
-        >
-          <label class="sub-label">{{ t('editor.recurDuration') }}</label>
-          <div class="duration-row">
-            <input
-              v-model.number="form.recurrence_duration_n"
-              type="number" min="1" max="52"
-              class="dur-n"
-            />
-            <select v-model="form.recurrence_duration_unit" class="opt-select">
-              <option
-                v-if="form.recurrence !== 'monthly'"
-                value="semaines"
-              >{{ form.recurrence_duration_n > 1 ? 'semaines' : 'semaine' }}</option>
-              <option value="mois">mois</option>
-            </select>
+          <!-- Monthly sub-mode: same date vs same Nth weekday -->
+          <div v-if="form.recurrence === 'monthly'" class="opt-sub">
+            <label class="rad">
+              <input type="radio" v-model="form.recurrence_pattern" value="date" />
+              <span>Le {{ recurDate ? recurDate.getDate() : '?' }} de chaque mois</span>
+            </label>
+            <label class="rad">
+              <input type="radio" v-model="form.recurrence_pattern" value="weekday" />
+              <span>Le {{ nthLabel(recurNthOfMonth) }} {{ recurWeekday }} de chaque mois</span>
+            </label>
+
+            <div v-if="form.recurrence_pattern === 'weekday'" class="monthly-pickers">
+              <select v-model.number="monthlyNth" class="opt-select">
+                <option :value="1">1ᵉʳ</option>
+                <option :value="2">2ᵉ</option>
+                <option :value="3">3ᵉ</option>
+                <option :value="4">4ᵉ</option>
+                <option :value="5">5ᵉ (ou dernier)</option>
+              </select>
+              <select v-model.number="monthlyDow" class="opt-select">
+                <option :value="1">lundi</option>
+                <option :value="2">mardi</option>
+                <option :value="3">mercredi</option>
+                <option :value="4">jeudi</option>
+                <option :value="5">vendredi</option>
+                <option :value="6">samedi</option>
+                <option :value="0">dimanche</option>
+              </select>
+            </div>
           </div>
+
+          <!-- Duration: "Pendant X semaine(s) / mois" -->
+          <div class="opt-sub">
+            <label class="sub-label">{{ t('editor.recurDuration') }}</label>
+            <div class="duration-row">
+              <input
+                v-model.number="form.recurrence_duration_n"
+                type="number" min="1" max="52"
+                class="dur-n"
+              />
+              <select v-model="form.recurrence_duration_unit" class="opt-select">
+                <option
+                  v-if="form.recurrence !== 'monthly'"
+                  value="semaines"
+                >{{ form.recurrence_duration_n > 1 ? 'semaines' : 'semaine' }}</option>
+                <option value="mois">mois</option>
+              </select>
+            </div>
+          </div>
+
+          <p v-if="recurPreview" class="recur-preview">{{ recurPreview }}</p>
+          <p v-if="recurPreview" class="recur-first">
+            {{ t('editor.recurFirst') }} <strong>{{ recurFirstLabel }}</strong>.
+          </p>
         </div>
 
-        <p v-if="recurPreview && !editingId" class="recur-preview">{{ recurPreview }}</p>
-        <p v-if="recurPreview && !editingId" class="recur-first">
-          {{ t('editor.recurFirst') }} <strong>{{ recurFirstLabel }}</strong>.
-        </p>
-
-        <span class="opt-help">
-          {{ editingId ? t('editor.recurLocked') : t('editor.recurHint') }}
-        </span>
+        <span v-if="editingId" class="opt-help">{{ t('editor.recurLocked') }}</span>
+        <span v-else-if="!recurrenceOn" class="opt-help">{{ t('editor.recurOff') }}</span>
+        <span v-else class="opt-help">{{ t('editor.recurHint') }}</span>
       </div>
 
       <p v-if="editingId" class="resubmit-note">{{ t('editor.resubmitNote') }}</p>
@@ -786,6 +796,12 @@ async function onCancelEvent() {
   color: var(--ink);
 }
 .opt-select:disabled { opacity: 0.55; cursor: not-allowed; }
+.recur-body {
+  margin-left: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 .opt-sub { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .sub-label {
   font-size: 0.74rem;
