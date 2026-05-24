@@ -304,6 +304,26 @@ async function copyLink() {
             </RouterLink>
           </div>
 
+          <!-- Tenant URLs: where it lives (pages.dev) + where it came
+               from (the scaffolded source website). -->
+          <div class="resto-urls">
+            <a
+              :href="`https://${r.slug}.pages.dev`"
+              target="_blank" rel="noopener"
+              class="resto-url resto-url--live"
+            >
+              <span class="ic">🌐</span>{{ r.slug }}.pages.dev
+            </a>
+            <a
+              v-if="r.source_url"
+              :href="r.source_url"
+              target="_blank" rel="noopener"
+              class="resto-url resto-url--src"
+            >
+              <span class="ic">🔗</span>{{ t('admin.sourceUrl') }}
+            </a>
+          </div>
+
           <p v-if="!r.owners.length" class="owners-empty">{{ t('admin.noOwners') }}</p>
           <ul v-else class="owners">
             <li v-for="o in r.owners" :key="o.email" :class="{ locked: o.locked }">
@@ -545,6 +565,32 @@ async function copyLink() {
 .resto-cfg { margin-left: auto; }
 .resto-head strong { font-family: 'Rufina', serif; font-size: 1.1rem; }
 .resto-slug { font-size: 0.74rem; color: var(--mut); }
+
+/* URL chips under the restaurant title — pages.dev (always) +
+   scaffolded source URL (only when present). */
+.resto-urls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+.resto-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--mut);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 4px 10px;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+.resto-url:hover { border-color: var(--accent); color: var(--accent); }
+.resto-url .ic { font-size: 0.84rem; }
+.resto-url--live { color: var(--accent); border-color: rgba(158, 5, 61, 0.25); }
 
 .owners { list-style: none; margin: 10px 0 4px; }
 .owners-empty { font-size: 0.8rem; color: var(--mut); margin: 8px 0 4px; }

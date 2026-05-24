@@ -248,6 +248,7 @@ const fr = {
     codeLabel: 'Code :',
     emailDefineBtn: 'Définir e-mail',
     emailSetBtn: 'Enregistrer',
+    sourceUrl: 'Site source',
     tabRestaurants: 'Restaurants', tabClients: 'Clients',
     newRestaurant: 'Nouveau restaurant',
     restaurantName: 'Nom du restaurant', restaurantSlug: 'Identifiant (slug)',
