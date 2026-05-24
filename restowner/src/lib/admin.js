@@ -33,6 +33,8 @@ export async function adminClients(restaurantId = null) {
  * or { error }.
  */
 export async function deleteTenant(restaurantId, confirmSlug) {
+  const sessErr = await requireSession()
+  if (sessErr) return { error: sessErr }
   const { data, error } = await supabase.functions.invoke('delete-tenant', {
     body: { restaurant_id: restaurantId, confirm_slug: confirmSlug }
   })
@@ -56,7 +58,21 @@ async function unwrapFunctionError(err) {
   return { message: err.message || String(err) }
 }
 
+// Catch the most common cause of "Failed to send a request to the Edge
+// Function" up front: there's no signed-in user so supabase-js can't
+// attach a JWT. The gateway would 401 anyway; better to fail fast with
+// a message the moderator can act on.
+async function requireSession() {
+  const { data } = await supabase.auth.getSession()
+  if (!data?.session) {
+    return { message: 'Session expirée — reconnectez-vous puis réessayez.' }
+  }
+  return null
+}
+
 export async function scaffoldTenant(url) {
+  const sessErr = await requireSession()
+  if (sessErr) return { error: sessErr }
   const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
     body: { url }
   })
