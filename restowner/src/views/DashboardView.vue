@@ -3,7 +3,7 @@ import { ref, watch, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
-import { listEvents, listEventStats, cancelEvent } from '../lib/events'
+import { listEvents, listEventStats } from '../lib/events'
 import { today } from '../lib/format'
 import EventRow from '../components/EventRow.vue'
 
@@ -49,11 +49,6 @@ const upcoming = computed(() =>
     .sort((a, b) => b.event_date.localeCompare(a.event_date))
 )
 
-async function onCancel(ev) {
-  if (!confirm(t('event.confirmCancel', { title: ev.title }))) return
-  await cancelEvent(ev.id)
-  load()
-}
 </script>
 
 <template>
@@ -79,14 +74,12 @@ async function onCancel(ev) {
     </p>
 
     <div v-else class="ev-list">
-      <EventRow v-for="ev in upcoming" :key="ev.id" :event="ev" :attendees="stats[ev.id] || 0">
-        <RouterLink :to="`/event/${ev.id}`" class="btn btn--plain btn--sm">{{ t('event.edit') }}</RouterLink>
-        <button
-          v-if="ev.status !== 'cancelled'"
-          class="btn btn--danger btn--sm"
-          @click="onCancel(ev)"
-        >{{ t('event.cancel') }}</button>
-      </EventRow>
+      <EventRow
+        v-for="ev in upcoming"
+        :key="ev.id"
+        :event="ev"
+        :attendees="stats[ev.id] || 0"
+      />
     </div>
   </div>
 </template>

@@ -1,6 +1,5 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
 import { listEvents } from '../lib/events'
@@ -63,11 +62,14 @@ const past = computed(() =>
     <p v-else-if="!past.length" class="empty">{{ t('history.empty') }}</p>
 
     <div v-else class="ev-list">
-      <EventRow v-for="ev in past" :key="ev.id" :event="ev">
-        <RouterLink :to="`/event/new?from=${ev.id}`" class="btn btn--ghost btn--sm">
-          {{ t('history.duplicate') }}
-        </RouterLink>
-      </EventRow>
+      <!-- Past events open the editor in "duplicate from" mode so the
+           owner can re-publish a similar event with one tap. -->
+      <EventRow
+        v-for="ev in past"
+        :key="ev.id"
+        :event="ev"
+        :to="`/event/new?from=${ev.id}`"
+      />
     </div>
   </div>
 </template>
