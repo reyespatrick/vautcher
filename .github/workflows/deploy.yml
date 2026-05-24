@@ -30,20 +30,36 @@ jobs:
       - name: Scan restowner/src + app/src
         run: |
           set -euo pipefail
-          # Match: window.confirm/alert/prompt OR bare `confirm(/alert(/prompt(`
-          # not preceded by a dot/letter (would be a method or composable
-          # destructure). Excludes the AppDialog composable + memory files.
-          PATTERN='(^|[^a-zA-Z_.])(window\.)?(confirm|alert|prompt)[[:space:]]*\('
-          HITS=$(grep -rnE "$PATTERN" \
-            restowner/src app/src \
-            --include='*.vue' --include='*.js' --include='*.ts' \
-            | grep -vE 'composables/useDialog|components/AppDialog' \
-            | grep -vE 'confirmLabel|cancelLabel|confirmation|confirmed|confirmCancel|confirmDelete|confirmArchive|confirmDeleteImage' \
-            | grep -vE '\.alert\(|\.confirm\(|\.prompt\(' \
-            || true)
+          # Two passes:
+          #  1. Always-fail: `window.confirm/alert/prompt(` — unambiguous.
+          #  2. Bare `confirm(/alert(/prompt(` but ONLY in files that don't
+          #     import useDialog; in files that do, the bare names are the
+          #     composable's destructured methods, not the native APIs.
+          FILES=$(find restowner/src app/src \
+            \( -name '*.vue' -o -name '*.js' -o -name '*.ts' \) \
+            -not -path '*composables/useDialog*' \
+            -not -path '*components/AppDialog*')
+
+          HITS=""
+          for f in $FILES; do
+            # Pass 1 — always flag window.<dialog>(
+            H1=$(grep -nE '(^|[^a-zA-Z_.])window\.(confirm|alert|prompt)[[:space:]]*\(' "$f" || true)
+            [ -n "$H1" ] && HITS="${HITS}${f}:\n${H1}\n"
+
+            # Pass 2 — bare call. Skip files that use useDialog (their bare
+            # `confirm`/`alert`/`prompt` calls are the composable's methods).
+            if ! grep -q 'useDialog' "$f"; then
+              H2=$(grep -nE '(^|[^a-zA-Z_.])(confirm|alert|prompt)[[:space:]]*\(' "$f" \
+                | grep -vE 'confirmLabel|cancelLabel|confirmation|confirmed|confirmCancel|confirmDelete|confirmArchive|confirmDeleteImage' \
+                | grep -vE '\.alert\(|\.confirm\(|\.prompt\(' \
+                || true)
+              [ -n "$H2" ] && HITS="${HITS}${f}:\n${H2}\n"
+            fi
+          done
+
           if [ -n "$HITS" ]; then
             echo "::error::Native dialog calls found — use useDialog().confirm/alert instead:"
-            echo "$HITS"
+            printf "%b" "$HITS"
             exit 1
           fi
           echo "✓ no native dialog calls."
