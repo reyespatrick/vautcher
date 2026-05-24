@@ -23,7 +23,8 @@ const fr = {
   common: {
     loading: 'Chargement…', save: 'Enregistrer', cancel: 'Annuler',
     retry: 'Réessayer', loadError: 'Impossible de charger les événements.',
-    signOut: 'Déconnexion', saving: 'Enregistrement…'
+    signOut: 'Déconnexion', saving: 'Enregistrement…',
+    delete: 'Supprimer', keep: 'Garder', edit: 'Modifier'
   },
   config: {
     title: 'Configuration du restaurant',
@@ -167,7 +168,9 @@ const fr = {
     save: 'Enregistrer', saving: 'Enregistrement…', createBtn: 'Créer l’événement/offre',
     resubmitNote: 'Toute modification renvoie l’événement/offre en validation : il sera de nouveau visible par les clients une fois approuvé.',
     cancelEvent: 'Annuler l’événement/offre',
+    confirmCancelTitle: 'Annuler cet événement/offre ?',
     confirmCancel: 'Annuler cet événement/offre ? Il ne sera plus visible par les clients.',
+    confirmDeleteImageTitle: 'Supprimer cette image ?',
     loadFailed: 'Le chargement a échoué. Vérifiez votre connexion et réessayez.',
     loadError: 'Impossible de charger l’événement/offre.',
     saveFailed: 'L’enregistrement a échoué. Réessayez.',
@@ -206,6 +209,7 @@ const fr = {
     rewardHint: 'Ce que le client reçoit lorsqu’il complète la carte.',
     save: 'Enregistrer', saving: 'Enregistrement…', createBtn: 'Créer la carte',
     archive: 'Archiver cette carte',
+    confirmArchiveTitle: 'Archiver cette carte ?',
     confirmArchive: 'Archiver cette carte ? Vos clients ne la recevront plus.',
     loadError: 'Impossible de charger la carte.',
     saveFailed: 'L’enregistrement a échoué. Réessayez.'

@@ -13,7 +13,7 @@ const props = defineProps({
 const { t, locale } = useI18n()
 
 const target = computed(() =>
-  props.to || { name: 'event-edit', params: { id: props.event.id } }
+  props.to || { name: 'event-detail', params: { id: props.event.id } }
 )
 
 const dateText = computed(() => {

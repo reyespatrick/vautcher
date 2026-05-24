@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
+import { useDialog } from '../composables/useDialog'
 import {
   getEvent, createEvent, updateEvent, cancelEvent, IMAGE_OPTIONS,
   uploadEventImage, listUploadedImages, deleteEventImage,
@@ -12,6 +13,7 @@ import {
 const route = useRoute()
 const router = useRouter()
 const { activeRestaurantId } = useScope()
+const { confirm } = useDialog()
 const { t } = useI18n()
 
 const editingId = computed(() => (route.name === 'event-edit' ? route.params.id : null))
@@ -98,7 +100,13 @@ async function onPickFile(e) {
 }
 
 async function onDeleteImage(img) {
-  if (!confirm(t('editor.confirmDeleteImage'))) return
+  const ok = await confirm({
+    title: t('editor.confirmDeleteImageTitle'),
+    body: t('editor.confirmDeleteImage'),
+    confirmLabel: t('common.delete'),
+    danger: true
+  })
+  if (!ok) return
   await deleteEventImage(img.path)
   uploadedImages.value = uploadedImages.value.filter((i) => i.path !== img.path)
   if (form.value.image_url === img.url) form.value.image_url = IMAGE_OPTIONS[0].url
@@ -359,7 +367,14 @@ async function save() {
 }
 
 async function onCancelEvent() {
-  if (!confirm(t('editor.confirmCancel'))) return
+  const ok = await confirm({
+    title: t('editor.confirmCancelTitle'),
+    body: t('editor.confirmCancel'),
+    confirmLabel: t('editor.cancelEvent'),
+    cancelLabel: t('common.keep'),
+    danger: true
+  })
+  if (!ok) return
   await cancelEvent(editingId.value)
   router.push({ name: 'dashboard' })
 }

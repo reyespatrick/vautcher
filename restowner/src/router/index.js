@@ -4,6 +4,7 @@ import { useAuth, whenAuthReady } from '../composables/useAuth'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import EventEditorView from '../views/EventEditorView.vue'
+import EventDetailView from '../views/EventDetailView.vue'
 import HistoryView from '../views/HistoryView.vue'
 import ScanView from '../views/ScanView.vue'
 import ShareView from '../views/ShareView.vue'
@@ -18,7 +19,8 @@ const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
   { path: '/', name: 'dashboard', component: DashboardView },
   { path: '/event/new', name: 'event-new', component: EventEditorView },
-  { path: '/event/:id', name: 'event-edit', component: EventEditorView },
+  { path: '/event/:id', name: 'event-detail', component: EventDetailView },
+  { path: '/event/:id/edit', name: 'event-edit', component: EventEditorView },
   { path: '/history', name: 'history', component: HistoryView },
   { path: '/scan', name: 'scan', component: ScanView },
   { path: '/share', name: 'share', component: ShareView },

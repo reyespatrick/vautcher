@@ -6,6 +6,7 @@ import { ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
+import { useDialog } from '../composables/useDialog'
 import {
   adminRestaurants, createRestaurant,
   setOwnerFlags, provisionOwner
@@ -13,6 +14,7 @@ import {
 
 const { t } = useI18n()
 const { isModerator } = useAuth()
+const { alert } = useDialog()
 
 const restaurants = ref([])
 const loading = ref(true)
@@ -51,7 +53,10 @@ async function submitRestaurant() {
   busy.value = true
   try {
     const { error } = await createRestaurant(newR.value.name.trim(), newR.value.slug.trim())
-    if (error) { alert(error.message || t('admin.error')); return }
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
     newR.value = { name: '', slug: '' }
     showNewRestaurant.value = false
     await load()
@@ -73,7 +78,10 @@ async function submitOwner(restaurantId) {
     const { data, error } = await provisionOwner(
       newO.value.email.trim(), newO.value.name.trim(), restaurantId
     )
-    if (error) { alert(error.message || t('admin.error')); return }
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
     provisionResult.value = data
     ownerFormFor.value = null
     await load()

@@ -8,6 +8,7 @@ import { useViewAs } from './composables/useViewAs'
 import { useScope } from './composables/useScope'
 import ProfileMenu from './components/ProfileMenu.vue'
 import RestaurantPicker from './components/RestaurantPicker.vue'
+import AppDialog from './components/AppDialog.vue'
 
 const { owner, restaurant, isModerator, signOut } = useAuth()
 const { asOwner } = useViewAs()
@@ -193,6 +194,8 @@ async function doSignOut() {
         </div>
       </div>
     </Teleport>
+
+    <AppDialog />
   </div>
 </template>
 

@@ -3,11 +3,13 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
+import { useDialog } from '../composables/useDialog'
 import { getVoucher, createVoucher, updateVoucher, archiveVoucher } from '../lib/vouchers'
 
 const route = useRoute()
 const router = useRouter()
 const { activeRestaurantId } = useScope()
+const { confirm } = useDialog()
 const { t } = useI18n()
 
 const editingId = computed(() => (route.name === 'voucher-edit' ? route.params.id : null))
@@ -86,7 +88,14 @@ async function save() {
 }
 
 async function onArchive() {
-  if (!confirm(t('voucherEditor.confirmArchive'))) return
+  const ok = await confirm({
+    title: t('voucherEditor.confirmArchiveTitle'),
+    body: t('voucherEditor.confirmArchive'),
+    confirmLabel: t('voucherEditor.archive'),
+    cancelLabel: t('common.keep'),
+    danger: true
+  })
+  if (!ok) return
   await archiveVoucher(editingId.value)
   router.push({ name: 'vouchers' })
 }
