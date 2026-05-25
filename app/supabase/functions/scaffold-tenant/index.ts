@@ -913,6 +913,7 @@ function extractDishCards(
   }
 
   const cards: cheerio.Element[] = []
+  const firstArt = $('article.dish').first()
   const _dbg: any = {
     scanned: 0, classMatch: 0, classSamples: [] as string[],
     pastNav: 0, pastTitlePrice: 0, pastNested: 0,
@@ -922,6 +923,10 @@ function extractDishCards(
     bareDish: ($.html() || '').match(/<article[^>]*\bclass="[^"]*\bdish\b[^"]*"/g)?.length || 0,
     entryTitleCount: $('.entry-title').length,
     dishPriceCount: $('.dish-price').length,
+    firstArtHtml: firstArt.length ? ($.html(firstArt) || '').slice(0, 1500) : null,
+    firstArtChildren: firstArt.length ? firstArt.children().toArray().map((c: any) => `<${c.tagName}${c.attribs?.class ? ` class="${c.attribs.class.slice(0, 30)}"` : ''}>`) : null,
+    firstArtDescendantsCount: firstArt.length ? firstArt.find('*').length : 0,
+    bodyTopChildren: $('body').children().toArray().slice(0, 10).map((c: any) => `<${c.tagName}${c.attribs?.class ? ` class="${(c.attribs.class || '').slice(0, 40)}"` : ''}>`),
   }
   $('article, li, div').each((_: number, el: cheerio.Element) => {
     _dbg.scanned++
