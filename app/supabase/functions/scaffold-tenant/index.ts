@@ -913,7 +913,16 @@ function extractDishCards(
   }
 
   const cards: cheerio.Element[] = []
-  const _dbg = { scanned: 0, classMatch: 0, classSamples: [] as string[], pastNav: 0, pastTitlePrice: 0, pastNested: 0 }
+  const _dbg: any = {
+    scanned: 0, classMatch: 0, classSamples: [] as string[],
+    pastNav: 0, pastTitlePrice: 0, pastNested: 0,
+    articleCount: $('article').length,
+    articleClassSamples: $('article').toArray().slice(0, 5).map((a: any) => ($(a).attr('class') || '').slice(0, 100)),
+    articleDishCount: $('article.dish').length,
+    bareDish: ($.html() || '').match(/<article[^>]*\bclass="[^"]*\bdish\b[^"]*"/g)?.length || 0,
+    entryTitleCount: $('.entry-title').length,
+    dishPriceCount: $('.dish-price').length,
+  }
   $('article, li, div').each((_: number, el: cheerio.Element) => {
     _dbg.scanned++
     const cls = ($(el).attr('class') || '')
