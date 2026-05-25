@@ -604,6 +604,68 @@ const DAY_FR: Record<string, string> = {
   Thursday: 'Jeudi', Friday: 'Vendredi', Saturday: 'Samedi', Sunday: 'Dimanche',
   PublicHolidays: 'Jours fériés'
 }
+
+// Final-pass normalizer applied to EVERY {days, time} entry that ends
+// up in config.hours, whether it came from the scraper or the AI. The
+// dapaolo.ch test revealed that scrapers and LLMs both faithfully echo
+// "WEEKDAYS" / "11:30 TO 23:00" from English-labelled source sites; we
+// want a single canonical French form in the stored config.
+function normalizeHourEntry(e: { days?: string; time?: string; service?: string | null }): { days: string; time: string; service?: string | null } {
+  const dayBlocks: Record<string, string> = {
+    'weekdays': 'Lundi – Vendredi',
+    'weekday': 'Lundi – Vendredi',
+    'weekend': 'Samedi – Dimanche',
+    'weekends': 'Samedi – Dimanche',
+    'weekends & holidays': 'Samedi, Dimanche & jours fériés',
+    'weekend & holidays': 'Samedi, Dimanche & jours fériés',
+    'holidays': 'Jours fériés',
+    'public holidays': 'Jours fériés',
+    'every day': 'Tous les jours',
+    'everyday': 'Tous les jours',
+    'all days': 'Tous les jours',
+    'daily': 'Tous les jours'
+  }
+  const dayTokens: Record<string, string> = {
+    monday: 'Lundi', tuesday: 'Mardi', wednesday: 'Mercredi',
+    thursday: 'Jeudi', friday: 'Vendredi', saturday: 'Samedi', sunday: 'Dimanche',
+    mon: 'Lundi', tue: 'Mardi', tues: 'Mardi', wed: 'Mercredi',
+    thu: 'Jeudi', thur: 'Jeudi', thurs: 'Jeudi',
+    fri: 'Vendredi', sat: 'Samedi', sun: 'Dimanche',
+    // French is identity-mapped so we just title-case it.
+    lundi: 'Lundi', mardi: 'Mardi', mercredi: 'Mercredi', jeudi: 'Jeudi',
+    vendredi: 'Vendredi', samedi: 'Samedi', dimanche: 'Dimanche'
+  }
+
+  // ---- Days ----
+  let days = String(e.days ?? '').trim().replace(/\s+/g, ' ')
+  // Try a multi-word "block" match first (weekdays, weekends, etc.).
+  const blockKey = days.toLowerCase()
+  if (dayBlocks[blockKey]) {
+    days = dayBlocks[blockKey]
+  } else {
+    // Walk tokens. Keep separators intact.
+    days = days
+      .replace(/\s*[-–]\s*/g, ' – ')
+      .replace(/\s+to\s+/gi, ' – ')
+      .replace(/\s*&\s*/g, ' & ')
+      .replace(/\s*,\s*/g, ', ')
+    days = days.replace(/[A-Za-zÀ-ÿ]+/g, (w) => {
+      const k = w.toLowerCase()
+      return dayTokens[k] || w
+    })
+  }
+
+  // ---- Time ----
+  let time = String(e.time ?? '').trim()
+  time = time
+    .replace(/\s+to\s+/gi, ' – ')           // "11:30 TO 14:00"
+    .replace(/\s*[-–]\s*/g, ' – ')           // hyphens → en-dash w/ spaces
+    .replace(/(\d{1,2}):(\d{2})/g, '$1h$2')  // 11:30 → 11h30
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return { days, time, service: e.service ?? null }
+}
 function frDay(d: string): string {
   const k = String(d || '').split('/').pop() || ''
   return DAY_FR[k] || DAY_FR[k.slice(0, 2)] || k
@@ -911,12 +973,20 @@ MISSING fields to fill: ${missing.join(', ')}
 
 Critical rules:
 1. Every string you return MUST appear verbatim somewhere in the source text below.
-   Do NOT paraphrase. Do NOT invent. Do NOT translate.
-2. If a field is not findable in the source, return null for it.
-3. For opening_hours: return one entry per service window, with French day names
-   (Lundi, Mardi, …) and times like "11h30 – 14h00".
+   Do NOT paraphrase. Do NOT invent. Do NOT translate prose, dish names, or
+   descriptions — those have to be the exact words from the source.
+2. EXCEPTION for opening_hours: the digits (times) must be exact, but day labels
+   may be normalized to French. Convert English day labels you find in source
+   to their French equivalents in your output:
+     "Weekdays"/"weekdays"/"Mon-Fri" → "Lundi – Vendredi"
+     "Weekend"/"weekends" → "Samedi – Dimanche"
+     "Weekends & Holidays" → "Samedi, Dimanche & jours fériés"
+     "Monday"/"Mon" → "Lundi", "Tuesday"/"Tue" → "Mardi", etc.
+   Always format times as "11h30 – 14h00" (use 'h' as the hour separator and
+   en-dash with spaces around it). Never use "TO" or ":" in the output time.
+3. If a field is not findable in the source, return null for it.
 4. For specialties: return at most 6, only items that look like signature dishes
-   or section headlines in a menu. Each must have a title that appears in source.
+   or menu section headlines. Each must have a title that appears in source.
 
 Source text:
 ${source}`
@@ -1031,7 +1101,7 @@ ${source}`
   if (Array.isArray(ai.opening_hours)) {
     const valid = ai.opening_hours.filter((h: any) =>
       h && h.days && h.time && inSourceLoose(h.days + ' ' + h.time))
-    if (valid.length) filled.hours = valid
+    if (valid.length) filled.hours = valid.map(normalizeHourEntry)
     for (const h of ai.opening_hours) {
       if (!valid.includes(h)) rejected.push(`hours: ${h?.days} ${h?.time}`)
     }
@@ -1154,13 +1224,16 @@ Deno.serve(async (req: Request) => {
 
   // Opening hours: schema.org → openingHoursSpecification first (the
   // structured shape), then openingHours strings, then text regex.
-  let hours: { days: string; service?: string; time: string }[] = []
+  // Every entry is normalized so the stored format is canonical no
+  // matter which source produced it.
+  let hours: { days: string; service?: string | null; time: string }[] = []
   if (ld.openingHoursSpec) hours = parseSchemaHoursSpec(ld.openingHoursSpec)
   if (!hours.length && ld.openingHours) {
     const raw = Array.isArray(ld.openingHours) ? ld.openingHours : [ld.openingHours]
     for (const r of raw) hours.push(...parseSchemaHoursStr(String(r)))
   }
   if (!hours.length) hours = extractHoursFromText(pages)
+  hours = hours.map(normalizeHourEntry)
 
   // Restaurant description: JSON-LD wins, then og:description (filtered
   // through safeLead so nav words don't slip through), then meta name=
