@@ -8,6 +8,28 @@ const { profile, openDialog } = useProfile()
 
 const firstName = computed(() => profile.value?.name.trim().split(/\s+/)[0] || '')
 const initial = computed(() => firstName.value.charAt(0).toUpperCase() || '?')
+
+// Restaurant names from og:title are often long compound strings like
+// "Pizzeria Da Paolo – Restaurant Italien à Genève". The header looks
+// awful when that wraps to 2-3 lines on a phone. Show only the part
+// before the first em-dash / pipe / hyphen-with-spaces, fall back to
+// the full name otherwise.
+const brandName = computed(() => {
+  const n = (site.name || '').trim()
+  const m = n.split(/\s+[–—|]\s+|\s+-\s+/)[0]
+  return m || n
+})
+
+// Header subtitle is intentionally tiny — restaurant descriptions that
+// run 100+ chars (Da Paolo's "Depuis 1972, le restaurant Da Paolo
+// s'efforce de proposer à son aimable clientèle...") look like a wall
+// of all-caps junk under the name. Show the subtitle only if it's a
+// short tagline (≤ 60 chars after collapsing whitespace).
+const brandSubtitle = computed(() => {
+  const t = (site.tagline || '').replace(/\s+/g, ' ').trim()
+  if (!t || t.length > 60) return ''
+  return t
+})
 </script>
 
 <template>
@@ -16,8 +38,8 @@ const initial = computed(() => firstName.value.charAt(0).toUpperCase() || '?')
       <RouterLink to="/" class="brand">
         <img :src="site.logoUrl" :alt="site.name" />
         <span class="brand-txt">
-          {{ site.name }}
-          <small>{{ site.tagline }}</small>
+          <span class="brand-name">{{ brandName }}</span>
+          <small v-if="brandSubtitle">{{ brandSubtitle }}</small>
         </span>
       </RouterLink>
 
@@ -70,15 +92,30 @@ const initial = computed(() => firstName.value.charAt(0).toUpperCase() || '?')
   font-family: 'Rufina', serif;
   font-size: 1.15rem;
   color: var(--burgundy);
-  line-height: 1.05;
+  line-height: 1.1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.brand-name {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60vw;
 }
 .brand-txt small {
   display: block;
   font-family: 'Montserrat', sans-serif;
-  font-size: 0.54rem;
+  font-size: 0.58rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60vw;
+  margin-top: 2px;
 }
 
 .top-nav { display: flex; gap: 24px; }
