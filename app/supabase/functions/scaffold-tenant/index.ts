@@ -171,7 +171,11 @@ async function crawl(startUrl: string, maxDepth = 2, maxPages = 25) {
     visited.add(u)
     const page = await fetchHtml(u)
     if (!page) continue
-    const $ = cheerio.load(page.html)
+    // parse5 (cheerio's default in Deno) reparents the contents of
+    // <header class="entry-header"> inside WP dish articles, dropping
+    // .entry-title from the tree entirely. htmlparser2 mode preserves
+    // the source structure verbatim.
+    const $ = cheerio.load(page.html, { _useHtmlParser2: true } as any)
     pages.push({ url: page.url, html: page.html, $ })
     if (d >= maxDepth) continue
 
@@ -1279,7 +1283,7 @@ async function enhanceWithAI(
       corpus.push(`# ${p.url} — STRUCTURED DATA\n${ldScripts.join('\n---\n')}`)
     }
     // Clone, strip chrome, harvest body text.
-    const $c = cheerio.load($.html())
+    const $c = cheerio.load($.html(), { _useHtmlParser2: true } as any)
     $c('header, nav, footer, script, style, noscript, .menu, .navbar, .breadcrumb').remove()
     const text = $c('body').text().replace(/\s+/g, ' ').trim()
     if (text) corpus.push(`# ${p.url}\n${text.slice(0, 8000)}`)
