@@ -970,6 +970,21 @@ function extractDishCards(
     headerCount: $('header').length,
     headerInsideArticle: $('article header').length,
     aBookmarkCount: $('a[rel="bookmark"]').length,
+    // Sanity: parse a tiny known-good fragment and see if the parser
+    // returns the structure we wrote. If this comes back wrong, the
+    // problem is cheerio/htmlparser2 in this runtime, not the source.
+    selfTest: (() => {
+      const html = '<!doctype html><html><body><article class="dish"><div class="main-column"><header class="entry-header"><h1 class="entry-title"><a rel="bookmark">X</a></h1></header><div class="entry-content"><span class="dish-price">9.50</span></div></div></article></body></html>'
+      const $$ = cheerio.load(parseDocument(html))
+      return {
+        article: $$('article').length,
+        header: $$('header').length,
+        h1: $$('h1').length,
+        a: $$('a').length,
+        entryTitleText: $$('.entry-title').text(),
+        articleHtml: $$.html($$('article'))
+      }
+    })(),
     rawSnippet: rawArtIdx >= 0 ? sourceHtml.slice(rawArtIdx, rawArtIdx + 1500) : null,
     firstArtHtml: firstArt.length ? ($.html(firstArt) || '').slice(0, 1500) : null,
     firstArtChildren: firstArt.length ? firstArt.children().toArray().map((c: any) => `<${c.tagName}${c.attribs?.class ? ` class="${c.attribs.class.slice(0, 30)}"` : ''}>`) : null,
