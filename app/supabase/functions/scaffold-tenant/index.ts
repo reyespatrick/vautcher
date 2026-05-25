@@ -913,22 +913,30 @@ function extractDishCards(
   }
 
   const cards: cheerio.Element[] = []
+  const _dbg = { scanned: 0, classMatch: 0, classSamples: [] as string[], pastNav: 0, pastTitlePrice: 0, pastNested: 0 }
   $('article, li, div').each((_: number, el: cheerio.Element) => {
+    _dbg.scanned++
     const cls = ($(el).attr('class') || '')
     if (!DISH_CARD_CLASS_RE.test(cls)) return
+    _dbg.classMatch++
+    if (_dbg.classSamples.length < 5) _dbg.classSamples.push(cls.slice(0, 100))
     const $el = ($ as any)(el)
     // Exclude items inside nav/header/footer (WP nav uses .menu-item too).
     if ($el.parents('nav, header, footer').length) return
+    _dbg.pastNav++
     // A real dish card has BOTH a title and a price somewhere inside.
     // A nav <li class="menu-item"> has neither.
     const hasTitle = $el.find(DISH_NAME_SEL).length > 0
     const hasPrice = $el.find(DISH_PRICE_SEL + ', ' + DISH_PRICE_LINE_SEL).length > 0
     if (!hasTitle || !hasPrice) return
+    _dbg.pastTitlePrice++
     // Skip cards nested inside another card (avoid duplicates).
     const ancestors = $el.parents().toArray() as cheerio.Element[]
     if (ancestors.some((p) => DISH_CARD_CLASS_RE.test(($(p).attr('class') || '')))) return
+    _dbg.pastNested++
     cards.push(el)
   })
+  ;(globalThis as any).__lastCardDbg = _dbg
 
   if (!cards.length || !pageCategory) return []
 
@@ -1943,8 +1951,14 @@ Deno.serve(async (req: Request) => {
       menu_items: (config.menu || []).reduce((n: number, c: any) => n + (c.items?.length || 0), 0),
       dish_cards_per_page: pages.map((p: any) => {
         try {
+          ;(globalThis as any).__lastCardDbg = null
           const sections = extractDishCards(p.$, p.url, '')
-          return { url: p.url, sections: sections.length, items: sections.reduce((n, s) => n + s.items.length, 0) }
+          return {
+            url: p.url,
+            sections: sections.length,
+            items: sections.reduce((n, s) => n + s.items.length, 0),
+            dbg: (globalThis as any).__lastCardDbg
+          }
         } catch (e) {
           return { url: p.url, error: String((e as any)?.message || e) }
         }
