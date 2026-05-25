@@ -26,6 +26,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import * as cheerio from 'npm:cheerio@1.2.0'
 import { parseDocument } from 'npm:htmlparser2@9.1.0'
+import { parseHTML } from 'npm:linkedom@0.18.5'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -970,17 +971,23 @@ function extractDishCards(
     headerCount: $('header').length,
     headerInsideArticle: $('article header').length,
     aBookmarkCount: $('a[rel="bookmark"]').length,
-    // Dump the body markup leading up to the first dish article — that's
-    // where the prior chunks of HTML are that confuse the parser into
-    // dropping inner tags.
-    preludeBeforeFirstArticle: (() => {
-      const idx = sourceHtml.indexOf('<article class="post-')
-      if (idx < 0) return null
-      // Find <body> start
-      const bodyIdx = sourceHtml.search(/<body\b/i)
-      const start = bodyIdx >= 0 ? bodyIdx : 0
-      // Last 2000 chars of body-prelude (closest to article)
-      return sourceHtml.slice(Math.max(start, idx - 2000), idx)
+    // Compare cheerio+htmlparser2 vs linkedom (separate DOM parser).
+    // If linkedom finds the entry-titles, we'll switch.
+    linkedomTest: (() => {
+      try {
+        const { document } = parseHTML(sourceHtml || '')
+        return {
+          article: document.querySelectorAll('article').length,
+          articleDish: document.querySelectorAll('article.dish').length,
+          h1: document.querySelectorAll('h1').length,
+          header: document.querySelectorAll('header').length,
+          entryTitle: document.querySelectorAll('.entry-title').length,
+          dishPrice: document.querySelectorAll('.dish-price').length,
+          firstEntryTitleText: document.querySelector('.entry-title')?.textContent?.slice(0, 50) || null
+        }
+      } catch (e) {
+        return { error: String((e as any)?.message || e) }
+      }
     })(),
     rawSnippet: rawArtIdx >= 0 ? sourceHtml.slice(rawArtIdx, rawArtIdx + 1500) : null,
     firstArtHtml: firstArt.length ? ($.html(firstArt) || '').slice(0, 1500) : null,
