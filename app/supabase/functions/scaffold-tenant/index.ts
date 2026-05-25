@@ -122,7 +122,25 @@ async function uniqueSlug(base: string): Promise<string> {
 // ---------- CRAWL ----------
 async function fetchHtml(url: string): Promise<{ html: string; url: string } | null> {
   try {
-    const res = await fetch(url, { headers: { 'User-Agent': UA } })
+    // Full browser-like headers. WP sites behind Cloudflare / Wordfence /
+    // similar serve a stripped skeleton (no entry-title, etc.) when the
+    // request doesn't look like a real browser. Sec-Fetch-* + a normal
+    // Accept matter as much as the UA.
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': UA,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'fr-CH,fr;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+      }
+    })
     if (!res.ok) return null
     return { html: await res.text(), url: res.url }
   } catch { return null }
