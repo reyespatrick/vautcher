@@ -36,7 +36,11 @@ const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || ''
 const ANTHROPIC_MODEL = Deno.env.get('ANTHROPIC_MODEL') || 'claude-sonnet-4-6'
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
-const UA = 'Mozilla/5.0 (compatible; vautcher-scaffold/1.0)'
+// Use a real browser UA — some WordPress sites (dapaolo.ch among them)
+// serve a stripped-down skeleton without entry titles to anything that
+// identifies itself as a bot/crawler. The scraper otherwise looks at
+// half-empty article cards and can't find dish names.
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
 
 // CORS headers — the function is called from restowner's browser
 // origin (https://restowner.pages.dev), so it must answer the
