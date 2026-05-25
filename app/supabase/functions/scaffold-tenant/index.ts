@@ -6,7 +6,9 @@
 //
 //  Steps:
 //   1. Verify caller is a moderator (RLS-style via JWT email lookup).
-//   2. Crawl the URL (depth 1, ≤12 pages, prioritising contact-ish urls).
+//   2. Crawl the URL (depth 2, ≤25 pages, prioritising menu/carte and
+//      contact-ish urls so the most diner-relevant content lands first
+//      even when the cap is reached).
 //   3. Extract verbatim content blocks (cheerio): headings, paragraphs,
 //      images, plus leaf <div>/<li>/<dd> text the strict no-invention
 //      extractor needs. Drop orphan headings.
@@ -127,10 +129,29 @@ function isAssetUrl(u: string): boolean {
   return /\.(css|js|json|xml|ico|svg|png|jpe?g|gif|webp|pdf|mp4|webm|woff2?)(\?|$)/i.test(u)
 }
 
-async function crawl(startUrl: string, maxPages = 12) {
+// BFS crawl with a configurable depth and a page cap. Depth is the
+// number of link-hops from the start URL — depth 0 is the start page
+// itself, depth 1 is anything linked from it, depth 2 is one level
+// further (e.g. /carte → /carte/pizzas). Stays same-origin and skips
+// asset URLs.
+//
+// Pages are visited in priority order: menu / carte / specialty
+// pages first (highest diner-value), then contact / info / hours,
+// then everything else. The priority sort is applied to the queue
+// AFTER each new-link batch is added so deeper menu pages jump ahead
+// of shallow generic pages.
+async function crawl(startUrl: string, maxDepth = 2, maxPages = 25) {
   const visited = new Set<string>()
   const pages: { url: string; html: string; $: cheerio.CheerioAPI }[] = []
   const queue: { u: string; d: number }[] = [{ u: startUrl, d: 0 }]
+
+  const priority = (u: string): number => {
+    // Lower number = higher priority. Sort key, not user-visible.
+    if (/menu|carte|plat|sp[ée]cialit/i.test(u)) return 0
+    if (/contact|infos?|coord|adress|hor[ai]/i.test(u)) return 1
+    return 2
+  }
+
   while (queue.length && visited.size < maxPages) {
     const { u, d } = queue.shift()!
     if (visited.has(u)) continue
@@ -139,9 +160,8 @@ async function crawl(startUrl: string, maxPages = 12) {
     if (!page) continue
     const $ = cheerio.load(page.html)
     pages.push({ url: page.url, html: page.html, $ })
-    if (d >= 1) continue
+    if (d >= maxDepth) continue
 
-    const newLinks: { u: string; d: number }[] = []
     $('a[href]').each((_: number, el: cheerio.Element) => {
       const href = $(el).attr('href')
       if (!href) return
@@ -152,17 +172,12 @@ async function crawl(startUrl: string, maxPages = 12) {
         if (isAssetUrl(abs)) return
         if (visited.has(abs)) return
         if (queue.find((q) => q.u === abs)) return
-        if (newLinks.find((q) => q.u === abs)) return
-        newLinks.push({ u: abs, d: d + 1 })
+        queue.push({ u: abs, d: d + 1 })
       } catch { /* ignore bad URLs */ }
     })
-    // Prioritise contact-ish pages so the address/hours/phone land
-    // even on a many-page site.
-    newLinks.sort((a, b) => {
-      const pri = (u: string) => /contact|infos?|coord|adress|hor[ai]/i.test(u) ? 0 : 1
-      return pri(a.u) - pri(b.u)
-    })
-    queue.push(...newLinks)
+    // Re-sort the entire queue so any high-value page (menu, contact)
+    // discovered at any depth is visited before generic ones.
+    queue.sort((a, b) => priority(a.u) - priority(b.u))
   }
   return pages
 }

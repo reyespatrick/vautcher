@@ -2,7 +2,7 @@
 // =============================================================
 //  Strict, no-invention extractor for the vautcher pipeline.
 //
-//  Crawls the home page + the internal pages it links to (depth 1,
+//  Crawls the home page + the internal pages it links to (depth 2,
 //  capped) and pulls VERBATIM content into:
 //    - top-level structured fields when the source exposes them
 //      (name, slug, contact, hours via JSON-LD / OG / /contact regex)
@@ -25,8 +25,8 @@ import probe from 'probe-image-size'
 const args = process.argv.slice(2)
 let url = null
 let outFile = null
-let depth = 1
-let maxPages = 12
+let depth = 2
+let maxPages = 25
 for (let i = 0; i < args.length; i++) {
   const a = args[i]
   if (a === '--out') outFile = args[++i]
@@ -68,6 +68,13 @@ function isIconImage(src) {
 }
 
 async function crawl(startUrl) {
+  // Lower number = higher priority. Menu/carte pages first (the most
+  // diner-relevant content), then contact-ish, then everything else.
+  const priority = (u) => {
+    if (/menu|carte|plat|sp[ée]cialit/i.test(u)) return 0
+    if (/contact|infos?|coord|adress|hor[ai]/i.test(u)) return 1
+    return 2
+  }
   const queue = [{ u: startUrl, d: 0 }]
   while (queue.length && visited.size < maxPages) {
     const { u, d } = queue.shift()
@@ -78,7 +85,6 @@ async function crawl(startUrl) {
     const $ = load(page.html)
     pageData.push({ url: page.url, $, html: page.html })
     if (d >= depth) continue
-    const newLinks = []
     $('a[href]').each((_, el) => {
       let href = $(el).attr('href')
       if (!href) return
@@ -89,16 +95,12 @@ async function crawl(startUrl) {
         if (isAssetUrl(abs)) return
         if (visited.has(abs)) return
         if (queue.find((q) => q.u === abs)) return
-        if (newLinks.find((q) => q.u === abs)) return
-        newLinks.push({ u: abs, d: d + 1 })
+        queue.push({ u: abs, d: d + 1 })
       } catch { /* ignore */ }
     })
-    // Prioritise pages likely to hold address / hours / contact info.
-    newLinks.sort((a, b) => {
-      const pri = (u) => /contact|infos?|coord|adress|hor[ai]/i.test(u) ? 0 : 1
-      return pri(a.u) - pri(b.u)
-    })
-    queue.push(...newLinks)
+    // Re-sort the whole queue so high-value pages discovered at any
+    // depth jump ahead of generic shallow ones.
+    queue.sort((a, b) => priority(a.u) - priority(b.u))
   }
 }
 
