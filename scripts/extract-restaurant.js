@@ -54,8 +54,17 @@ async function fetchPage(u) {
 const visited = new Set()
 const pageData = [] // [{ url, $, html }]
 
+// Same-site check that tolerates a leading "www." swap so a home page
+// at www.dapaolo.ch that links to dapaolo.ch/dishes/... counts as
+// internal. See the edge-function copy for the rationale.
 function sameOrigin(a, b) {
-  try { return new URL(a).origin === new URL(b).origin } catch { return false }
+  try {
+    const ua = new URL(a)
+    const ub = new URL(b)
+    if (ua.protocol !== ub.protocol) return false
+    const norm = (h) => h.replace(/^www\./i, '').toLowerCase()
+    return norm(ua.hostname) === norm(ub.hostname)
+  } catch { return false }
 }
 function isAssetUrl(u) {
   return /\.(css|js|json|xml|ico|svg|png|jpe?g|gif|webp|pdf|mp4|webm|woff2?)(\?|$)/i.test(u)

@@ -122,8 +122,21 @@ async function fetchHtml(url: string): Promise<{ html: string; url: string } | n
     return { html: await res.text(), url: res.url }
   } catch { return null }
 }
+// Same-site check that tolerates a leading "www." swap. dapaolo.ch's
+// home page lives at www.dapaolo.ch but every internal link points to
+// dapaolo.ch (no www) — a strict origin comparison rejects them as
+// cross-origin and the crawl stops at the home page. Strip "www."
+// from both sides before comparing so the two count as the same site.
+// Still rejects genuinely different hosts (subdomain.foo.com vs foo.com
+// only match if one has "www." and the other doesn't).
 function sameOrigin(a: string, b: string): boolean {
-  try { return new URL(a).origin === new URL(b).origin } catch { return false }
+  try {
+    const ua = new URL(a)
+    const ub = new URL(b)
+    if (ua.protocol !== ub.protocol) return false
+    const norm = (h: string) => h.replace(/^www\./i, '').toLowerCase()
+    return norm(ua.hostname) === norm(ub.hostname)
+  } catch { return false }
 }
 function isAssetUrl(u: string): boolean {
   return /\.(css|js|json|xml|ico|svg|png|jpe?g|gif|webp|pdf|mp4|webm|woff2?)(\?|$)/i.test(u)
