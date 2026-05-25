@@ -337,33 +337,48 @@ function extractBlocks($: cheerio.CheerioAPI, pageUrl: string) {
   return out
 }
 
-// Post-extract sanity check — count how many blocks look like real
-// content vs. the kind of junk we should never have shipped (allergen
-// lists, bare day-name labels, ALL-CAPS slug strings, etc.).
+// Post-extract sanity check. Real signal-of-quality isn't "did we get
+// some text blocks", it's "did we get the things a diner needs":
+// address, phone, hours, a description, photos, and ideally a menu.
 //
-// Returns a quality verdict the moderator can see in the scaffold
-// result: 'ok' | 'low' | 'bad'. 'bad' means we're shipping near-pure
-// garbage and should NOT publish until a human has fixed it.
-function scoreBlocks(blocks: any[]): { quality: 'ok'|'low'|'bad'; reasons: string[] } {
+// Returns:
+//   ok    — structured fields are populated; safe to ship
+//   low   — partial extraction; moderator should verify before publishing
+//   bad   — almost no usable structured data; do NOT publish as-is
+function scoreScaffold(
+  blocks: any[],
+  structured: {
+    address: string | null
+    phone: string | null
+    hours: any[]
+    description: string
+    specialties: any[]
+    images: any[]
+  }
+): { quality: 'ok'|'low'|'bad'; reasons: string[] } {
   const reasons: string[] = []
   const text = blocks.filter((b) => b.type === 'text').map((b) => b.text)
   const headings = blocks.filter((b) => b.type === 'heading').map((b) => b.text)
-  const images = blocks.filter((b) => b.type === 'image').length
 
+  // Structured-field misses are weighted heavily — those are what
+  // matters for a real diner page.
+  if (!structured.address) reasons.push('address not found')
+  if (!structured.phone) reasons.push('phone not found')
+  if (!structured.hours.length) reasons.push('opening hours not found')
+  if (!structured.description || structured.description.length < 40) {
+    reasons.push('restaurant description too short or missing')
+  }
+  if (!structured.specialties.length) reasons.push('no menu/specialty items detected')
+  if (structured.images.length < 3) reasons.push(`only ${structured.images.length} usable image(s)`)
+
+  // Verbatim-block tells (kept as secondary signals).
   if (text.length + headings.length === 0) {
     return { quality: 'bad', reasons: ['no text or heading blocks extracted'] }
   }
-  if (images === 0) reasons.push('no images extracted')
-  if (headings.length === 0) reasons.push('no headings extracted')
-
-  // Average text-block length. Real menu descriptions / about copy run
-  // 60-200 chars; a soup of 8-character noise blocks is a tell.
   if (text.length > 0) {
     const avg = text.reduce((a, s) => a + s.length, 0) / text.length
     if (avg < 30) reasons.push(`avg text block too short (${Math.round(avg)} chars)`)
   }
-  // Caps-heavy share — if >40% of text blocks are mostly uppercase it
-  // means the source uses CAPS for headers we mis-tagged as text.
   const capsHeavy = text.filter((s) => {
     const letters = s.replace(/[^A-Za-zÀ-ÿ]/g, '')
     if (letters.length < 5) return false
@@ -375,7 +390,7 @@ function scoreBlocks(blocks: any[]): { quality: 'ok'|'low'|'bad'; reasons: strin
   }
 
   let quality: 'ok'|'low'|'bad' = 'ok'
-  if (reasons.length >= 3) quality = 'bad'
+  if (reasons.length >= 4) quality = 'bad'
   else if (reasons.length >= 1) quality = 'low'
   return { quality, reasons }
 }
@@ -506,6 +521,229 @@ function pickHeadingFont(families: string[]): string | null {
   return families[families.length - 1]
 }
 
+// ---------- STRUCTURED EXTRACTORS ----------
+//
+// The scaffolder needs to produce real restaurant data (hours, menu,
+// contacts, gallery, description, branding), not just a bag of text
+// blocks. We try the highest-quality source first and fall through:
+//
+//   1. JSON-LD (schema.org Restaurant/FoodEstablishment/LocalBusiness)
+//   2. Microdata (itemprop="*")
+//   3. Open Graph + meta tags
+//   4. Heuristic class names (.menu-item, .opening-hours, …)
+//   5. Regex pattern matching across full-page text
+//
+// Each extractor is independent. If JSON-LD gives us hours, we use them
+// verbatim; otherwise we fall to the regex matcher.
+
+// Parse every <script type="application/ld+json"> on the page and merge
+// any restaurant-like entity we find.
+function extractJsonLd($: cheerio.CheerioAPI): any {
+  const out: any = {}
+  $('script[type="application/ld+json"]').each((_: number, el: cheerio.Element) => {
+    try {
+      const raw = $(el).contents().text() || $(el).text() || ''
+      if (!raw.trim()) return
+      const data = JSON.parse(raw)
+      const arr = Array.isArray(data) ? data : (data['@graph'] || [data])
+      for (const item of arr) {
+        if (!item || typeof item !== 'object') continue
+        const type = item['@type']
+        const types = Array.isArray(type) ? type : [type]
+        const restaurantLike = types.some((t: string) =>
+          /restaurant|foodestablishment|cafe|bar|localbusiness|organization/i.test(String(t || '')))
+        if (!restaurantLike) continue
+        if (item.name && !out.name) out.name = String(item.name)
+        if (item.description && !out.description) out.description = String(item.description)
+        if (item.telephone && !out.telephone) out.telephone = String(item.telephone)
+        if (item.email && !out.email) out.email = String(item.email)
+        if (item.image && !out.image) {
+          const img = Array.isArray(item.image) ? item.image[0] : item.image
+          out.image = typeof img === 'string' ? img : (img?.url || null)
+        }
+        if (item.address && !out.address) out.address = item.address
+        if (item.openingHours && !out.openingHours) out.openingHours = item.openingHours
+        if (item.openingHoursSpecification && !out.openingHoursSpec) {
+          out.openingHoursSpec = item.openingHoursSpecification
+        }
+        if (item.servesCuisine && !out.cuisine) out.cuisine = item.servesCuisine
+        if (item.priceRange && !out.priceRange) out.priceRange = String(item.priceRange)
+        if (item.url && !out.url) out.url = String(item.url)
+      }
+    } catch { /* unparseable JSON-LD — try the next script tag */ }
+  })
+  return out
+}
+
+// Flatten a schema.org PostalAddress object into a single string.
+function formatLdAddress(a: any): string | null {
+  if (!a) return null
+  if (typeof a === 'string') return a.replace(/\s+/g, ' ').trim()
+  if (Array.isArray(a)) return formatLdAddress(a[0])
+  const parts: string[] = []
+  if (a.streetAddress) parts.push(String(a.streetAddress))
+  const cityLine = [a.postalCode, a.addressLocality].filter(Boolean).join(' ').trim()
+  if (cityLine) parts.push(cityLine)
+  if (a.addressCountry) {
+    const c = typeof a.addressCountry === 'string'
+      ? a.addressCountry
+      : (a.addressCountry.name || a.addressCountry['@id'])
+    if (c && c.length > 2) parts.push(String(c))
+  }
+  const flat = parts.join(', ').trim()
+  return flat || null
+}
+
+// schema.org day codes → French day names.
+const DAY_FR: Record<string, string> = {
+  Mo: 'Lundi', Tu: 'Mardi', We: 'Mercredi', Th: 'Jeudi',
+  Fr: 'Vendredi', Sa: 'Samedi', Su: 'Dimanche',
+  Monday: 'Lundi', Tuesday: 'Mardi', Wednesday: 'Mercredi',
+  Thursday: 'Jeudi', Friday: 'Vendredi', Saturday: 'Samedi', Sunday: 'Dimanche',
+  PublicHolidays: 'Jours fériés'
+}
+function frDay(d: string): string {
+  const k = String(d || '').split('/').pop() || ''
+  return DAY_FR[k] || DAY_FR[k.slice(0, 2)] || k
+}
+
+// "Mo-Sa 11:30-14:00,18:30-23:30" → [{days, time}, …]
+function parseSchemaHoursStr(s: string): { days: string; time: string }[] {
+  const out: { days: string; time: string }[] = []
+  const m = String(s).match(/^([A-Za-z]+(?:-[A-Za-z]+)?(?:,\s*[A-Za-z]+(?:-[A-Za-z]+)?)*)\s+(.+)$/)
+  if (!m) return out
+  const days = m[1].includes('-')
+    ? m[1].split('-').map(frDay).join(' – ')
+    : m[1].split(',').map((p) => frDay(p.trim())).join(', ')
+  for (const t of m[2].split(',')) {
+    const time = t.trim().replace(/(\d{1,2}):(\d{2})/g, '$1h$2').replace(/-/, ' – ')
+    if (time) out.push({ days, time })
+  }
+  return out
+}
+
+function parseSchemaHoursSpec(spec: any): { days: string; time: string }[] {
+  const arr = Array.isArray(spec) ? spec : [spec]
+  const out: { days: string; time: string }[] = []
+  for (const s of arr) {
+    if (!s) continue
+    const dayList = Array.isArray(s.dayOfWeek) ? s.dayOfWeek : [s.dayOfWeek]
+    const days = dayList.filter(Boolean).map(frDay).join(', ')
+    const fmt = (t: any) => String(t || '').replace(/(\d{1,2}):(\d{2})(?::\d{2})?/, '$1h$2')
+    const time = `${fmt(s.opens)} – ${fmt(s.closes)}`
+    if (days && s.opens && s.closes) out.push({ days, time })
+  }
+  return out
+}
+
+// Heuristic regex extractor for opening hours in unstructured text.
+// Matches "Lundi 11h30 – 14h00", "Mon - Sat: 11:30 - 14:00", etc.
+function extractHoursFromText(pages: { $: cheerio.CheerioAPI }[]): { days: string; time: string }[] {
+  const out: { days: string; time: string }[] = []
+  const dayRe = '(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|monday|tuesday|wednesday|thursday|friday|saturday|sunday|lun|mar|mer|jeu|ven|sam|dim|mon|tue|wed|thu|fri|sat|sun)'
+  const rangeRe = new RegExp(`(${dayRe}(?:\\s*[-–à]\\s*${dayRe})?)\\s*[:\\.]?\\s*(\\d{1,2}[h:]\\d{2}\\s*[-–]\\s*\\d{1,2}[h:]\\d{2}(?:\\s*[/,]\\s*\\d{1,2}[h:]\\d{2}\\s*[-–]\\s*\\d{1,2}[h:]\\d{2})?)`, 'gi')
+  for (const { $ } of pages) {
+    const text = $('body').text().replace(/\s+/g, ' ')
+    let m
+    while ((m = rangeRe.exec(text))) {
+      const rawDays = m[1].trim()
+      const days = rawDays.split(/\s*[-–à]\s*/).map((d) => {
+        const t = d.toLowerCase()
+        const longForm = /^(lun|mar|mer|jeu|ven|sam|dim)/.test(t) ||
+          /^(mon|tue|wed|thu|fri|sat|sun)/.test(t)
+        return longForm ? d : d
+      }).join(' – ')
+      const time = m[2].replace(/\s+/g, '').replace(':', 'h').replace('-', ' – ')
+      if (out.length > 14) break
+      if (out.find((o) => o.days.toLowerCase() === days.toLowerCase() && o.time === time)) continue
+      out.push({ days, time })
+    }
+    if (out.length) break
+  }
+  return out
+}
+
+// Pull phone from tel: links + JSON-LD before falling back to regex.
+function extractPhone($h: cheerio.CheerioAPI, ld: any, pages: { html: string }[]): string | null {
+  if (ld?.telephone) return String(ld.telephone).trim()
+  const tel = $h('a[href^="tel:"]').first().attr('href')
+  if (tel) return tel.replace(/^tel:/i, '').trim()
+  return fallbackPhone(pages)
+}
+function extractEmail($h: cheerio.CheerioAPI, ld: any, pages: { html: string }[]): string | null {
+  if (ld?.email) return String(ld.email).trim()
+  const mail = $h('a[href^="mailto:"]').first().attr('href')
+  if (mail) return mail.replace(/^mailto:/i, '').split('?')[0].trim()
+  return fallbackEmail(pages)
+}
+function extractAddress($h: cheerio.CheerioAPI, ld: any, pages: { html: string }[]): string | null {
+  const fromLd = formatLdAddress(ld?.address)
+  if (fromLd) return fromLd
+  // Microdata: <span itemprop="streetAddress"> etc.
+  const street = $h('[itemprop="streetAddress"]').first().text().trim()
+  const locality = $h('[itemprop="addressLocality"]').first().text().trim()
+  const postal = $h('[itemprop="postalCode"]').first().text().trim()
+  const composed = [street, [postal, locality].filter(Boolean).join(' ')].filter(Boolean).join(', ')
+  if (composed.length > 5) return composed
+  return fallbackAddress(pages)
+}
+
+// Find menu / specialties sections and extract dish items. Returns
+// items as { icon, title, text } so they slot straight into the
+// diner-app's specialties config.
+function extractSpecialties($: cheerio.CheerioAPI): { icon: string; title: string; text: string }[] {
+  const items: { icon: string; title: string; text: string }[] = []
+  const headingRe = /^(notre |nos |la |le )?(menu|carte|plats?|spécialit[ée]s|specialites?|signature|incontournab|nos suggestions|à la carte)/i
+
+  // Build a list of "menu container" elements by walking each h1/h2/h3
+  // whose text matches a menu-ish heading and grabbing the following
+  // siblings up to the next heading.
+  $('h1, h2, h3').each((_: number, h: cheerio.Element) => {
+    const ht = flatText($, h)
+    if (!headingRe.test(ht)) return
+
+    // Collect dish elements: each subsequent h3/h4/li/dt within the
+    // same logical section, stopping at the next h1/h2.
+    const stop = (el: cheerio.Element) => /^h[12]$/.test((el.tagName || '').toLowerCase())
+    let cur: any = ($ as any)(h).next()
+    let scanned = 0
+    while (cur && cur.length && scanned < 200) {
+      const node = cur.get(0)
+      if (!node) break
+      if (stop(node)) break
+      // Within `cur`, find dish-leaf elements.
+      cur.find('h3, h4, li, dt').each((_: number, el: cheerio.Element) => {
+        const $el = $(el)
+        const title = flatText($, el)
+        if (!title || title.length < 3 || title.length > 80) return
+        if (isJunkText(title)) return
+        if (headingRe.test(title)) return
+        // Skip if it has block children (means we'll catch the leaf in
+        // a nested iteration instead).
+        if ($el.find('h3, h4, li, dt').length > 0) return
+        // Description: a sibling <p> or <dd> immediately after.
+        let desc = ''
+        const $sib = $el.next()
+        if ($sib.is('p, dd, span')) desc = flatText($, $sib.get(0)!)
+        if (desc && isJunkText(desc)) desc = ''
+        const cleanTitle = title.replace(/\s*\d+[.,]\d{2}\s*(CHF|EUR|€|F)?$/i, '').trim()
+        items.push({ icon: '🍽️', title: cleanTitle, text: desc })
+      })
+      scanned++
+      cur = cur.next()
+    }
+  })
+
+  // Dedupe by title.
+  const seen = new Set<string>()
+  return items.filter((i) => {
+    const k = i.title.toLowerCase()
+    if (seen.has(k)) return false
+    seen.add(k)
+    return true
+  }).slice(0, 8)  // cap so the home page isn't overwhelmed
+}
+
 // ---------- HELPERS ----------
 function fallbackPhone(pages: { html: string }[]): string | null {
   for (const { html } of pages) {
@@ -591,8 +829,6 @@ function buildConfig(pages: { url: string; html: string; $: cheerio.CheerioAPI }
   const texts = sections.filter((s) => s.type === 'text')
   const images = sections.filter((s) => s.type === 'image')
 
-  const score = scoreBlocks(sections)
-
   return {
     name,
     sections,
@@ -600,9 +836,7 @@ function buildConfig(pages: { url: string; html: string; $: cheerio.CheerioAPI }
     texts,
     images,
     og,
-    baseUrl,
-    quality: score.quality,         // 'ok' | 'low' | 'bad'
-    qualityReasons: score.reasons
+    baseUrl
   }
 }
 
@@ -697,15 +931,70 @@ Deno.serve(async (req: Request) => {
     logoUrl = cfg.og.image
   }
 
-  const phone = fallbackPhone(pages)
-  const email = fallbackEmail(pages)
-  const address = fallbackAddress(pages)
+  // Structured extraction — JSON-LD is the gold standard, then microdata,
+  // then heuristic regex. Each source fills in only what the prior
+  // sources missed.
+  const ld = extractJsonLd($h)
+  const phone = extractPhone($h, ld, pages)
+  const email = extractEmail($h, ld, pages)
+  const address = extractAddress($h, ld, pages)
 
-  const heroTitle = cfg.headings.find((h: any) => h.level === 1)?.text || cfg.og.title || cfg.name
-  const heroLead = cfg.headings.find((h: any) => h.level === 2)?.text || cfg.og.description || ''
+  // Opening hours: schema.org → openingHoursSpecification first (the
+  // structured shape), then openingHours strings, then text regex.
+  let hours: { days: string; service?: string; time: string }[] = []
+  if (ld.openingHoursSpec) hours = parseSchemaHoursSpec(ld.openingHoursSpec)
+  if (!hours.length && ld.openingHours) {
+    const raw = Array.isArray(ld.openingHours) ? ld.openingHours : [ld.openingHours]
+    for (const r of raw) hours.push(...parseSchemaHoursStr(String(r)))
+  }
+  if (!hours.length) hours = extractHoursFromText(pages)
+
+  // Restaurant description: JSON-LD wins, then og:description (filtered
+  // through safeLead so nav words don't slip through), then meta name=
+  // description, then the first long paragraph we extracted.
+  const safeOgDesc = cfg.og.description // already safeLead'd in buildConfig
+  const description = (ld.description && ld.description.length > 30)
+    ? ld.description
+    : (safeOgDesc || $h('meta[name="description"]').attr('content') || cfg.texts[0]?.text || '')
+
+  // Specialties — try to pull dish names + descriptions from any
+  // menu/carte/spécialités section on any crawled page.
+  let specialties: { icon: string; title: string; text: string }[] = []
+  for (const p of pages) {
+    specialties.push(...extractSpecialties(p.$))
+    if (specialties.length >= 8) break
+  }
+  // Dedupe across pages.
+  {
+    const seen = new Set<string>()
+    specialties = specialties.filter((s) => {
+      const k = s.title.toLowerCase()
+      if (seen.has(k)) return false
+      seen.add(k)
+      return true
+    }).slice(0, 8)
+  }
+
+  const heroTitle = ld.name || cfg.headings.find((h: any) => h.level === 1)?.text || cfg.og.title || cfg.name
+  const heroLead = (description || '').slice(0, 220)
+
+  // About paragraphs — prefer the structured description as the first
+  // paragraph, then pad with extracted text blocks (deduped against the
+  // description).
+  const aboutParagraphs: string[] = []
+  if (description) aboutParagraphs.push(description)
+  for (const t of cfg.texts) {
+    if (aboutParagraphs.length >= 4) break
+    if (aboutParagraphs.some((p) => p.includes(t.text) || t.text.includes(p))) continue
+    aboutParagraphs.push(t.text)
+  }
+
+  // Reservation slots — keep empty by default. Once we detect a BookingForm
+  // / reservation system we can pre-populate, but until then any value
+  // would be invented (violates the no-invention rule).
 
   const config = {
-    tagline: cfg.og.description || $h('meta[name="description"]').attr('content') || null,
+    tagline: description ? description.slice(0, 140) : (cfg.og.description || null),
     address,
     phone,
     phone_href: phone ? 'tel:' + phone.replace(/[^\d+]/g, '') : null,
@@ -721,30 +1010,42 @@ Deno.serve(async (req: Request) => {
     google_fonts_families: gf.families,
     pwa_name: cfg.name,
     pwa_short_name: cfg.name,
-    pwa_description: cfg.og.description || null,
-    hours: [],
+    pwa_description: description || cfg.og.description || null,
+    hours,
     reservation_slots: [],
     hero: {
-      eyebrow: null,
+      eyebrow: ld.cuisine
+        ? (Array.isArray(ld.cuisine) ? ld.cuisine.join(' · ') : String(ld.cuisine))
+        : null,
       title: heroTitle,
       lead: heroLead,
-      // Prefer an extracted image; fall back to og:image so the hero
-      // is never empty for sites that only declare images via meta.
-      image_url: cfg.images[0]?.src || cfg.og.image || null
+      image_url: ld.image || cfg.images[0]?.src || cfg.og.image || null
     },
     about: {
       kicker: '',
       title: '',
       image_url: cfg.images[1]?.src || cfg.images[0]?.src || cfg.og.image || null,
-      paragraphs: cfg.texts.slice(0, 4).map((t: any) => t.text)
+      paragraphs: aboutParagraphs
     },
-    specialties: [],
+    specialties,
     gallery: cfg.images.slice(0, 12).map((img: any) => ({
       src: img.src, caption: img.alt || ''
     })),
     sections: cfg.sections,
     source_url: target
   }
+
+  // Score the scrape on the STRUCTURED fields, not just block counts.
+  // This is what the moderator should look at — "did we get the things
+  // a diner actually needs?".
+  const score = scoreScaffold(cfg.sections, {
+    address,
+    phone,
+    hours,
+    description,
+    specialties,
+    images: config.gallery
+  })
 
   // 2. Insert the restaurant row (uniqueified slug).
   const slug = await uniqueSlug(slugify(cfg.name))
@@ -794,8 +1095,8 @@ Deno.serve(async (req: Request) => {
     pages_url: `https://${inserted.slug}.pages.dev`,
     // Surface scraper quality so the moderator knows whether to trust
     // the auto-generated content or open the config editor immediately.
-    quality: cfg.quality,                 // 'ok' | 'low' | 'bad'
-    quality_reasons: cfg.qualityReasons,
+    quality: score.quality,               // 'ok' | 'low' | 'bad'
+    quality_reasons: score.reasons,
     owner: ownerErr ? null : {
       placeholder_email: placeholderEmail,
       claim_code: claimCode
