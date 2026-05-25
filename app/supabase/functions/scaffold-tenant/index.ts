@@ -872,16 +872,114 @@ function isDishyName(s: string): boolean {
   return true
 }
 
+// Many WordPress restaurant themes (and the like) render each menu
+// item as an <article class="dish"> / <li class="menu-item"> card,
+// with the name in .entry-title (or an h1-h4), portion variants in
+// repeated .dish-price-line elements, and a description in
+// .dish-description / .entry-content. The dish name does NOT sit
+// under the category heading as an h3 — it's nested inside its own
+// card. This strategy walks the cards directly so we capture name +
+// per-variant price + description from the markup, with no AI needed.
+const DISH_CARD_CLASS_RE = /(?:^|\s)(?:dish|menu-item|menu-product|food-item|wprm-recipe|product-item|carte-item|plat-item)(?:$|\s|--|__|-(?:[a-z]))/i
+const DISH_NAME_SEL = '.entry-title, .menu-item-title, .dish-title, .product-title, .plat-title, h1, h2, h3, h4'
+const DISH_PRICE_LINE_SEL = '.dish-price-line, .price-line, .menu-item-price-line, .product-price-line, .variant'
+const DISH_PRICE_SEL = '.dish-price, .menu-item-price, .product-price, .price, .amount'
+const DISH_LABEL_SEL = '.dish-price-label, .price-label, .variant-label, .menu-item-price-label'
+const DISH_DESC_SEL = '.dish-description, .menu-item-description, .product-description, .entry-content p, .entry-summary p'
+
+function extractDishCards(
+  $: cheerio.CheerioAPI,
+  pageUrl: string,
+  fallbackCategory: string
+): { category: string; items: MenuItem[] }[] {
+  // Find the page's own category title (e.g. <h3 class="category-title">).
+  let pageCategory = fallbackCategory
+  $('.category-title, .archive-title, .page-title, .term-name').each((_: number, h: cheerio.Element) => {
+    const t = flatText($, h)
+    if (t && t.length > 1 && t.length < 80 && !pageCategory) { pageCategory = t }
+    if (t && t.length > 1 && t.length < 80) { pageCategory = t; return false as any }
+  })
+  if (!pageCategory) {
+    // URL slug → "Les Suggestions"
+    try {
+      const segs = new URL(pageUrl).pathname.split('/').filter(Boolean)
+      const last = segs[segs.length - 1] || segs[segs.length - 2] || ''
+      pageCategory = last.replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    } catch { /* ignore */ }
+  }
+
+  const cards: cheerio.Element[] = []
+  $('article, li, div').each((_: number, el: cheerio.Element) => {
+    const cls = ($(el).attr('class') || '')
+    if (!DISH_CARD_CLASS_RE.test(cls)) return
+    // Skip cards nested inside another card (avoid duplicates).
+    const ancestors = ($ as any)(el).parents().toArray() as cheerio.Element[]
+    if (ancestors.some((p) => DISH_CARD_CLASS_RE.test(($(p).attr('class') || '')))) return
+    cards.push(el)
+  })
+
+  if (!cards.length || !pageCategory) return []
+
+  const items: MenuItem[] = []
+  const seenNames = new Set<string>()
+
+  for (const el of cards) {
+    if (items.length >= 30) break
+
+    const $el = ($ as any)(el)
+    const nameEl = $el.find(DISH_NAME_SEL).first()
+    const name = nameEl.length ? flatText($, nameEl.get(0)) : ''
+    if (!name || !isDishyName(name)) continue
+    const key = name.toLowerCase().trim()
+    if (seenNames.has(key)) continue
+    seenNames.add(key)
+
+    // Variants: <li class="dish-price-line"> with .dish-price + .dish-price-label.
+    const variants: { label: string; price: string }[] = []
+    $el.find(DISH_PRICE_LINE_SEL).each((_: number, ln: cheerio.Element) => {
+      const $ln = ($ as any)(ln)
+      const p = flatText($, $ln.find(DISH_PRICE_SEL).first().get(0))
+      const l = flatText($, $ln.find(DISH_LABEL_SEL).first().get(0))
+      if (p && l) variants.push({ label: l, price: p })
+    })
+
+    // Headline price: first .dish-price either in a variant or top-level.
+    let price: string | null = null
+    if (variants.length) {
+      price = variants[0].price
+    } else {
+      const pEl = $el.find(DISH_PRICE_SEL).first()
+      if (pEl.length) price = flatText($, pEl.get(0)) || null
+    }
+
+    // Description (avoid grabbing the dish name itself).
+    let description = ''
+    const dEl = $el.find(DISH_DESC_SEL).first()
+    if (dEl.length) {
+      const t = flatText($, dEl.get(0))
+      if (t && t !== name && !isJunkText(t) && t.length < 400) description = t
+    }
+
+    items.push({ name, description, price, ingredients: [], variants, allergens: [] })
+  }
+
+  if (!items.length) return []
+  return [{ category: pageCategory, items }]
+}
+
 // Hierarchical menu extractor. Output:
 //   [ { category: 'Les entrées', items: [MenuItem, ...] } ]
 //
-// We only emit *named* dishes: a heading inside a menu section paired
-// with (optionally) its description / price. Anonymous bare-paragraph
-// fragments are intentionally NOT extracted here — they produced
-// garbage rows on dapaolo (price chips, form labels, isolated
-// ingredient lines). The AI enhancement pass reads the full source
-// corpus and groups those fragments into proper dishes (variants /
-// ingredients / allergens), which the verbatim gate then checks.
+// Two strategies, applied per crawled page:
+//   1. Heading-based: <h2>Category</h2> ... <h3>Dish</h3> + <p>desc</p>
+//   2. Dish-card-based: <article class="dish"> ... .entry-title +
+//      .dish-price-line cards (WordPress / restaurant plugins).
+// Anonymous bare-paragraph fragments are intentionally NOT extracted —
+// they produced garbage rows on dapaolo (price chips, form labels,
+// isolated ingredient lines). The AI enhancement pass reads the full
+// source corpus and groups those into proper dishes when neither
+// strategy catches anything.
 function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
   category: string;
   items: MenuItem[];
@@ -895,6 +993,14 @@ function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
   for (const p of pages) {
     const isMenuPage = menuUrlRe.test(p.url)
     const $ = p.$
+
+    // Strategy 2: dish-card scan. Cheap to attempt — returns [] if the
+    // page has no card markup. Done first so card-style pages (the WP
+    // /dishes/<cat>/ archives) get their proper category from the
+    // page's own .category-title even when no menu-ish heading exists.
+    const cardSections = extractDishCards($, p.url, '')
+    for (const sec of cardSections) out.push(sec)
+
     // Find every h1/h2/h3 that could be a category header.
     const candidates: { el: cheerio.Element; text: string }[] = []
     $('h1, h2, h3').each((_: number, h: cheerio.Element) => {
