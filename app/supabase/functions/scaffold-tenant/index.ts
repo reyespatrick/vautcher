@@ -1027,7 +1027,11 @@ function extractDishCards(
     items.push({ name, description, price, ingredients: [], variants, allergens: [] })
   }
 
-  if (!items.length) return []
+  // Drop the section if no item has any price/variant. The dapaolo
+  // /dishes/origine-des-produits/ page uses dish-card markup for a list
+  // of supplier origins (no prices) — it's not a menu category.
+  const anyPriced = items.some((it) => it.price || (it.variants && it.variants.length))
+  if (!items.length || !anyPriced) return []
   return [{ category: pageCategory, items }]
 }
 
@@ -1977,7 +1981,6 @@ Deno.serve(async (req: Request) => {
     slug: inserted.slug,
     blocks: cfg.sections.length,
     pages_crawled: pages.length,
-    pages_crawled_urls: pages.map((p: any) => p.url),
     deploy: workflowUrl ? 'dispatched' : 'manual',
     deploy_log_url: workflowUrl,
     pages_url: `https://${inserted.slug}.pages.dev`,
@@ -1989,25 +1992,8 @@ Deno.serve(async (req: Request) => {
     ai_used: aiUsed,                      // boolean
     ai_filled: aiFilled,                  // ['address', 'hours', …]
     ai_rejected: aiRejected,              // hallucinations we dropped
-    // Debug: per-page dish-card counts to diagnose why menu is empty.
-    debug_menu: {
-      menu_categories: (config.menu || []).length,
-      menu_items: (config.menu || []).reduce((n: number, c: any) => n + (c.items?.length || 0), 0),
-      dish_cards_per_page: pages.map((p: any) => {
-        try {
-          ;(globalThis as any).__lastCardDbg = null
-          const sections = extractDishCards(p.$, p.url, '', p.html || '')
-          return {
-            url: p.url,
-            sections: sections.length,
-            items: sections.reduce((n, s) => n + s.items.length, 0),
-            dbg: (globalThis as any).__lastCardDbg
-          }
-        } catch (e) {
-          return { url: p.url, error: String((e as any)?.message || e) }
-        }
-      })
-    },
+    menu_categories: (config.menu || []).length,
+    menu_items: (config.menu || []).reduce((n: number, c: any) => n + (c.items?.length || 0), 0),
     owner: ownerErr ? null : {
       placeholder_email: placeholderEmail,
       claim_code: claimCode
