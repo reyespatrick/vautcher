@@ -29,6 +29,12 @@ const heroStyle = computed(() => {
 // references via `site.hero`, `site.about`, `site.specialties` keep
 // this view tenant-agnostic.
 
+// site.menu is [{ category, items: [{ name, description, price }] }].
+// Filter out categories with zero items so the section stays clean.
+const menuWithItems = computed(() =>
+  (site.menu || []).filter((c) => Array.isArray(c.items) && c.items.length > 0)
+)
+
 const events = ref([])
 const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
                 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']
@@ -100,9 +106,42 @@ onMounted(async () => {
       </div>
     </section>
 
-    <!-- Specialties — extracted menu sections / signature dishes. -->
+    <!-- Hierarchical menu — category headers + dishes underneath.
+         When the scaffolder + AI got items per category, this is the
+         full menu the diner sees. Empty section v-if guards keep the
+         page tidy when a tenant has only specialties (no items) or
+         only items (no descriptions). -->
     <section
-      v-if="site.specialties && site.specialties.length"
+      v-if="menuWithItems.length"
+      class="section menu-section"
+    >
+      <div class="container">
+        <div class="section-head">
+          <span class="kicker">Notre carte</span>
+          <h2>Le menu</h2>
+          <div class="divider"></div>
+        </div>
+        <div class="menu-categories">
+          <article v-for="cat in menuWithItems" :key="cat.category" class="menu-cat">
+            <h3 class="menu-cat-head">{{ cat.category }}</h3>
+            <ul class="menu-items">
+              <li v-for="(item, i) in cat.items" :key="i" class="menu-item">
+                <div class="menu-item-head">
+                  <strong v-if="item.name">{{ item.name }}</strong>
+                  <span v-if="item.price" class="menu-item-price">{{ item.price }}</span>
+                </div>
+                <p v-if="item.description" class="menu-item-desc">{{ item.description }}</p>
+              </li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Specialties — fallback for tenants where the menu extractor
+         found section headlines but no items underneath. -->
+    <section
+      v-else-if="site.specialties && site.specialties.length"
       class="section specialties"
     >
       <div class="container">
@@ -279,6 +318,55 @@ onMounted(async () => {
 .spec-card h3 { font-size: 1.2rem; margin-bottom: 6px; }
 .spec-card p { color: var(--grey); font-size: 0.9rem; }
 
+/* Hierarchical menu: 2-column grid on desktop, 1 column on mobile.
+   Each category is a card; dishes are a vertical list inside. */
+.menu-categories {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+}
+.menu-cat {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 22px 18px;
+  box-shadow: var(--shadow);
+}
+.menu-cat-head {
+  font-family: 'Rufina', serif;
+  color: var(--burgundy);
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.menu-items { list-style: none; padding: 0; margin: 0; }
+.menu-item { padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.menu-item:last-child { border-bottom: 0; }
+.menu-item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+.menu-item-head strong {
+  font-family: 'Rufina', serif;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.menu-item-price {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--burgundy);
+  white-space: nowrap;
+}
+.menu-item-desc {
+  color: var(--grey);
+  font-size: 0.88rem;
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
 .hours-teaser { background: var(--paper); }
 .hours-table {
   margin: 0 auto;
@@ -365,5 +453,6 @@ onMounted(async () => {
   .spec-grid { grid-template-columns: 1fr; }
   .ev-grid { grid-template-columns: 1fr; }
   .gallery-teaser .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+  .menu-categories { grid-template-columns: 1fr; gap: 18px; }
 }
 </style>

@@ -836,6 +836,137 @@ function extractSpecialties($: cheerio.CheerioAPI): { icon: string; title: strin
   }).slice(0, 8)  // cap so the home page isn't overwhelmed
 }
 
+// Hierarchical menu extractor. Output:
+//   [ { category: 'Les entrées', items: [{ name, description, price }] } ]
+//
+// For each page that looks like a menu page (URL contains /menu, /carte,
+// /dishes, /plats or the page has a menu-ish H1), walk the headings:
+//   - The first h1/h2 is the category title.
+//   - Subsequent h3/h4 are dish names (if any).
+//   - Paragraphs / list items between headings are descriptions.
+// On sites like dapaolo.ch where dishes are listed as bare "Ingrédients …"
+// paragraphs with no name, each paragraph becomes one item with an
+// empty name.
+function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
+  category: string;
+  items: { name: string; description: string; price: string | null }[];
+}[] {
+  const menuUrlRe = /\/(menu|carte|dishes|plats|specialites|sp[ée]cialit[ée]s)\b/i
+  const menuHeadRe = /^(notre |nos |la |le |les )?(menu|carte|plats?|sp[ée]cialit[ée]s|specialites?|signature|incontournab|nos suggestions|à la carte|entr[ée]es|pizz|p[âa]tes|p[âa]tes|poissons|viandes|desserts|antipast|primi|secondi|riz)/i
+  const PRICE_RE = /(\d+[.,]\d{2})\s*(CHF|EUR|€|F)?/i
+
+  const out: { category: string; items: { name: string; description: string; price: string | null }[] }[] = []
+
+  for (const p of pages) {
+    const isMenuPage = menuUrlRe.test(p.url)
+    const $ = p.$
+    // Find every h1/h2/h3 that could be a category header.
+    const candidates: { el: cheerio.Element; text: string }[] = []
+    $('h1, h2, h3').each((_: number, h: cheerio.Element) => {
+      const t = flatText($, h)
+      if (!t) return
+      if (!isMenuPage && !menuHeadRe.test(t)) return
+      // On a menu URL we accept any heading as a potential category;
+      // on a non-menu URL only headings that look menu-ish.
+      if (t.length > 80) return
+      candidates.push({ el: h, text: t })
+    })
+
+    for (const cand of candidates) {
+      const category = cand.text.trim()
+      const items: { name: string; description: string; price: string | null }[] = []
+
+      // Walk subsequent siblings until the next h1/h2 of equal or
+      // higher level, harvesting dish leaves.
+      const stop = (el: cheerio.Element) => {
+        const tn = (el.tagName || '').toLowerCase()
+        return tn === 'h1' || tn === 'h2'
+      }
+      let cur: any = ($ as any)(cand.el).next()
+      let scanned = 0
+      while (cur && cur.length && scanned < 200 && items.length < 30) {
+        const node = cur.get(0)
+        if (!node) break
+        if (stop(node)) break
+
+        // Two extraction strategies inside the section:
+        //  (a) Named dishes: <h3>/<h4>/<dt> = name, next <p>/<dd> = desc
+        //  (b) Unnamed dishes: bare <p>/<li> paragraphs (dapaolo style)
+        cur.find('h3, h4, dt').each((_: number, h: cheerio.Element) => {
+          if (items.length >= 30) return
+          const name = flatText($, h)
+          if (!name || name.length < 3 || name.length > 100) return
+          if (isJunkText(name)) return
+          // Avoid re-using a category title as a dish name.
+          if (menuHeadRe.test(name) && name.length < 25) return
+          let desc = ''
+          const $sib = ($ as any)(h).next()
+          if ($sib.is('p, dd, span, div')) desc = flatText($, $sib.get(0))
+          if (desc && isJunkText(desc)) desc = ''
+          const priceM = (name + ' ' + desc).match(PRICE_RE)
+          const cleanName = name.replace(/\s*\d+[.,]\d{2}\s*(CHF|EUR|€|F)?$/i, '').trim()
+          const cleanDesc = desc.replace(/\s*\d+[.,]\d{2}\s*(CHF|EUR|€|F)?\s*$/i, '').trim()
+          items.push({ name: cleanName, description: cleanDesc, price: priceM ? priceM[0] : null })
+        })
+
+        // If we saw no <h3>/<h4>/<dt>, harvest bare <p>/<li> in this
+        // sibling block (dapaolo-style "Ingrédients..." paragraphs).
+        if (items.length === 0 || cur.find('h3, h4, dt').length === 0) {
+          cur.find('p, li').each((_: number, el: cheerio.Element) => {
+            if (items.length >= 30) return
+            const txt = flatText($, el)
+            if (!txt || txt.length < 8 || txt.length > 240) return
+            if (isJunkText(txt)) return
+            if (menuHeadRe.test(txt) && txt.length < 25) return
+            const priceM = txt.match(PRICE_RE)
+            const clean = txt.replace(/\s*\d+[.,]\d{2}\s*(CHF|EUR|€|F)?\s*$/i, '').trim()
+            items.push({ name: '', description: clean, price: priceM ? priceM[0] : null })
+          })
+        }
+
+        scanned++
+        cur = cur.next()
+      }
+
+      if (items.length >= 1) {
+        // Dedupe items by description.
+        const seen = new Set<string>()
+        const deduped = items.filter((i) => {
+          const k = (i.name + '|' + i.description).toLowerCase()
+          if (seen.has(k)) return false
+          seen.add(k)
+          return true
+        })
+        out.push({ category, items: deduped })
+      }
+    }
+  }
+
+  // Dedupe categories by name (across pages) and merge items.
+  const byCategory = new Map<string, { name: string; description: string; price: string | null }[]>()
+  for (const sec of out) {
+    const key = sec.category.toLowerCase().trim()
+    if (!byCategory.has(key)) byCategory.set(key, [])
+    const dest = byCategory.get(key)!
+    for (const item of sec.items) {
+      const k = (item.name + '|' + item.description).toLowerCase()
+      if (!dest.some((d) => (d.name + '|' + d.description).toLowerCase() === k)) {
+        dest.push(item)
+      }
+    }
+  }
+  // Materialize back with original category casing (first occurrence wins).
+  const final: { category: string; items: { name: string; description: string; price: string | null }[] }[] = []
+  const seenKeys = new Set<string>()
+  for (const sec of out) {
+    const key = sec.category.toLowerCase().trim()
+    if (seenKeys.has(key)) continue
+    seenKeys.add(key)
+    final.push({ category: sec.category, items: byCategory.get(key) || [] })
+  }
+  return final
+}
+
 // ---------- HELPERS ----------
 function fallbackPhone(pages: { html: string }[]): string | null {
   for (const { html } of pages) {
@@ -961,6 +1092,12 @@ async function enhanceWithAI(
   if (!currentConfig.hours?.length) missing.push('opening_hours')
   if (!currentConfig.specialties?.length) missing.push('specialties')
   if (!currentConfig.about?.paragraphs?.length) missing.push('description')
+  // We always ask AI to fill in the menu — even a partial scraper menu
+  // benefits from AI filling in dish names the scraper couldn't tease
+  // out of unstructured paragraphs.
+  if (!currentConfig.menu?.length || currentConfig.menu.some((c: any) => !c.items?.length)) {
+    missing.push('menu')
+  }
   if (missing.length === 0) return { filled: {}, rejected: [] }
 
   // Build the source corpus the AI can read — JSON-LD scripts (gold
@@ -1015,6 +1152,10 @@ Critical rules:
 3. If a field is not findable in the source, return null for it.
 4. For specialties: return at most 6, only items that look like signature dishes
    or menu section headlines. Each must have a title that appears in source.
+5. For menu: return the full hierarchical menu — one entry per category, each with
+   its list of dishes. Each dish's "description" MUST be verbatim from the source.
+   "name" may be omitted (some sites only list ingredients, not dish names).
+   Skip categories that have zero dishes in the source. Max 12 categories.
 
 Source text:
 ${source}`
@@ -1060,6 +1201,29 @@ ${source}`
                   text: { type: ['string', 'null'] }
                 },
                 required: ['title']
+              }
+            },
+            menu: {
+              type: ['array', 'null'],
+              description: 'Hierarchical menu grouped by section. Use the exact category labels and dish descriptions found in the source. If a category has no individually named dishes, leave name empty and put the line in description.',
+              items: {
+                type: 'object',
+                properties: {
+                  category: { type: 'string' },
+                  items: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: ['string', 'null'] },
+                        description: { type: 'string' },
+                        price: { type: ['string', 'null'] }
+                      },
+                      required: ['description']
+                    }
+                  }
+                },
+                required: ['category', 'items']
               }
             }
           }
@@ -1146,6 +1310,41 @@ ${source}`
     for (const s of ai.specialties) {
       if (!valid.includes(s)) rejected.push(`specialty: ${s?.title}`)
     }
+  }
+
+  // Menu — hierarchical { category, items: [{ name, description, price }] }.
+  // Each item's description must appear verbatim; name may be empty;
+  // price passes through if present (it always matches because it's
+  // copied from the gate-matched description anyway).
+  if (Array.isArray(ai.menu)) {
+    const validCats: any[] = []
+    for (const cat of ai.menu) {
+      if (!cat || !cat.category || !Array.isArray(cat.items)) continue
+      if (!inSource(cat.category, 3)) {
+        rejected.push(`menu category: ${cat.category}`)
+        continue
+      }
+      const validItems = cat.items.filter((it: any) => {
+        if (!it || !it.description) return false
+        if (!inSource(it.description, 8)) {
+          rejected.push(`dish: ${String(it.description).slice(0, 50)}…`)
+          return false
+        }
+        // Name (if present) must also be verbatim.
+        if (it.name && !inSource(it.name, 4)) {
+          rejected.push(`dish name: ${it.name}`)
+          // Drop name but keep the dish if description was valid.
+          it.name = ''
+        }
+        return true
+      }).map((it: any) => ({
+        name: String(it.name || '').trim(),
+        description: String(it.description).trim(),
+        price: it.price ? String(it.price).trim() : null
+      }))
+      if (validItems.length) validCats.push({ category: String(cat.category).trim(), items: validItems })
+    }
+    if (validCats.length) filled.menu = validCats
   }
 
   return { filled, rejected }
@@ -1289,6 +1488,11 @@ Deno.serve(async (req: Request) => {
     }).slice(0, 8)
   }
 
+  // Hierarchical menu — { category, items: [{ name, description, price }] }.
+  // The scraper walks every crawled page; categories with no items are
+  // dropped. AI may add or extend this through enhanceWithAI.
+  const menu = extractMenu(pages.map((p) => ({ url: p.url, $: p.$ })))
+
   const heroTitle = ld.name || cfg.headings.find((h: any) => h.level === 1)?.text || cfg.og.title || cfg.name
   const heroLead = (description || '').slice(0, 220)
 
@@ -1342,6 +1546,7 @@ Deno.serve(async (req: Request) => {
       paragraphs: aboutParagraphs
     },
     specialties,
+    menu,
     gallery: cfg.images.slice(0, 12).map((img: any) => ({
       src: img.src, caption: img.alt || ''
     })),
@@ -1402,6 +1607,34 @@ Deno.serve(async (req: Request) => {
       if (Array.isArray(f.specialties) && f.specialties.length && !config.specialties.length) {
         config.specialties = f.specialties
         aiFilled.push('specialties')
+      }
+      if (Array.isArray(f.menu) && f.menu.length) {
+        // AI menu wins over scraper menu when scraper produced little
+        // or nothing. When both are present, merge by category name.
+        if (!config.menu?.length) {
+          config.menu = f.menu
+        } else {
+          const byKey = new Map<string, any>()
+          for (const c of config.menu) byKey.set(c.category.toLowerCase().trim(), c)
+          for (const c of f.menu) {
+            const k = String(c.category).toLowerCase().trim()
+            if (!byKey.has(k)) {
+              byKey.set(k, c)
+              config.menu.push(c)
+            } else {
+              // Merge items, dedupe by description.
+              const dest = byKey.get(k)
+              const seen = new Set(dest.items.map((i: any) => i.description.toLowerCase()))
+              for (const item of c.items) {
+                if (!seen.has(item.description.toLowerCase())) {
+                  dest.items.push(item)
+                  seen.add(item.description.toLowerCase())
+                }
+              }
+            }
+          }
+        }
+        aiFilled.push('menu')
       }
       aiRejected = enhanced.rejected
 

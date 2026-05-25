@@ -41,6 +41,7 @@ const GENERIC_FALLBACK = {
   hero: { eyebrow: '', title: '', lead: '' },
   about: { kicker: '', title: '', image_url: '', paragraphs: [] },
   specialties: [],
+  menu: [],
   gallery: [],
   sections: []
 }
@@ -122,6 +123,7 @@ function flatten(payload) {
     hero: c.hero ?? FALLBACK.hero,
     about: c.about ?? FALLBACK.about,
     specialties: c.specialties ?? FALLBACK.specialties,
+    menu: c.menu ?? FALLBACK.menu ?? [],
     gallery: c.gallery ?? FALLBACK.gallery,
     sections: c.sections ?? FALLBACK.sections
   }
