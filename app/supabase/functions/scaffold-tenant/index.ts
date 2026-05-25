@@ -167,6 +167,71 @@ async function crawl(startUrl: string, maxPages = 12) {
 
 // ---------- BLOCK EXTRACTION ----------
 const BLOCK_RE = /^(div|section|article|aside|main|p|h[1-6]|ul|ol|li|dl|dd|dt|table|tr|td|th|figure|figcaption)$/
+
+// Pull the visible text out of a cheerio element while INSERTING a
+// space between sibling text nodes. Cheerio's $el.text() concatenates
+// without separators, so `<span>Allergènes</span><span>Lupin</span>`
+// becomes "AllergènesLupin" — which is what was shipping in scraped
+// menus. Walking the DOM and joining with spaces fixes that.
+function flatText($: cheerio.CheerioAPI, el: cheerio.Element): string {
+  const parts: string[] = []
+  function walk(node: any) {
+    if (!node) return
+    if (node.type === 'text') {
+      const s = String(node.data || '').replace(/\s+/g, ' ').trim()
+      if (s) parts.push(s)
+      return
+    }
+    if (node.type === 'tag') {
+      const name = (node.tagName || '').toLowerCase()
+      if (name === 'script' || name === 'style' || name === 'noscript') return
+      // Suppress the brief content of <sup>, <sub>, <small> footnote
+      // markers when they wedge between two adjacent words.
+      const children = node.children || []
+      for (const c of children) walk(c)
+    }
+  }
+  walk(el)
+  return parts.join(' ').replace(/\s+/g, ' ').trim()
+}
+
+// Junk-pattern filter. Cookie banners, allergen lists, lone day-name
+// labels (WEEKDAYS, LUN, MAR…), pure-uppercase blob without sentences,
+// and other metadata-only fragments shouldn't make it into the
+// scaffolded content. Returns true → drop the block.
+function isJunkText(t: string): boolean {
+  const s = t.trim()
+  if (!s) return true
+
+  // Allergen / nutritional list — body text that's mostly chemistry
+  // jargon. "Allergènes…", "Contains gluten", "Sulfites & sulfureux…".
+  if (/^allerg[èe]nes?\b/i.test(s)) return true
+  if (/^contient\b/i.test(s) || /^contains\b/i.test(s)) return true
+  // Sulfite/lactose/gluten mash-ups with no surrounding sentence —
+  // count allergen tokens vs total words.
+  const allergenTokens = (s.match(/(allerg[èe]nes?|sulfites?|sulfureux|anhydride|gluten|lactose|lupin|moutarde|c[ée]leri|crustac[ée]s|mollusques|fruits? [aà] coque|s[ée]same|soja|arachide|sulfite|sulfite)/gi) || []).length
+  const totalTokens = s.split(/\s+/).filter(Boolean).length
+  if (totalTokens > 0 && allergenTokens / totalTokens > 0.4) return true
+
+  // Lone day-or-period label (WEEKDAYS, WEEKEND, LUN MAR MER, MIDI, SOIR)
+  // with no times attached. If the string is short, ALL-CAPS, and made
+  // of these tokens, drop it.
+  if (s.length < 40 && /^[\sA-ZÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ&\-/]+$/.test(s)) {
+    if (/^(weekdays|weekend|weekends|holidays?|lun|mar|mer|jeu|ven|sam|dim|midi|soir|du|au|et|monday|tuesday|wednesday|thursday|friday|saturday|sunday)([\s&/\-]|$)/i.test(s)) {
+      // No hours / minutes present anywhere.
+      if (!/\d/.test(s)) return true
+    }
+  }
+
+  // Cookie / consent / GDPR boilerplate.
+  if (/cookies?\s+(sont|nous|permettent|utilis)/i.test(s)) return true
+  if (/politique\s+de\s+confidentialit/i.test(s)) return true
+
+  // Single uppercase word that's not a dish name (>= 3 chars).
+  if (/^[A-ZÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]{3,30}$/.test(s)) return true
+
+  return false
+}
 function isIconImage(src: string): boolean {
   return /(favicon|logo|icon|sprite|spacer|arrow_)/i.test(src)
 }
@@ -238,17 +303,22 @@ function extractBlocks($: cheerio.CheerioAPI, pageUrl: string) {
       if (/\.(svg|ico|webmanifest)(\?|$)/i.test(abs)) return
       out.push({ type: 'image', src: abs, alt: ($el.attr('alt') || '').trim() })
     } else if (/^h[1-4]$/.test(tag)) {
-      const text = $el.text().replace(/\s+/g, ' ').trim()
-      if (text && text.length <= 140) out.push({ type: 'heading', level: +tag[1], text })
+      const text = flatText($, el)
+      if (text && text.length <= 140 && !isJunkText(text)) {
+        out.push({ type: 'heading', level: +tag[1], text })
+      }
     } else if (tag === 'p') {
-      const text = $el.text().replace(/\s+/g, ' ').trim()
-      if (text.length >= 25 && !isNavLikeText(text)) out.push({ type: 'text', text })
+      const text = flatText($, el)
+      if (text.length >= 25 && !isNavLikeText(text) && !isJunkText(text)) {
+        out.push({ type: 'text', text })
+      }
     } else if (tag === 'li' || tag === 'dd' || tag === 'dt') {
       if (looksLikeNav($, el)) return
       const hasBlockChild = $el.find(BLOCK_RE).length > 0
       if (hasBlockChild) return
-      const text = $el.text().replace(/\s+/g, ' ').trim()
-      if (text.length >= 2 && text.length <= 400 && !isNavLikeText(text)) {
+      const text = flatText($, el)
+      if (text.length >= 2 && text.length <= 400
+          && !isNavLikeText(text) && !isJunkText(text)) {
         out.push({ type: 'text', text })
       }
     } else if (tag === 'div') {
@@ -258,13 +328,56 @@ function extractBlocks($: cheerio.CheerioAPI, pageUrl: string) {
       const direct = $el.contents().filter((_: number, n: any) => n.type === 'text')
         .map((_: number, n: any) => n.data).get().join(' ').replace(/\s+/g, ' ').trim()
       if (direct.length < 2) return
-      const leaf = $el.text().replace(/\s+/g, ' ').trim()
+      const leaf = flatText($, el)
       if (!leaf || leaf.length > 500) return
-      if (isNavLikeText(leaf)) return
+      if (isNavLikeText(leaf) || isJunkText(leaf)) return
       out.push({ type: 'text', text: leaf })
     }
   })
   return out
+}
+
+// Post-extract sanity check — count how many blocks look like real
+// content vs. the kind of junk we should never have shipped (allergen
+// lists, bare day-name labels, ALL-CAPS slug strings, etc.).
+//
+// Returns a quality verdict the moderator can see in the scaffold
+// result: 'ok' | 'low' | 'bad'. 'bad' means we're shipping near-pure
+// garbage and should NOT publish until a human has fixed it.
+function scoreBlocks(blocks: any[]): { quality: 'ok'|'low'|'bad'; reasons: string[] } {
+  const reasons: string[] = []
+  const text = blocks.filter((b) => b.type === 'text').map((b) => b.text)
+  const headings = blocks.filter((b) => b.type === 'heading').map((b) => b.text)
+  const images = blocks.filter((b) => b.type === 'image').length
+
+  if (text.length + headings.length === 0) {
+    return { quality: 'bad', reasons: ['no text or heading blocks extracted'] }
+  }
+  if (images === 0) reasons.push('no images extracted')
+  if (headings.length === 0) reasons.push('no headings extracted')
+
+  // Average text-block length. Real menu descriptions / about copy run
+  // 60-200 chars; a soup of 8-character noise blocks is a tell.
+  if (text.length > 0) {
+    const avg = text.reduce((a, s) => a + s.length, 0) / text.length
+    if (avg < 30) reasons.push(`avg text block too short (${Math.round(avg)} chars)`)
+  }
+  // Caps-heavy share — if >40% of text blocks are mostly uppercase it
+  // means the source uses CAPS for headers we mis-tagged as text.
+  const capsHeavy = text.filter((s) => {
+    const letters = s.replace(/[^A-Za-zÀ-ÿ]/g, '')
+    if (letters.length < 5) return false
+    const upper = letters.replace(/[^A-ZÀ-ÖØ-Þ]/g, '').length
+    return upper / letters.length > 0.7
+  }).length
+  if (text.length > 4 && capsHeavy / text.length > 0.4) {
+    reasons.push(`${capsHeavy}/${text.length} text blocks are mostly UPPERCASE`)
+  }
+
+  let quality: 'ok'|'low'|'bad' = 'ok'
+  if (reasons.length >= 3) quality = 'bad'
+  else if (reasons.length >= 1) quality = 'low'
+  return { quality, reasons }
 }
 
 // ---------- BRAND COLOUR ----------
@@ -478,6 +591,8 @@ function buildConfig(pages: { url: string; html: string; $: cheerio.CheerioAPI }
   const texts = sections.filter((s) => s.type === 'text')
   const images = sections.filter((s) => s.type === 'image')
 
+  const score = scoreBlocks(sections)
+
   return {
     name,
     sections,
@@ -485,7 +600,9 @@ function buildConfig(pages: { url: string; html: string; $: cheerio.CheerioAPI }
     texts,
     images,
     og,
-    baseUrl
+    baseUrl,
+    quality: score.quality,         // 'ok' | 'low' | 'bad'
+    qualityReasons: score.reasons
   }
 }
 
@@ -675,6 +792,10 @@ Deno.serve(async (req: Request) => {
     deploy: workflowUrl ? 'dispatched' : 'manual',
     deploy_log_url: workflowUrl,
     pages_url: `https://${inserted.slug}.pages.dev`,
+    // Surface scraper quality so the moderator knows whether to trust
+    // the auto-generated content or open the config editor immediately.
+    quality: cfg.quality,                 // 'ok' | 'low' | 'bad'
+    quality_reasons: cfg.qualityReasons,
     owner: ownerErr ? null : {
       placeholder_email: placeholderEmail,
       claim_code: claimCode

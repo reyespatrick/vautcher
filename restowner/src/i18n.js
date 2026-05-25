@@ -240,6 +240,8 @@ const fr = {
     scaffoldPlaceholder: 'unrestaurant.ch',
     scaffoldBtn: 'Créer',
     scaffoldRunning: 'En cours',
+    scaffoldQualityLow: 'Qualité d’extraction faible — ouvrez Configurer pour vérifier le contenu avant de publier.',
+    scaffoldQualityBad: 'Extraction insuffisante — n’ouvrez pas l’app cliente tant que le contenu n’a pas été corrigé.',
     scaffoldStep1: 'Connexion au site…',
     scaffoldStep2: 'Extraction du contenu (textes, photos, horaires)…',
     scaffoldStep3: 'Création du restaurant et du code propriétaire…',

@@ -348,13 +348,33 @@ async function copyLink() {
         <p v-if="scaffoldError" class="scaffold-err">{{ scaffoldError }}</p>
       </form>
 
-      <div v-else class="card scaffold scaffold--done">
+      <div v-else class="card scaffold scaffold--done"
+           :class="{ 'scaffold--low': scaffoldResult.quality === 'low',
+                     'scaffold--bad': scaffoldResult.quality === 'bad' }">
         <strong>{{ t('admin.scaffoldDone') }} — {{ scaffoldResult.name }}</strong>
         <p class="scaffold-result-meta">
           {{ scaffoldResult.blocks }} {{ t('admin.scaffoldBlocks') }} ·
           {{ scaffoldResult.pages_crawled }} {{ t('admin.scaffoldPages') }}
         </p>
         <code class="prov-link">{{ scaffoldResult.pages_url }}</code>
+
+        <!-- Scraper quality verdict. 'ok' is silent; 'low' shows a yellow
+             warning chip; 'bad' shows a red one and the moderator is
+             expected to open Configurer immediately. -->
+        <div
+          v-if="scaffoldResult.quality && scaffoldResult.quality !== 'ok'"
+          class="scaffold-quality"
+          :class="`scaffold-quality--${scaffoldResult.quality}`"
+        >
+          <strong>
+            {{ scaffoldResult.quality === 'bad'
+              ? t('admin.scaffoldQualityBad')
+              : t('admin.scaffoldQualityLow') }}
+          </strong>
+          <ul v-if="scaffoldResult.quality_reasons?.length">
+            <li v-for="(r, i) in scaffoldResult.quality_reasons" :key="i">{{ r }}</li>
+          </ul>
+        </div>
 
         <!-- Owner claim code — what the moderator hands to the future owner. -->
         <div v-if="scaffoldResult.owner" class="claim-block">
@@ -679,6 +699,19 @@ async function copyLink() {
   font-weight: 600;
 }
 .scaffold--done { background: #fdf3f6; border-color: var(--accent); }
+.scaffold--low { background: #fff7d5; border-color: #f3d96b; }
+.scaffold--bad { background: #ffe6e6; border-color: var(--danger); }
+.scaffold-quality {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+.scaffold-quality--low { background: rgba(243, 217, 107, 0.25); color: #6e5006; }
+.scaffold-quality--bad { background: rgba(220, 38, 38, 0.12); color: #6b1010; }
+.scaffold-quality ul { margin: 6px 0 0 18px; }
+.scaffold-quality li { font-size: 0.78rem; }
 .scaffold-result-meta {
   font-size: 0.8rem;
   color: var(--mut);

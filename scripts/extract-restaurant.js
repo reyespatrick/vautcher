@@ -347,6 +347,50 @@ function addressString() {
 
 // ---------- SECTION BLOCKS — verbatim, in source order ----------
 // Walk each page's DOM and emit { type, ... } blocks for headings,
+// Walk an element's descendants and join their text nodes WITH spaces
+// between them. cheerio's $el.text() concatenates without separators,
+// so `<span>Allergènes</span><span>Lupin</span>` collapses to
+// "AllergènesLupin" — the soup that was shipping in scraped menus.
+function flatText($, el) {
+  const parts = []
+  function walk(node) {
+    if (!node) return
+    if (node.type === 'text') {
+      const s = String(node.data || '').replace(/\s+/g, ' ').trim()
+      if (s) parts.push(s)
+      return
+    }
+    if (node.type === 'tag') {
+      const name = (node.tagName || '').toLowerCase()
+      if (name === 'script' || name === 'style' || name === 'noscript') return
+      for (const c of (node.children || [])) walk(c)
+    }
+  }
+  walk(el)
+  return parts.join(' ').replace(/\s+/g, ' ').trim()
+}
+
+// Junk-pattern filter — cookie banners, allergen lists, lone day-name
+// labels (WEEKDAYS, LUN, MAR…), pure-CAPS slug strings, etc.
+function isJunkText(s) {
+  s = s.trim()
+  if (!s) return true
+  if (/^allerg[èe]nes?\b/i.test(s)) return true
+  if (/^contient\b/i.test(s) || /^contains\b/i.test(s)) return true
+  const allergenTokens = (s.match(/(allerg[èe]nes?|sulfites?|sulfureux|anhydride|gluten|lactose|lupin|moutarde|c[ée]leri|crustac[ée]s|mollusques|fruits? [aà] coque|s[ée]same|soja|arachide)/gi) || []).length
+  const totalTokens = s.split(/\s+/).filter(Boolean).length
+  if (totalTokens > 0 && allergenTokens / totalTokens > 0.4) return true
+  if (s.length < 40 && /^[\sA-ZÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ&\-/]+$/.test(s)) {
+    if (/^(weekdays|weekend|weekends|holidays?|lun|mar|mer|jeu|ven|sam|dim|midi|soir|du|au|et|monday|tuesday|wednesday|thursday|friday|saturday|sunday)([\s&/\-]|$)/i.test(s)) {
+      if (!/\d/.test(s)) return true
+    }
+  }
+  if (/cookies?\s+(sont|nous|permettent|utilis)/i.test(s)) return true
+  if (/politique\s+de\s+confidentialit/i.test(s)) return true
+  if (/^[A-ZÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]{3,30}$/.test(s)) return true
+  return false
+}
+
 // paragraphs and content images. Carousel duplicates and navigation
 // chrome are deduped after collection.
 function extractBlocksFromPage($, pageUrl) {
@@ -427,19 +471,22 @@ function extractBlocksFromPage($, pageUrl) {
       if (/\.(svg|ico|webmanifest)(\?|$)/i.test(abs)) return
       out.push({ type: 'image', src: abs, alt: ($el.attr('alt') || '').trim() })
     } else if (/^h[1-4]$/.test(tag)) {
-      const text = $el.text().replace(/\s+/g, ' ').trim()
-      if (text && text.length <= 140) {
+      const text = flatText($, el)
+      if (text && text.length <= 140 && !isJunkText(text)) {
         out.push({ type: 'heading', level: +tag[1], text })
       }
     } else if (tag === 'p') {
-      const text = $el.text().replace(/\s+/g, ' ').trim()
-      if (text.length >= 25 && !isNavLikeText(text)) {
+      const text = flatText($, el)
+      if (text.length >= 25 && !isNavLikeText(text) && !isJunkText(text)) {
         out.push({ type: 'text', text })
       }
     } else if (tag === 'li' || tag === 'dd' || tag === 'dt') {
       if (looksLikeNav($el)) return
-      const text = leafText($el)
-      if (text && text.length >= 2 && text.length <= 400 && !isNavLikeText(text)) {
+      const hasBlockChild = $el.find(BLOCK_RE).length > 0
+      if (hasBlockChild) return
+      const text = flatText($, el)
+      if (text && text.length >= 2 && text.length <= 400
+          && !isNavLikeText(text) && !isJunkText(text)) {
         out.push({ type: 'text', text })
       }
     } else if (tag === 'div') {
@@ -447,11 +494,13 @@ function extractBlocksFromPage($, pageUrl) {
       // contains text, no nested block elements. Catches the Lion d'Or
       // pattern: <div class="section-subtitle"> Route de Suisse… </div>.
       if (looksLikeNav($el)) return
+      const hasBlockChild = $el.find(BLOCK_RE).length > 0
+      if (hasBlockChild) return
       const direct = directText($el)
-      const leaf = leafText($el)
-      if (!leaf || leaf.length < 2 || leaf.length > 500) return
       if (direct.length < 2) return // pure wrapper — child holds the text
-      if (isNavLikeText(leaf)) return
+      const leaf = flatText($, el)
+      if (!leaf || leaf.length < 2 || leaf.length > 500) return
+      if (isNavLikeText(leaf) || isJunkText(leaf)) return
       out.push({ type: 'text', text: leaf })
     }
   })
