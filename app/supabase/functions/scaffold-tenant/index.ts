@@ -920,7 +920,8 @@ const DISH_DESC_SEL = '.dish-description, .menu-item-description, .product-descr
 function extractDishCards(
   $: cheerio.CheerioAPI,
   pageUrl: string,
-  fallbackCategory: string
+  fallbackCategory: string,
+  rawHtml: string = ''
 ): { category: string; items: MenuItem[] }[] {
   // Find the page's own category title (e.g. <h3 class="category-title">).
   let pageCategory = fallbackCategory
@@ -941,23 +942,24 @@ function extractDishCards(
 
   const cards: cheerio.Element[] = []
   const firstArt = $('article.dish').first()
-  // Pull the raw source HTML snippet around the first dish article to
-  // see what we actually fetched (different UAs or Cloudflare can serve
-  // different markup).
-  const rawHtml = ($.html() || '')
-  const rawArtIdx = rawHtml.indexOf('<article class="post-')
+  // Pull a snippet from the ORIGINAL fetched HTML (not $.html(), which
+  // re-serializes whatever cheerio's parser produced — that already has
+  // entry-header dropped).
+  const sourceHtml = rawHtml || ($.html() || '')
+  const rawArtIdx = sourceHtml.indexOf('<article class="post-')
   const _dbg: any = {
     scanned: 0, classMatch: 0, classSamples: [] as string[],
     pastNav: 0, pastTitlePrice: 0, pastNested: 0,
     articleCount: $('article').length,
     articleClassSamples: $('article').toArray().slice(0, 5).map((a: any) => ($(a).attr('class') || '').slice(0, 100)),
     articleDishCount: $('article.dish').length,
-    bareDish: rawHtml.match(/<article[^>]*\bclass="[^"]*\bdish\b[^"]*"/g)?.length || 0,
-    rawEntryHeaderCount: (rawHtml.match(/<header[^>]*\bclass="entry-header"/g) || []).length,
-    rawEntryTitleCount: (rawHtml.match(/<h1[^>]*\bclass="entry-title"/g) || []).length,
+    bareDish: sourceHtml.match(/<article[^>]*\bclass="[^"]*\bdish\b[^"]*"/g)?.length || 0,
+    rawEntryHeaderCount: (sourceHtml.match(/<header[^>]*\bclass="entry-header"/g) || []).length,
+    rawEntryTitleCount: (sourceHtml.match(/<h1[^>]*\bclass="entry-title"/g) || []).length,
+    rawSourceLength: sourceHtml.length,
     entryTitleCount: $('.entry-title').length,
     dishPriceCount: $('.dish-price').length,
-    rawSnippet: rawArtIdx >= 0 ? rawHtml.slice(rawArtIdx, rawArtIdx + 1500) : null,
+    rawSnippet: rawArtIdx >= 0 ? sourceHtml.slice(rawArtIdx, rawArtIdx + 1500) : null,
     firstArtHtml: firstArt.length ? ($.html(firstArt) || '').slice(0, 1500) : null,
     firstArtChildren: firstArt.length ? firstArt.children().toArray().map((c: any) => `<${c.tagName}${c.attribs?.class ? ` class="${c.attribs.class.slice(0, 30)}"` : ''}>`) : null,
     firstArtDescendantsCount: firstArt.length ? firstArt.find('*').length : 0,
@@ -1048,7 +1050,7 @@ function extractDishCards(
 // isolated ingredient lines). The AI enhancement pass reads the full
 // source corpus and groups those into proper dishes when neither
 // strategy catches anything.
-function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
+function extractMenu(pages: { url: string; html?: string; $: cheerio.CheerioAPI }[]): {
   category: string;
   items: MenuItem[];
 }[] {
@@ -1066,7 +1068,7 @@ function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
     // page has no card markup. Done first so card-style pages (the WP
     // /dishes/<cat>/ archives) get their proper category from the
     // page's own .category-title even when no menu-ish heading exists.
-    const cardSections = extractDishCards($, p.url, '')
+    const cardSections = extractDishCards($, p.url, '', p.html || '')
     for (const sec of cardSections) out.push(sec)
 
     // Find every h1/h2/h3 that could be a category header.
@@ -1772,7 +1774,7 @@ Deno.serve(async (req: Request) => {
   // Hierarchical menu — { category, items: [{ name, description, price }] }.
   // The scraper walks every crawled page; categories with no items are
   // dropped. AI may add or extend this through enhanceWithAI.
-  const menu = extractMenu(pages.map((p) => ({ url: p.url, $: p.$ })))
+  const menu = extractMenu(pages.map((p) => ({ url: p.url, html: p.html, $: p.$ })))
 
   const heroTitle = ld.name || cfg.headings.find((h: any) => h.level === 1)?.text || cfg.og.title || cfg.name
   const heroLead = (description || '').slice(0, 220)
@@ -2001,7 +2003,7 @@ Deno.serve(async (req: Request) => {
       dish_cards_per_page: pages.map((p: any) => {
         try {
           ;(globalThis as any).__lastCardDbg = null
-          const sections = extractDishCards(p.$, p.url, '')
+          const sections = extractDishCards(p.$, p.url, '', p.html || '')
           return {
             url: p.url,
             sections: sections.length,
