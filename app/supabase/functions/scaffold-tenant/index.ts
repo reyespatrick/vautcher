@@ -925,99 +925,65 @@ const DISH_PRICE_SEL = '.dish-price, .menu-item-price, .product-price, .price, .
 const DISH_LABEL_SEL = '.dish-price-label, .price-label, .variant-label, .menu-item-price-label'
 const DISH_DESC_SEL = '.dish-description, .menu-item-description, .product-description, .entry-content p, .entry-summary p'
 
+// linkedom parses the dapaolo / WP-restaurant style markup correctly,
+// where cheerio+htmlparser2 silently drops <header class="entry-header">
+// (and its <h1 class="entry-title"> child) from the tree. Used only for
+// dish-card extraction; cheerio handles everything else.
 function extractDishCards(
-  $: cheerio.CheerioAPI,
+  _$: cheerio.CheerioAPI,
   pageUrl: string,
   fallbackCategory: string,
   rawHtml: string = ''
 ): { category: string; items: MenuItem[] }[] {
-  // Find the page's own category title (e.g. <h3 class="category-title">).
+  if (!rawHtml) return []
+  const { document: doc } = parseHTML(rawHtml)
+  const txt = (el: Element | null): string =>
+    el ? (el.textContent || '').replace(/\s+/g, ' ').trim() : ''
+  const cls = (el: Element | null): string => (el?.getAttribute('class') || '')
+
+  // Find the page's own category title.
   let pageCategory = fallbackCategory
-  $('.category-title, .archive-title, .page-title, .term-name').each((_: number, h: cheerio.Element) => {
-    const t = flatText($, h)
-    if (t && t.length > 1 && t.length < 80 && !pageCategory) { pageCategory = t }
-    if (t && t.length > 1 && t.length < 80) { pageCategory = t; return false as any }
-  })
+  for (const sel of ['.category-title', '.archive-title', '.page-title', '.term-name']) {
+    const el = doc.querySelector(sel) as Element | null
+    const t = txt(el)
+    if (t && t.length > 1 && t.length < 80) { pageCategory = t; break }
+  }
   if (!pageCategory) {
-    // URL slug → "Les Suggestions"
     try {
       const segs = new URL(pageUrl).pathname.split('/').filter(Boolean)
       const last = segs[segs.length - 1] || segs[segs.length - 2] || ''
-      pageCategory = last.replace(/[-_]/g, ' ')
-        .replace(/\b\w/g, (c) => c.toUpperCase())
+      pageCategory = last.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
     } catch { /* ignore */ }
   }
 
-  const cards: cheerio.Element[] = []
-  const firstArt = $('article.dish').first()
-  // Pull a snippet from the ORIGINAL fetched HTML (not $.html(), which
-  // re-serializes whatever cheerio's parser produced — that already has
-  // entry-header dropped).
-  const sourceHtml = rawHtml || ($.html() || '')
-  const rawArtIdx = sourceHtml.indexOf('<article class="post-')
-  const _dbg: any = {
-    scanned: 0, classMatch: 0, classSamples: [] as string[],
-    pastNav: 0, pastTitlePrice: 0, pastNested: 0,
-    articleCount: $('article').length,
-    articleClassSamples: $('article').toArray().slice(0, 5).map((a: any) => ($(a).attr('class') || '').slice(0, 100)),
-    articleDishCount: $('article.dish').length,
-    bareDish: sourceHtml.match(/<article[^>]*\bclass="[^"]*\bdish\b[^"]*"/g)?.length || 0,
-    rawEntryHeaderCount: (sourceHtml.match(/<header[^>]*\bclass="entry-header"/g) || []).length,
-    rawEntryTitleCount: (sourceHtml.match(/<h1[^>]*\bclass="entry-title"/g) || []).length,
-    rawSourceLength: sourceHtml.length,
-    entryTitleCount: $('.entry-title').length,
-    dishPriceCount: $('.dish-price').length,
-    h1Count: $('h1').length,
-    headerCount: $('header').length,
-    headerInsideArticle: $('article header').length,
-    aBookmarkCount: $('a[rel="bookmark"]').length,
-    // Compare cheerio+htmlparser2 vs linkedom (separate DOM parser).
-    // If linkedom finds the entry-titles, we'll switch.
-    linkedomTest: (() => {
-      try {
-        const { document } = parseHTML(sourceHtml || '')
-        return {
-          article: document.querySelectorAll('article').length,
-          articleDish: document.querySelectorAll('article.dish').length,
-          h1: document.querySelectorAll('h1').length,
-          header: document.querySelectorAll('header').length,
-          entryTitle: document.querySelectorAll('.entry-title').length,
-          dishPrice: document.querySelectorAll('.dish-price').length,
-          firstEntryTitleText: document.querySelector('.entry-title')?.textContent?.slice(0, 50) || null
-        }
-      } catch (e) {
-        return { error: String((e as any)?.message || e) }
-      }
-    })(),
-    rawSnippet: rawArtIdx >= 0 ? sourceHtml.slice(rawArtIdx, rawArtIdx + 1500) : null,
-    firstArtHtml: firstArt.length ? ($.html(firstArt) || '').slice(0, 1500) : null,
-    firstArtChildren: firstArt.length ? firstArt.children().toArray().map((c: any) => `<${c.tagName}${c.attribs?.class ? ` class="${c.attribs.class.slice(0, 30)}"` : ''}>`) : null,
-    firstArtDescendantsCount: firstArt.length ? firstArt.find('*').length : 0,
-    bodyTopChildren: $('body').children().toArray().slice(0, 10).map((c: any) => `<${c.tagName}${c.attribs?.class ? ` class="${(c.attribs.class || '').slice(0, 40)}"` : ''}>`),
-  }
-  $('article, li, div').each((_: number, el: cheerio.Element) => {
-    _dbg.scanned++
-    const cls = ($(el).attr('class') || '')
-    if (!DISH_CARD_CLASS_RE.test(cls)) return
-    _dbg.classMatch++
-    if (_dbg.classSamples.length < 5) _dbg.classSamples.push(cls.slice(0, 100))
-    const $el = ($ as any)(el)
-    // Exclude items inside nav/header/footer (WP nav uses .menu-item too).
-    if ($el.parents('nav, header, footer').length) return
-    _dbg.pastNav++
-    // A real dish card has BOTH a title and a price somewhere inside.
-    // A nav <li class="menu-item"> has neither.
-    const hasTitle = $el.find(DISH_NAME_SEL).length > 0
-    const hasPrice = $el.find(DISH_PRICE_SEL + ', ' + DISH_PRICE_LINE_SEL).length > 0
-    if (!hasTitle || !hasPrice) return
-    _dbg.pastTitlePrice++
-    // Skip cards nested inside another card (avoid duplicates).
-    const ancestors = $el.parents().toArray() as cheerio.Element[]
-    if (ancestors.some((p) => DISH_CARD_CLASS_RE.test(($(p).attr('class') || '')))) return
-    _dbg.pastNested++
+  // Find every candidate card by class and filter by title+price predicate.
+  const candidates = Array.from(doc.querySelectorAll('article, li, div')) as Element[]
+  const cards: Element[] = []
+  for (const el of candidates) {
+    if (!DISH_CARD_CLASS_RE.test(cls(el))) continue
+    // Skip if inside nav/header/footer chrome.
+    let inChrome = false
+    let p: Element | null = el.parentElement
+    while (p) {
+      const tag = (p.tagName || '').toLowerCase()
+      if (tag === 'nav' || tag === 'header' || tag === 'footer') { inChrome = true; break }
+      p = p.parentElement
+    }
+    if (inChrome) continue
+    // Must have a title AND a price somewhere inside.
+    const hasTitle = !!el.querySelector(DISH_NAME_SEL)
+    const hasPrice = !!el.querySelector(DISH_PRICE_SEL + ', ' + DISH_PRICE_LINE_SEL)
+    if (!hasTitle || !hasPrice) continue
+    // Skip cards nested inside another matching card.
+    let nested = false
+    let q: Element | null = el.parentElement
+    while (q) {
+      if (DISH_CARD_CLASS_RE.test(cls(q))) { nested = true; break }
+      q = q.parentElement
+    }
+    if (nested) continue
     cards.push(el)
-  })
-  ;(globalThis as any).__lastCardDbg = _dbg
+  }
 
   if (!cards.length || !pageCategory) return []
 
@@ -1027,37 +993,34 @@ function extractDishCards(
   for (const el of cards) {
     if (items.length >= 30) break
 
-    const $el = ($ as any)(el)
-    const nameEl = $el.find(DISH_NAME_SEL).first()
-    const name = nameEl.length ? flatText($, nameEl.get(0)) : ''
+    const nameEl = el.querySelector(DISH_NAME_SEL) as Element | null
+    const name = txt(nameEl)
     if (!name || !isDishyName(name)) continue
     const key = name.toLowerCase().trim()
     if (seenNames.has(key)) continue
     seenNames.add(key)
 
-    // Variants: <li class="dish-price-line"> with .dish-price + .dish-price-label.
+    // Variants: each <li class="dish-price-line"> with .dish-price + label.
     const variants: { label: string; price: string }[] = []
-    $el.find(DISH_PRICE_LINE_SEL).each((_: number, ln: cheerio.Element) => {
-      const $ln = ($ as any)(ln)
-      const p = flatText($, $ln.find(DISH_PRICE_SEL).first().get(0))
-      const l = flatText($, $ln.find(DISH_LABEL_SEL).first().get(0))
+    for (const ln of Array.from(el.querySelectorAll(DISH_PRICE_LINE_SEL)) as Element[]) {
+      const p = txt(ln.querySelector(DISH_PRICE_SEL) as Element | null)
+      const l = txt(ln.querySelector(DISH_LABEL_SEL) as Element | null)
       if (p && l) variants.push({ label: l, price: p })
-    })
+    }
 
     // Headline price: first .dish-price either in a variant or top-level.
     let price: string | null = null
-    if (variants.length) {
-      price = variants[0].price
-    } else {
-      const pEl = $el.find(DISH_PRICE_SEL).first()
-      if (pEl.length) price = flatText($, pEl.get(0)) || null
+    if (variants.length) price = variants[0].price
+    else {
+      const pEl = el.querySelector(DISH_PRICE_SEL) as Element | null
+      price = txt(pEl) || null
     }
 
     // Description (avoid grabbing the dish name itself).
     let description = ''
-    const dEl = $el.find(DISH_DESC_SEL).first()
-    if (dEl.length) {
-      const t = flatText($, dEl.get(0))
+    const dEl = el.querySelector(DISH_DESC_SEL) as Element | null
+    if (dEl) {
+      const t = txt(dEl)
       if (t && t !== name && !isJunkText(t) && t.length < 400) description = t
     }
 
