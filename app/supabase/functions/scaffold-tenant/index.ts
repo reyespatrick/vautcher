@@ -24,7 +24,7 @@
 //  endpoint.
 // ============================================================
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import * as cheerio from 'npm:cheerio@1.0.0'
+import * as cheerio from 'npm:cheerio@1.2.0'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
