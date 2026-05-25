@@ -919,15 +919,23 @@ function extractDishCards(
 
   const cards: cheerio.Element[] = []
   const firstArt = $('article.dish').first()
+  // Pull the raw source HTML snippet around the first dish article to
+  // see what we actually fetched (different UAs or Cloudflare can serve
+  // different markup).
+  const rawHtml = ($.html() || '')
+  const rawArtIdx = rawHtml.indexOf('<article class="post-')
   const _dbg: any = {
     scanned: 0, classMatch: 0, classSamples: [] as string[],
     pastNav: 0, pastTitlePrice: 0, pastNested: 0,
     articleCount: $('article').length,
     articleClassSamples: $('article').toArray().slice(0, 5).map((a: any) => ($(a).attr('class') || '').slice(0, 100)),
     articleDishCount: $('article.dish').length,
-    bareDish: ($.html() || '').match(/<article[^>]*\bclass="[^"]*\bdish\b[^"]*"/g)?.length || 0,
+    bareDish: rawHtml.match(/<article[^>]*\bclass="[^"]*\bdish\b[^"]*"/g)?.length || 0,
+    rawEntryHeaderCount: (rawHtml.match(/<header[^>]*\bclass="entry-header"/g) || []).length,
+    rawEntryTitleCount: (rawHtml.match(/<h1[^>]*\bclass="entry-title"/g) || []).length,
     entryTitleCount: $('.entry-title').length,
     dishPriceCount: $('.dish-price').length,
+    rawSnippet: rawArtIdx >= 0 ? rawHtml.slice(rawArtIdx, rawArtIdx + 1500) : null,
     firstArtHtml: firstArt.length ? ($.html(firstArt) || '').slice(0, 1500) : null,
     firstArtChildren: firstArt.length ? firstArt.children().toArray().map((c: any) => `<${c.tagName}${c.attribs?.class ? ` class="${c.attribs.class.slice(0, 30)}"` : ''}>`) : null,
     firstArtDescendantsCount: firstArt.length ? firstArt.find('*').length : 0,
