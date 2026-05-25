@@ -376,6 +376,26 @@ async function copyLink() {
           </ul>
         </div>
 
+        <!-- AI-enhancement notice. Lists which fields Claude filled in
+             from the source text (after the verbatim-substring gate),
+             and which proposals were rejected for not appearing in
+             source (= would have been hallucinations). -->
+        <div v-if="scaffoldResult.ai_used" class="scaffold-ai">
+          <strong>🤖 {{ t('admin.scaffoldAiUsed') }}</strong>
+          <p v-if="scaffoldResult.ai_filled?.length">
+            {{ t('admin.scaffoldAiFilled') }} :
+            <span class="ai-chips">
+              <span v-for="(f, i) in scaffoldResult.ai_filled" :key="i" class="ai-chip">{{ f }}</span>
+            </span>
+          </p>
+          <p v-if="scaffoldResult.ai_rejected?.length" class="ai-rejected">
+            {{ t('admin.scaffoldAiRejected') }} :
+            <span class="ai-chips">
+              <span v-for="(r, i) in scaffoldResult.ai_rejected" :key="i" class="ai-chip ai-chip--bad">{{ r }}</span>
+            </span>
+          </p>
+        </div>
+
         <!-- Owner claim code — what the moderator hands to the future owner. -->
         <div v-if="scaffoldResult.owner" class="claim-block">
           <span class="claim-label">{{ t('admin.scaffoldCodeLabel') }}</span>
@@ -712,6 +732,34 @@ async function copyLink() {
 .scaffold-quality--bad { background: rgba(220, 38, 38, 0.12); color: #6b1010; }
 .scaffold-quality ul { margin: 6px 0 0 18px; }
 .scaffold-quality li { font-size: 0.78rem; }
+
+.scaffold-ai {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(56, 132, 255, 0.10);
+  color: #1c3d6e;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+.scaffold-ai .ai-rejected { color: #6b1010; margin-top: 4px; }
+.ai-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.ai-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(56, 132, 255, 0.18);
+  border-radius: 999px;
+  color: #1c3d6e;
+}
+.ai-chip--bad { background: rgba(220, 38, 38, 0.18); color: #6b1010; }
 .scaffold-result-meta {
   font-size: 0.8rem;
   color: var(--mut);

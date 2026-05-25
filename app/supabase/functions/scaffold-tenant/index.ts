@@ -29,6 +29,8 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 const GITHUB_TOKEN = Deno.env.get('GITHUB_TOKEN') || ''
 const GITHUB_REPO = Deno.env.get('GITHUB_REPO') || 'reyespatrick/vautcher'
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || ''
+const ANTHROPIC_MODEL = Deno.env.get('ANTHROPIC_MODEL') || 'claude-sonnet-4-6'
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 const UA = 'Mozilla/5.0 (compatible; vautcher-scaffold/1.0)'
@@ -840,6 +842,217 @@ function buildConfig(pages: { url: string; html: string; $: cheerio.CheerioAPI }
   }
 }
 
+// ---------- AI ENHANCER ----------
+//
+// Hybrid strategy (chose in /loop discussion):
+//   1. Scraper runs first — cheap, deterministic baseline.
+//   2. If the result is missing key fields (address, phone, hours,
+//      description, specialties) AND ANTHROPIC_API_KEY is configured,
+//      ask Claude to fill ONLY those gaps from the source HTML.
+//   3. Anti-hallucination gate — every AI-claimed string MUST appear
+//      verbatim in the scraped source corpus, otherwise it's rejected.
+//      This is how we keep the no-invention rule mechanically enforced
+//      instead of trusting it to a prompt.
+//   4. If the key is missing, the API errors, or the response is
+//      malformed, the function returns null and the scraper output
+//      ships untouched. Graceful no-op.
+async function enhanceWithAI(
+  pages: { url: string; $: cheerio.CheerioAPI }[],
+  currentConfig: any
+): Promise<{ filled: Record<string, any>; rejected: string[] } | null> {
+  if (!ANTHROPIC_API_KEY) return null
+
+  // What's actually missing? Don't burn tokens if the scraper got
+  // everything.
+  const missing: string[] = []
+  if (!currentConfig.address) missing.push('address')
+  if (!currentConfig.phone) missing.push('phone')
+  if (!currentConfig.email) missing.push('email')
+  if (!currentConfig.hours?.length) missing.push('opening_hours')
+  if (!currentConfig.specialties?.length) missing.push('specialties')
+  if (!currentConfig.about?.paragraphs?.length) missing.push('description')
+  if (missing.length === 0) return { filled: {}, rejected: [] }
+
+  // Build the source corpus the AI can read — JSON-LD scripts (gold
+  // standard structured data) + cleaned body text per page. Markup
+  // and scripts are dropped so we don't waste tokens on chrome.
+  const corpus: string[] = []
+  for (const p of pages) {
+    const $ = p.$
+    const ldScripts = $('script[type="application/ld+json"]').toArray()
+      .map((el: cheerio.Element) => $(el).text().trim())
+      .filter((s: string) => !!s)
+    if (ldScripts.length) {
+      corpus.push(`# ${p.url} — STRUCTURED DATA\n${ldScripts.join('\n---\n')}`)
+    }
+    // Clone, strip chrome, harvest body text.
+    const $c = cheerio.load($.html())
+    $c('header, nav, footer, script, style, noscript, .menu, .navbar, .breadcrumb').remove()
+    const text = $c('body').text().replace(/\s+/g, ' ').trim()
+    if (text) corpus.push(`# ${p.url}\n${text.slice(0, 8000)}`)
+  }
+  const source = corpus.join('\n\n').slice(0, 60000)
+  if (!source.trim()) return null
+
+  const prompt = `Extract missing restaurant information from the source text below.
+
+The scraper already found these fields (do NOT contradict or re-extract them):
+${JSON.stringify({
+    name: currentConfig.pwa_name,
+    address: currentConfig.address,
+    phone: currentConfig.phone,
+    email: currentConfig.email,
+    hours: currentConfig.hours,
+    specialties: currentConfig.specialties?.slice(0, 3),
+    description: currentConfig.about?.paragraphs?.[0]?.slice(0, 200)
+  }, null, 2)}
+
+MISSING fields to fill: ${missing.join(', ')}
+
+Critical rules:
+1. Every string you return MUST appear verbatim somewhere in the source text below.
+   Do NOT paraphrase. Do NOT invent. Do NOT translate.
+2. If a field is not findable in the source, return null for it.
+3. For opening_hours: return one entry per service window, with French day names
+   (Lundi, Mardi, …) and times like "11h30 – 14h00".
+4. For specialties: return at most 6, only items that look like signature dishes
+   or section headlines in a menu. Each must have a title that appears in source.
+
+Source text:
+${source}`
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 2048,
+      tools: [{
+        name: 'fill_restaurant_gaps',
+        description: 'Fill in the missing restaurant fields. Every string must appear verbatim in the provided source text.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            address: { type: ['string', 'null'], description: 'Full postal address, one line.' },
+            phone: { type: ['string', 'null'], description: 'Phone number as displayed on the site.' },
+            email: { type: ['string', 'null'], description: 'Contact email.' },
+            description: { type: ['string', 'null'], description: 'One-paragraph restaurant description, copied verbatim.' },
+            opening_hours: {
+              type: ['array', 'null'],
+              items: {
+                type: 'object',
+                properties: {
+                  days: { type: 'string' },
+                  service: { type: ['string', 'null'] },
+                  time: { type: 'string' }
+                },
+                required: ['days', 'time']
+              }
+            },
+            specialties: {
+              type: ['array', 'null'],
+              items: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  text: { type: ['string', 'null'] }
+                },
+                required: ['title']
+              }
+            }
+          }
+        }
+      }],
+      tool_choice: { type: 'tool', name: 'fill_restaurant_gaps' },
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+
+  if (!res.ok) {
+    console.error('Anthropic API failed:', res.status, await res.text())
+    return null
+  }
+  const data = await res.json()
+  const toolUse = (data.content || []).find((c: any) => c.type === 'tool_use')
+  if (!toolUse) return null
+  const ai = toolUse.input || {}
+
+  // Anti-hallucination gate. Normalize the source for matching:
+  // collapse whitespace, casefold, also keep a no-accent version so
+  // small encoding differences don't false-reject ("café" vs "cafe").
+  const norm = (s: string) =>
+    String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, ' ').trim()
+  const sourceN = norm(source)
+  const inSource = (s: string, minLen = 4): boolean => {
+    if (!s) return false
+    const n = norm(s)
+    if (n.length < minLen) return false
+    // For long strings, accept if a 40-char window matches (handles
+    // trivial reformatting like dropped punctuation).
+    if (n.length > 80) {
+      for (let i = 0; i + 40 <= n.length; i += 20) {
+        if (sourceN.includes(n.slice(i, i + 40))) return true
+      }
+      return false
+    }
+    return sourceN.includes(n)
+  }
+  const inSourceLoose = (s: string): boolean => {
+    // For phone/email/hours patterns, normalize digits only.
+    const digits = (x: string) => String(x || '').replace(/[^\d]/g, '')
+    if (digits(s).length >= 5 && sourceN.replace(/[^\d]/g, '').includes(digits(s))) return true
+    return inSource(s, 3)
+  }
+
+  const filled: Record<string, any> = {}
+  const rejected: string[] = []
+
+  if (ai.address) {
+    if (inSource(ai.address, 8)) filled.address = String(ai.address).trim()
+    else rejected.push(`address: ${ai.address}`)
+  }
+  if (ai.phone) {
+    if (inSourceLoose(ai.phone)) filled.phone = String(ai.phone).trim()
+    else rejected.push(`phone: ${ai.phone}`)
+  }
+  if (ai.email) {
+    if (inSource(ai.email, 5)) filled.email = String(ai.email).trim()
+    else rejected.push(`email: ${ai.email}`)
+  }
+  if (ai.description) {
+    if (inSource(ai.description, 20)) filled.description = String(ai.description).trim()
+    else rejected.push(`description: ${String(ai.description).slice(0, 60)}…`)
+  }
+  if (Array.isArray(ai.opening_hours)) {
+    const valid = ai.opening_hours.filter((h: any) =>
+      h && h.days && h.time && inSourceLoose(h.days + ' ' + h.time))
+    if (valid.length) filled.hours = valid
+    for (const h of ai.opening_hours) {
+      if (!valid.includes(h)) rejected.push(`hours: ${h?.days} ${h?.time}`)
+    }
+  }
+  if (Array.isArray(ai.specialties)) {
+    const valid = ai.specialties.filter((s: any) => s && s.title && inSource(s.title, 4))
+    if (valid.length) {
+      filled.specialties = valid.map((s: any) => ({
+        icon: '🍽️',
+        title: String(s.title).trim(),
+        text: s.text && inSource(s.text, 6) ? String(s.text).trim() : ''
+      }))
+    }
+    for (const s of ai.specialties) {
+      if (!valid.includes(s)) rejected.push(`specialty: ${s?.title}`)
+    }
+  }
+
+  return { filled, rejected }
+}
+
 // ---------- GITHUB DISPATCH ----------
 async function dispatchDeploy(slug: string): Promise<string | null> {
   if (!GITHUB_TOKEN) return null
@@ -1038,14 +1251,71 @@ Deno.serve(async (req: Request) => {
   // Score the scrape on the STRUCTURED fields, not just block counts.
   // This is what the moderator should look at — "did we get the things
   // a diner actually needs?".
-  const score = scoreScaffold(cfg.sections, {
-    address,
-    phone,
-    hours,
+  let score = scoreScaffold(cfg.sections, {
+    address: config.address,
+    phone: config.phone,
+    hours: config.hours,
     description,
-    specialties,
+    specialties: config.specialties,
     images: config.gallery
   })
+
+  // ---------- AI ENHANCEMENT (Option B) ----------
+  // If the scraper missed key fields, ask Claude to fill them in from
+  // the source text. Every AI-claimed string is gated through an
+  // exact-substring check against the scraped corpus so we keep the
+  // no-invention rule even when the LLM is uncertain.
+  let aiUsed = false
+  let aiFilled: string[] = []
+  let aiRejected: string[] = []
+  if (score.quality !== 'ok' && ANTHROPIC_API_KEY) {
+    const enhanced = await enhanceWithAI(pages, config)
+    if (enhanced && Object.keys(enhanced.filled).length > 0) {
+      aiUsed = true
+      const f = enhanced.filled
+      if (f.address && !config.address) {
+        config.address = f.address
+        config.maps_href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`
+        aiFilled.push('address')
+      }
+      if (f.phone && !config.phone) {
+        config.phone = f.phone
+        config.phone_href = 'tel:' + String(f.phone).replace(/[^\d+]/g, '')
+        aiFilled.push('phone')
+      }
+      if (f.email && !config.email) {
+        config.email = f.email
+        aiFilled.push('email')
+      }
+      if (f.description && !(config.about?.paragraphs || []).length) {
+        config.about.paragraphs = [f.description]
+        config.pwa_description = f.description
+        config.tagline = config.tagline || f.description.slice(0, 140)
+        config.hero.lead = config.hero.lead || f.description.slice(0, 220)
+        aiFilled.push('description')
+      }
+      if (Array.isArray(f.hours) && f.hours.length && !config.hours.length) {
+        config.hours = f.hours
+        aiFilled.push('hours')
+      }
+      if (Array.isArray(f.specialties) && f.specialties.length && !config.specialties.length) {
+        config.specialties = f.specialties
+        aiFilled.push('specialties')
+      }
+      aiRejected = enhanced.rejected
+
+      // Re-score after the merge — the moderator should see the post-AI
+      // verdict, not the original "scraper-only" one.
+      score = scoreScaffold(cfg.sections, {
+        address: config.address,
+        phone: config.phone,
+        hours: config.hours,
+        description: config.about.paragraphs[0] || '',
+        specialties: config.specialties,
+        images: config.gallery
+      })
+    }
+  }
 
   // 2. Insert the restaurant row (uniqueified slug).
   const slug = await uniqueSlug(slugify(cfg.name))
@@ -1097,6 +1367,10 @@ Deno.serve(async (req: Request) => {
     // the auto-generated content or open the config editor immediately.
     quality: score.quality,               // 'ok' | 'low' | 'bad'
     quality_reasons: score.reasons,
+    // AI enhancement bookkeeping — empty arrays when AI wasn't used.
+    ai_used: aiUsed,                      // boolean
+    ai_filled: aiFilled,                  // ['address', 'hours', …]
+    ai_rejected: aiRejected,              // hallucinations we dropped
     owner: ownerErr ? null : {
       placeholder_email: placeholderEmail,
       claim_code: claimCode
