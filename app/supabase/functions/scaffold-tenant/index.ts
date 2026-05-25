@@ -194,11 +194,15 @@ async function crawl(startUrl: string, maxDepth = 2, maxPages = 25) {
     visited.add(u)
     const page = await fetchHtml(u)
     if (!page) continue
-    // parse5 (cheerio's default in Deno) reparents the contents of
-    // <header class="entry-header"> inside WP dish articles, dropping
-    // .entry-title from the tree entirely. Parse via htmlparser2
-    // explicitly so the source structure is preserved verbatim.
-    const $ = cheerio.load(parseDocument(page.html))
+    // Strip <svg>…</svg> blocks before parsing. WP themes inject
+    // 10+ duotone <svg><defs><filter>…</filter></defs></svg> blocks at
+    // the top of <body>; the embedded <feFuncR />, <feColorMatrix /> etc.
+    // confuse both parse5 and htmlparser2 enough that the parser drops
+    // legitimate elements lower in the document (entry-header / h1 /
+    // bookmark <a>). The SVGs are visual filters with zero content
+    // value — safe to remove.
+    const cleanHtml = page.html.replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, '')
+    const $ = cheerio.load(parseDocument(cleanHtml))
     pages.push({ url: page.url, html: page.html, $ })
     if (d >= maxDepth) continue
 
