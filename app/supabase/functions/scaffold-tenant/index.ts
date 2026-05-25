@@ -1925,6 +1925,7 @@ Deno.serve(async (req: Request) => {
     slug: inserted.slug,
     blocks: cfg.sections.length,
     pages_crawled: pages.length,
+    pages_crawled_urls: pages.map((p: any) => p.url),
     deploy: workflowUrl ? 'dispatched' : 'manual',
     deploy_log_url: workflowUrl,
     pages_url: `https://${inserted.slug}.pages.dev`,
@@ -1936,6 +1937,19 @@ Deno.serve(async (req: Request) => {
     ai_used: aiUsed,                      // boolean
     ai_filled: aiFilled,                  // ['address', 'hours', …]
     ai_rejected: aiRejected,              // hallucinations we dropped
+    // Debug: per-page dish-card counts to diagnose why menu is empty.
+    debug_menu: {
+      menu_categories: (config.menu || []).length,
+      menu_items: (config.menu || []).reduce((n: number, c: any) => n + (c.items?.length || 0), 0),
+      dish_cards_per_page: pages.map((p: any) => {
+        try {
+          const sections = extractDishCards(p.$, p.url, '')
+          return { url: p.url, sections: sections.length, items: sections.reduce((n, s) => n + s.items.length, 0) }
+        } catch (e) {
+          return { url: p.url, error: String((e as any)?.message || e) }
+        }
+      })
+    },
     owner: ownerErr ? null : {
       placeholder_email: placeholderEmail,
       claim_code: claimCode
