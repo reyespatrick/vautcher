@@ -1,9 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { site } from '../data/site'
+import { site, gallery } from '../data/site'
 import { fetchEvents } from '../lib/api'
-import SiteBlocks from '../components/SiteBlocks.vue'
 
 // Hero background = tenant's own photo when available (first gallery
 // item or about image), else a brand-color gradient. Never the
@@ -79,16 +78,15 @@ onMounted(async () => {
       </a>
     </section>
 
-    <!-- Verbatim content blocks extracted from the tenant's website
-         (heading / text / image). When present, they replace the
-         curated about + specialties sections so we never render an
-         editorialised version of what's already on the source. -->
-    <SiteBlocks v-if="(site.sections || []).length" :blocks="site.sections" />
-
-    <!-- Curated about — only when sections is empty AND the tenant
-         has filled in about content via the editor. -->
+    <!-- About — structured paragraphs from config.about. We no longer
+         dump the verbatim section blocks (.sections) on the home page;
+         that produced incoherent walls of ingredient lists, kitchen
+         manifestos, and orphan headings depending on the source site
+         layout. The verbatim blocks are still stored in the config
+         (so they're not lost) but the home page now shows only the
+         curated/structured content. -->
     <section
-      v-else-if="(site.about?.paragraphs || []).length || site.about?.title"
+      v-if="(site.about?.paragraphs || []).length || site.about?.title"
       class="section about"
     >
       <div class="container about-grid">
@@ -102,15 +100,14 @@ onMounted(async () => {
       </div>
     </section>
 
-    <!-- Specialties — only when the tenant actually has some AND
-         hasn't gone the verbatim sections route. -->
+    <!-- Specialties — extracted menu sections / signature dishes. -->
     <section
-      v-if="!(site.sections || []).length && site.specialties && site.specialties.length"
+      v-if="site.specialties && site.specialties.length"
       class="section specialties"
     >
       <div class="container">
         <div class="section-head">
-          <span class="kicker">Nos Spécialités</span>
+          <span class="kicker">Notre carte</span>
           <h2>{{ site.specialtiesTitle || 'Nos plats' }}</h2>
           <div class="divider"></div>
         </div>
@@ -118,8 +115,54 @@ onMounted(async () => {
           <article v-for="s in site.specialties" :key="s.title" class="spec-card">
             <div class="spec-icon">{{ s.icon }}</div>
             <h3>{{ s.title }}</h3>
-            <p>{{ s.text }}</p>
+            <p v-if="s.text">{{ s.text }}</p>
           </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hours teaser — quick reassurance about when the place is open
+         before the visitor goes hunting for the Contact page. -->
+    <section
+      v-if="(site.hours || []).length"
+      class="section hours-teaser"
+    >
+      <div class="container">
+        <div class="section-head">
+          <span class="kicker">Horaires</span>
+          <h2>Quand nous trouver</h2>
+          <div class="divider"></div>
+        </div>
+        <table class="hours-table">
+          <tbody>
+            <tr v-for="(h, i) in site.hours" :key="i">
+              <td>{{ h.days }}</td>
+              <td v-if="h.service">{{ h.service }}</td>
+              <td>{{ h.time }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Gallery teaser — up to 6 thumbnails linking to the full gallery. -->
+    <section
+      v-if="gallery.length"
+      class="section gallery-teaser"
+    >
+      <div class="container">
+        <div class="section-head">
+          <span class="kicker">Galerie</span>
+          <h2>L’ambiance</h2>
+          <div class="divider"></div>
+        </div>
+        <div class="gallery-grid">
+          <figure v-for="g in gallery.slice(0, 6)" :key="g.src">
+            <img :src="g.src" :alt="g.caption || ''" loading="lazy" />
+          </figure>
+        </div>
+        <div class="text-center events-cta">
+          <RouterLink to="/galerie" class="btn btn--ghost">Toute la galerie</RouterLink>
         </div>
       </div>
     </section>
@@ -236,6 +279,42 @@ onMounted(async () => {
 .spec-card h3 { font-size: 1.2rem; margin-bottom: 6px; }
 .spec-card p { color: var(--grey); font-size: 0.9rem; }
 
+.hours-teaser { background: var(--paper); }
+.hours-table {
+  margin: 0 auto;
+  max-width: 480px;
+  width: 100%;
+  border-collapse: collapse;
+}
+.hours-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.95rem;
+}
+.hours-table tr:last-child td { border-bottom: 0; }
+.hours-table td:first-child { font-weight: 600; color: var(--ink); }
+.hours-table td:last-child { text-align: right; color: var(--burgundy); font-weight: 600; }
+
+.gallery-teaser .gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.gallery-teaser figure {
+  margin: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  aspect-ratio: 4 / 3;
+}
+.gallery-teaser img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .events-teaser { background: var(--paper); }
 .ev-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .ev-mini {
@@ -285,5 +364,6 @@ onMounted(async () => {
   .about-grid { grid-template-columns: 1fr; gap: 24px; }
   .spec-grid { grid-template-columns: 1fr; }
   .ev-grid { grid-template-columns: 1fr; }
+  .gallery-teaser .gallery-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
