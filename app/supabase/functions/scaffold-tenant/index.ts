@@ -160,7 +160,7 @@ async function crawl(startUrl: string, maxDepth = 2, maxPages = 25) {
 
   const priority = (u: string): number => {
     // Lower number = higher priority. Sort key, not user-visible.
-    if (/menu|carte|plat|sp[ée]cialit/i.test(u)) return 0
+    if (/menu|carte|plat|sp[ée]cialit|dish/i.test(u)) return 0
     if (/contact|infos?|coord|adress|hor[ai]/i.test(u)) return 1
     return 2
   }
@@ -880,7 +880,10 @@ function isDishyName(s: string): boolean {
 // under the category heading as an h3 — it's nested inside its own
 // card. This strategy walks the cards directly so we capture name +
 // per-variant price + description from the markup, with no AI needed.
-const DISH_CARD_CLASS_RE = /(?:^|\s)(?:dish|menu-item|menu-product|food-item|wprm-recipe|product-item|carte-item|plat-item)(?:$|\s|--|__|-(?:[a-z]))/i
+// Note: "menu-item" is deliberately NOT in this regex — WordPress uses
+// it on every nav-bar <li>, which produces hundreds of false positives.
+// We accept menu-item only via the title+price predicate below.
+const DISH_CARD_CLASS_RE = /(?:^|\s)(?:dish|food-item|wprm-recipe|product-item|carte-item|plat-item|menu-product|menu-item)(?:$|\s|--|__|-(?:[a-z]))/i
 const DISH_NAME_SEL = '.entry-title, .menu-item-title, .dish-title, .product-title, .plat-title, h1, h2, h3, h4'
 const DISH_PRICE_LINE_SEL = '.dish-price-line, .price-line, .menu-item-price-line, .product-price-line, .variant'
 const DISH_PRICE_SEL = '.dish-price, .menu-item-price, .product-price, .price, .amount'
@@ -913,8 +916,16 @@ function extractDishCards(
   $('article, li, div').each((_: number, el: cheerio.Element) => {
     const cls = ($(el).attr('class') || '')
     if (!DISH_CARD_CLASS_RE.test(cls)) return
+    const $el = ($ as any)(el)
+    // Exclude items inside nav/header/footer (WP nav uses .menu-item too).
+    if ($el.parents('nav, header, footer').length) return
+    // A real dish card has BOTH a title and a price somewhere inside.
+    // A nav <li class="menu-item"> has neither.
+    const hasTitle = $el.find(DISH_NAME_SEL).length > 0
+    const hasPrice = $el.find(DISH_PRICE_SEL + ', ' + DISH_PRICE_LINE_SEL).length > 0
+    if (!hasTitle || !hasPrice) return
     // Skip cards nested inside another card (avoid duplicates).
-    const ancestors = ($ as any)(el).parents().toArray() as cheerio.Element[]
+    const ancestors = $el.parents().toArray() as cheerio.Element[]
     if (ancestors.some((p) => DISH_CARD_CLASS_RE.test(($(p).attr('class') || '')))) return
     cards.push(el)
   })
