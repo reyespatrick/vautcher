@@ -194,14 +194,17 @@ async function crawl(startUrl: string, maxDepth = 2, maxPages = 25) {
     visited.add(u)
     const page = await fetchHtml(u)
     if (!page) continue
-    // Strip <svg>…</svg> blocks before parsing. WP themes inject
-    // 10+ duotone <svg><defs><filter>…</filter></defs></svg> blocks at
-    // the top of <body>; the embedded <feFuncR />, <feColorMatrix /> etc.
-    // confuse both parse5 and htmlparser2 enough that the parser drops
-    // legitimate elements lower in the document (entry-header / h1 /
-    // bookmark <a>). The SVGs are visual filters with zero content
-    // value — safe to remove.
-    const cleanHtml = page.html.replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, '')
+    // Strip <svg>, <noscript>, <script>, <style> blocks before parsing.
+    // WP pages mix in 10+ duotone SVG filter blocks, lazy-image noscript
+    // fallbacks, and inline JSON-LD/JS that have caused the parser to
+    // drop legitimate elements lower in the document on certain themes
+    // (e.g. dapaolo.ch — entry-header / h1 / bookmark <a> were missing
+    // from the tree even though they were present in the raw bytes).
+    const cleanHtml = page.html
+      .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, '')
+      .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, '')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
     const $ = cheerio.load(parseDocument(cleanHtml))
     pages.push({ url: page.url, html: page.html, $ })
     if (d >= maxDepth) continue
