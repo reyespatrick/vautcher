@@ -970,20 +970,17 @@ function extractDishCards(
     headerCount: $('header').length,
     headerInsideArticle: $('article header').length,
     aBookmarkCount: $('a[rel="bookmark"]').length,
-    // Sanity: parse a tiny known-good fragment and see if the parser
-    // returns the structure we wrote. If this comes back wrong, the
-    // problem is cheerio/htmlparser2 in this runtime, not the source.
-    selfTest: (() => {
-      const html = '<!doctype html><html><body><article class="dish"><div class="main-column"><header class="entry-header"><h1 class="entry-title"><a rel="bookmark">X</a></h1></header><div class="entry-content"><span class="dish-price">9.50</span></div></div></article></body></html>'
-      const $$ = cheerio.load(parseDocument(html))
-      return {
-        article: $$('article').length,
-        header: $$('header').length,
-        h1: $$('h1').length,
-        a: $$('a').length,
-        entryTitleText: $$('.entry-title').text(),
-        articleHtml: $$.html($$('article'))
-      }
+    // Dump the body markup leading up to the first dish article — that's
+    // where the prior chunks of HTML are that confuse the parser into
+    // dropping inner tags.
+    preludeBeforeFirstArticle: (() => {
+      const idx = sourceHtml.indexOf('<article class="post-')
+      if (idx < 0) return null
+      // Find <body> start
+      const bodyIdx = sourceHtml.search(/<body\b/i)
+      const start = bodyIdx >= 0 ? bodyIdx : 0
+      // Last 2000 chars of body-prelude (closest to article)
+      return sourceHtml.slice(Math.max(start, idx - 2000), idx)
     })(),
     rawSnippet: rawArtIdx >= 0 ? sourceHtml.slice(rawArtIdx, rawArtIdx + 1500) : null,
     firstArtHtml: firstArt.length ? ($.html(firstArt) || '').slice(0, 1500) : null,
