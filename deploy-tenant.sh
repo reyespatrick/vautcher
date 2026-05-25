@@ -86,11 +86,16 @@ echo "→ deploying app/dist → $SLUG.pages.dev"
 ( cd "$HERE" && \
   npx --yes wrangler pages project create "$SLUG" --production-branch=main 2>/dev/null || true )
 
+# Cloudflare's Pages API rejects commit messages with non-ASCII chars
+# (em-dash etc.) with "Invalid commit message [code: 8000111]". Force
+# an ASCII commit-message override so the API never sees the real one.
+SHA=$(git -C "$HERE" rev-parse HEAD 2>/dev/null || echo "manual")
 ( cd "$HERE" && \
   npx --yes wrangler pages deploy app/dist \
     --project-name="$SLUG" \
     --branch=main \
-    --commit-dirty=true )
+    --commit-dirty=true \
+    --commit-message="deploy-${SHA}" )
 
 echo "  ✓ https://$SLUG.pages.dev"
 
