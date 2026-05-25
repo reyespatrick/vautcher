@@ -836,26 +836,61 @@ function extractSpecialties($: cheerio.CheerioAPI): { icon: string; title: strin
   }).slice(0, 8)  // cap so the home page isn't overwhelmed
 }
 
-// Hierarchical menu extractor. Output:
-//   [ { category: 'Les entrées', items: [{ name, description, price }] } ]
+// A menu item, as stored in config.menu[*].items[*].
 //
-// For each page that looks like a menu page (URL contains /menu, /carte,
-// /dishes, /plats or the page has a menu-ish H1), walk the headings:
-//   - The first h1/h2 is the category title.
-//   - Subsequent h3/h4 are dish names (if any).
-//   - Paragraphs / list items between headings are descriptions.
-// On sites like dapaolo.ch where dishes are listed as bare "Ingrédients …"
-// paragraphs with no name, each paragraph becomes one item with an
-// empty name.
+// Scraper only fills name/description/price reliably (those come from
+// the page's own structure). ingredients / variants / allergens are
+// almost always inferred by the AI grouping pass, because they sit in
+// unstructured prose like "Allergènes: …" annotations or "(en entrée)"
+// portion chips next to a price. The scraper-side fields default to
+// empty arrays so the merge/render layers never have to null-check.
+type MenuItem = {
+  name: string
+  description: string
+  price: string | null
+  ingredients: string[]
+  variants: { label: string; price: string }[]
+  allergens: string[]
+}
+
+// A "dish-ish" name: must contain at least one letter sequence and not
+// look like a pure price tag ("16.-"), a portion chip ("(en entrée)"),
+// or a form-field label ("Variantes / commentaires : …"). These are
+// the fragments dapaolo.ch produced before the gate.
+function isDishyName(s: string): boolean {
+  const t = s.trim()
+  if (!t) return false
+  // Pure prices like "16.-", "23.- (en plat)", "CHF 12.50".
+  if (/^\s*(CHF|EUR|€|F)?\s*\d+[.,]?-?\d*\s*(CHF|EUR|€|F)?\s*(\([^)]+\))?\s*$/i.test(t)) return false
+  // Form-field labels — "Variantes / commentaires : épinards frais",
+  // "Allergènes : gluten", "Suppléments : ..."
+  if (/^\s*(variantes?|commentaires?|options?|all[ée]rg[ée]nes?|suppl[ée]ments?|ingr[ée]dients?)\b[\s/]*[:•]/i.test(t)) return false
+  // Bare portion chip — "(en entrée)", "(en plat)", "(en dessert)".
+  if (/^\s*\(?\s*en\s+(entr[ée]e|plat|dessert|accompagnement)s?\s*\)?\s*$/i.test(t)) return false
+  // Need at least two letters.
+  if ((t.match(/[\p{L}]/gu) || []).length < 2) return false
+  return true
+}
+
+// Hierarchical menu extractor. Output:
+//   [ { category: 'Les entrées', items: [MenuItem, ...] } ]
+//
+// We only emit *named* dishes: a heading inside a menu section paired
+// with (optionally) its description / price. Anonymous bare-paragraph
+// fragments are intentionally NOT extracted here — they produced
+// garbage rows on dapaolo (price chips, form labels, isolated
+// ingredient lines). The AI enhancement pass reads the full source
+// corpus and groups those fragments into proper dishes (variants /
+// ingredients / allergens), which the verbatim gate then checks.
 function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
   category: string;
-  items: { name: string; description: string; price: string | null }[];
+  items: MenuItem[];
 }[] {
   const menuUrlRe = /\/(menu|carte|dishes|plats|specialites|sp[ée]cialit[ée]s)\b/i
   const menuHeadRe = /^(notre |nos |la |le |les )?(menu|carte|plats?|sp[ée]cialit[ée]s|specialites?|signature|incontournab|nos suggestions|à la carte|entr[ée]es|pizz|p[âa]tes|p[âa]tes|poissons|viandes|desserts|antipast|primi|secondi|riz)/i
   const PRICE_RE = /(\d+[.,]\d{2})\s*(CHF|EUR|€|F)?/i
 
-  const out: { category: string; items: { name: string; description: string; price: string | null }[] }[] = []
+  const out: { category: string; items: MenuItem[] }[] = []
 
   for (const p of pages) {
     const isMenuPage = menuUrlRe.test(p.url)
@@ -874,7 +909,7 @@ function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
 
     for (const cand of candidates) {
       const category = cand.text.trim()
-      const items: { name: string; description: string; price: string | null }[] = []
+      const items: MenuItem[] = []
 
       // Walk subsequent siblings until the next h1/h2 of equal or
       // higher level, harvesting dish leaves.
@@ -889,14 +924,14 @@ function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
         if (!node) break
         if (stop(node)) break
 
-        // Two extraction strategies inside the section:
-        //  (a) Named dishes: <h3>/<h4>/<dt> = name, next <p>/<dd> = desc
-        //  (b) Unnamed dishes: bare <p>/<li> paragraphs (dapaolo style)
+        // Only one extraction strategy: named dishes.
+        //   <h3>/<h4>/<dt> = name, next <p>/<dd> = description.
         cur.find('h3, h4, dt').each((_: number, h: cheerio.Element) => {
           if (items.length >= 30) return
           const name = flatText($, h)
           if (!name || name.length < 3 || name.length > 100) return
           if (isJunkText(name)) return
+          if (!isDishyName(name)) return
           // Avoid re-using a category title as a dish name.
           if (menuHeadRe.test(name) && name.length < 25) return
           let desc = ''
@@ -906,30 +941,22 @@ function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
           const priceM = (name + ' ' + desc).match(PRICE_RE)
           const cleanName = name.replace(/\s*\d+[.,]\d{2}\s*(CHF|EUR|€|F)?$/i, '').trim()
           const cleanDesc = desc.replace(/\s*\d+[.,]\d{2}\s*(CHF|EUR|€|F)?\s*$/i, '').trim()
-          items.push({ name: cleanName, description: cleanDesc, price: priceM ? priceM[0] : null })
-        })
-
-        // If we saw no <h3>/<h4>/<dt>, harvest bare <p>/<li> in this
-        // sibling block (dapaolo-style "Ingrédients..." paragraphs).
-        if (items.length === 0 || cur.find('h3, h4, dt').length === 0) {
-          cur.find('p, li').each((_: number, el: cheerio.Element) => {
-            if (items.length >= 30) return
-            const txt = flatText($, el)
-            if (!txt || txt.length < 8 || txt.length > 240) return
-            if (isJunkText(txt)) return
-            if (menuHeadRe.test(txt) && txt.length < 25) return
-            const priceM = txt.match(PRICE_RE)
-            const clean = txt.replace(/\s*\d+[.,]\d{2}\s*(CHF|EUR|€|F)?\s*$/i, '').trim()
-            items.push({ name: '', description: clean, price: priceM ? priceM[0] : null })
+          items.push({
+            name: cleanName,
+            description: cleanDesc,
+            price: priceM ? priceM[0] : null,
+            ingredients: [],
+            variants: [],
+            allergens: []
           })
-        }
+        })
 
         scanned++
         cur = cur.next()
       }
 
       if (items.length >= 1) {
-        // Dedupe items by description.
+        // Dedupe items by (name, description).
         const seen = new Set<string>()
         const deduped = items.filter((i) => {
           const k = (i.name + '|' + i.description).toLowerCase()
@@ -943,7 +970,7 @@ function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
   }
 
   // Dedupe categories by name (across pages) and merge items.
-  const byCategory = new Map<string, { name: string; description: string; price: string | null }[]>()
+  const byCategory = new Map<string, MenuItem[]>()
   for (const sec of out) {
     const key = sec.category.toLowerCase().trim()
     if (!byCategory.has(key)) byCategory.set(key, [])
@@ -956,7 +983,7 @@ function extractMenu(pages: { url: string; $: cheerio.CheerioAPI }[]): {
     }
   }
   // Materialize back with original category casing (first occurrence wins).
-  const final: { category: string; items: { name: string; description: string; price: string | null }[] }[] = []
+  const final: { category: string; items: MenuItem[] }[] = []
   const seenKeys = new Set<string>()
   for (const sec of out) {
     const key = sec.category.toLowerCase().trim()
@@ -1153,9 +1180,25 @@ Critical rules:
 4. For specialties: return at most 6, only items that look like signature dishes
    or menu section headlines. Each must have a title that appears in source.
 5. For menu: return the full hierarchical menu — one entry per category, each with
-   its list of dishes. Each dish's "description" MUST be verbatim from the source.
-   "name" may be omitted (some sites only list ingredients, not dish names).
-   Skip categories that have zero dishes in the source. Max 12 categories.
+   its list of dishes. Each dish has:
+     - name (REQUIRED): the dish's actual name, verbatim from source.
+       A bare price ("16.-"), portion chip ("en entrée"), or form-field label
+       ("Variantes / commentaires") is NOT a dish name — skip it. If you cannot
+       identify a real dish name in the source, do not invent one; drop the row.
+     - description: one-line prose description, verbatim. May be empty.
+     - ingredients: list of distinct ingredients mentioned for the dish, each
+       verbatim from source (e.g. "tagliatelle", "épinards frais", "parmesan").
+       Empty array if not listed.
+     - price: the dish's headline price, as displayed. Null if not stated.
+     - variants: when one dish is sold in multiple portions/sizes (e.g.
+       "16.- (en entrée)" + "23.- (en plat)"), group those under the dish as
+       [{ label: "en entrée", price: "16.-" }, { label: "en plat", price: "23.-" }].
+       Both label and price must appear verbatim in source. Empty array if
+       there's only one portion.
+     - allergens: distinct allergen names found in an explicit "Allergènes: …"
+       annotation tied to this dish. Each verbatim. Empty array if none.
+   Skip categories with zero dishes you can name. Max 12 categories, 30 dishes
+   per category.
 
 Source text:
 ${source}`
@@ -1205,7 +1248,7 @@ ${source}`
             },
             menu: {
               type: ['array', 'null'],
-              description: 'Hierarchical menu grouped by section. Use the exact category labels and dish descriptions found in the source. If a category has no individually named dishes, leave name empty and put the line in description.',
+              description: 'Hierarchical menu grouped by category. Every dish MUST have a real name (verbatim from source). Group portion variants and allergen annotations into the parent dish — never emit them as standalone rows.',
               items: {
                 type: 'object',
                 properties: {
@@ -1215,11 +1258,33 @@ ${source}`
                     items: {
                       type: 'object',
                       properties: {
-                        name: { type: ['string', 'null'] },
-                        description: { type: 'string' },
-                        price: { type: ['string', 'null'] }
+                        name: { type: 'string', description: 'Dish name, verbatim from source. Required.' },
+                        description: { type: ['string', 'null'], description: 'One-line description, verbatim. May be omitted.' },
+                        ingredients: {
+                          type: ['array', 'null'],
+                          description: 'Distinct ingredients listed for this dish, each verbatim from source.',
+                          items: { type: 'string' }
+                        },
+                        price: { type: ['string', 'null'], description: 'Headline price as displayed.' },
+                        variants: {
+                          type: ['array', 'null'],
+                          description: 'Portion variants for the same dish (e.g. entrée vs plat). Each variant has label + price, both verbatim.',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              label: { type: 'string' },
+                              price: { type: 'string' }
+                            },
+                            required: ['label', 'price']
+                          }
+                        },
+                        allergens: {
+                          type: ['array', 'null'],
+                          description: 'Allergens declared for this dish, each verbatim from source.',
+                          items: { type: 'string' }
+                        }
                       },
-                      required: ['description']
+                      required: ['name']
                     }
                   }
                 },
@@ -1312,10 +1377,14 @@ ${source}`
     }
   }
 
-  // Menu — hierarchical { category, items: [{ name, description, price }] }.
-  // Each item's description must appear verbatim; name may be empty;
-  // price passes through if present (it always matches because it's
-  // copied from the gate-matched description anyway).
+  // Menu — hierarchical { category, items: [MenuItem, ...] }.
+  // Gate rules:
+  //   - category must be inSource (≥3 chars)
+  //   - name is REQUIRED, must be inSource and pass isDishyName()
+  //   - description, ingredients[], variants[].label, allergens[] each
+  //     verbatim; offending fields are dropped, item kept if name+core
+  //     remain valid
+  //   - prices pass through digit-loose
   if (Array.isArray(ai.menu)) {
     const validCats: any[] = []
     for (const cat of ai.menu) {
@@ -1324,24 +1393,62 @@ ${source}`
         rejected.push(`menu category: ${cat.category}`)
         continue
       }
-      const validItems = cat.items.filter((it: any) => {
-        if (!it || !it.description) return false
-        if (!inSource(it.description, 8)) {
-          rejected.push(`dish: ${String(it.description).slice(0, 50)}…`)
-          return false
+      const validItems: MenuItem[] = []
+      for (const it of cat.items) {
+        if (!it || !it.name) {
+          rejected.push(`dish (no name): ${String(it?.description || '').slice(0, 50)}…`)
+          continue
         }
-        // Name (if present) must also be verbatim.
-        if (it.name && !inSource(it.name, 4)) {
-          rejected.push(`dish name: ${it.name}`)
-          // Drop name but keep the dish if description was valid.
-          it.name = ''
+        const rawName = String(it.name).trim()
+        if (!isDishyName(rawName)) {
+          rejected.push(`dish (not a name): ${rawName}`)
+          continue
         }
-        return true
-      }).map((it: any) => ({
-        name: String(it.name || '').trim(),
-        description: String(it.description).trim(),
-        price: it.price ? String(it.price).trim() : null
-      }))
+        if (!inSource(rawName, 4)) {
+          rejected.push(`dish name: ${rawName}`)
+          continue
+        }
+        let desc = ''
+        if (it.description) {
+          const d = String(it.description).trim()
+          if (inSource(d, 8)) desc = d
+          else rejected.push(`dish desc (${rawName}): ${d.slice(0, 40)}…`)
+        }
+        const ingredients: string[] = []
+        if (Array.isArray(it.ingredients)) {
+          for (const ing of it.ingredients) {
+            const s = String(ing || '').trim()
+            if (s && inSource(s, 3)) ingredients.push(s)
+            else if (s) rejected.push(`ingredient (${rawName}): ${s}`)
+          }
+        }
+        const variants: { label: string; price: string }[] = []
+        if (Array.isArray(it.variants)) {
+          for (const v of it.variants) {
+            if (!v || !v.label || !v.price) continue
+            const lbl = String(v.label).trim()
+            const pr = String(v.price).trim()
+            if (inSource(lbl, 3) && inSourceLoose(pr)) variants.push({ label: lbl, price: pr })
+            else rejected.push(`variant (${rawName}): ${lbl} / ${pr}`)
+          }
+        }
+        const allergens: string[] = []
+        if (Array.isArray(it.allergens)) {
+          for (const al of it.allergens) {
+            const s = String(al || '').trim()
+            if (s && inSource(s, 3)) allergens.push(s)
+            else if (s) rejected.push(`allergen (${rawName}): ${s}`)
+          }
+        }
+        validItems.push({
+          name: rawName,
+          description: desc,
+          price: it.price ? String(it.price).trim() : null,
+          ingredients,
+          variants,
+          allergens
+        })
+      }
       if (validItems.length) validCats.push({ category: String(cat.category).trim(), items: validItems })
     }
     if (validCats.length) filled.menu = validCats
@@ -1609,8 +1716,10 @@ Deno.serve(async (req: Request) => {
         aiFilled.push('specialties')
       }
       if (Array.isArray(f.menu) && f.menu.length) {
-        // AI menu wins over scraper menu when scraper produced little
-        // or nothing. When both are present, merge by category name.
+        // AI menu generally wins — the scraper only produces name+description
+        // shells, while AI adds ingredients/variants/allergens. When the same
+        // dish (matched by name) appears in both, prefer the AI row because
+        // it carries the enriched fields.
         if (!config.menu?.length) {
           config.menu = f.menu
         } else {
@@ -1622,13 +1731,18 @@ Deno.serve(async (req: Request) => {
               byKey.set(k, c)
               config.menu.push(c)
             } else {
-              // Merge items, dedupe by description.
               const dest = byKey.get(k)
-              const seen = new Set(dest.items.map((i: any) => i.description.toLowerCase()))
+              const dishKey = (i: any) => String(i.name || '').toLowerCase().trim()
+              const seen = new Map<string, number>()
+              dest.items.forEach((i: any, idx: number) => seen.set(dishKey(i), idx))
               for (const item of c.items) {
-                if (!seen.has(item.description.toLowerCase())) {
+                const k2 = dishKey(item)
+                if (seen.has(k2)) {
+                  // Replace the scraper-shell entry with the richer AI one.
+                  dest.items[seen.get(k2)!] = item
+                } else {
                   dest.items.push(item)
-                  seen.add(item.description.toLowerCase())
+                  seen.set(k2, dest.items.length - 1)
                 }
               }
             }

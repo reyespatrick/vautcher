@@ -131,6 +131,28 @@ onMounted(async () => {
                   <span v-if="item.price" class="menu-item-price">{{ item.price }}</span>
                 </div>
                 <p v-if="item.description" class="menu-item-desc">{{ item.description }}</p>
+                <ul
+                  v-if="item.ingredients && item.ingredients.length"
+                  class="menu-item-ings"
+                >
+                  <li v-for="ing in item.ingredients" :key="ing">{{ ing }}</li>
+                </ul>
+                <ul
+                  v-if="item.variants && item.variants.length"
+                  class="menu-item-variants"
+                >
+                  <li v-for="(v, vi) in item.variants" :key="vi">
+                    <span class="vlabel">{{ v.label }}</span>
+                    <span class="vprice">{{ v.price }}</span>
+                  </li>
+                </ul>
+                <p
+                  v-if="item.allergens && item.allergens.length"
+                  class="menu-item-allergens"
+                >
+                  <span class="alabel">Allergènes</span> :
+                  {{ item.allergens.join(', ') }}
+                </p>
               </li>
             </ul>
           </article>
@@ -365,6 +387,57 @@ onMounted(async () => {
   font-size: 0.88rem;
   margin: 4px 0 0;
   line-height: 1.5;
+}
+.menu-item-ings {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.menu-item-ings li {
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+.menu-item-variants {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.menu-item-variants li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+.menu-item-variants .vlabel {
+  color: var(--grey);
+  font-style: italic;
+}
+.menu-item-variants .vprice {
+  font-weight: 700;
+  color: var(--burgundy);
+}
+.menu-item-allergens {
+  margin: 6px 0 0;
+  font-size: 0.74rem;
+  color: var(--grey);
+  font-style: italic;
+}
+.menu-item-allergens .alabel {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .hours-teaser { background: var(--paper); }
