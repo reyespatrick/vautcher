@@ -384,7 +384,8 @@ async function copyLink() {
 
         <div class="prov-actions">
           <span v-if="scaffoldResult.scaffold === 'dispatched' || scaffoldResult.deploy === 'dispatched'"
-                class="badge badge--pending">
+                class="badge badge--pending badge--pulse">
+            <span class="badge-dot" aria-hidden="true"></span>
             {{ t('admin.scaffoldDeploying') }}
           </span>
           <span v-else class="badge badge--off">{{ t('admin.scaffoldManual') }}</span>
@@ -394,6 +395,15 @@ async function copyLink() {
             target="_blank" rel="noopener"
             class="prov-code"
           >{{ t('admin.scaffoldLogs') }} ↗</a>
+        </div>
+        <!-- Indeterminate progress bar — gives the moderator a constant
+             signal that work is happening in CI for the next ~3-5 min. -->
+        <div
+          v-if="scaffoldResult.scaffold === 'dispatched' || scaffoldResult.deploy === 'dispatched'"
+          class="scaffold-progress"
+          role="status" aria-live="polite"
+        >
+          <div class="scaffold-progress-bar"><span></span></div>
         </div>
         <button class="prov-x" @click="scaffoldResult = null">✕</button>
       </div>
@@ -847,15 +857,41 @@ async function copyLink() {
   white-space: nowrap;
 }
 .resto-state--scaffolding {
-  background: linear-gradient(90deg, #fbeec4, #f3d98c);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(110deg, #fbeec4 25%, #f7e3a0 45%, #fbeec4 65%);
   color: #6e5414;
-  /* Shimmer so the eye knows it's not a static badge. */
-  background-size: 200% 100%;
-  animation: state-shimmer 1.6s ease-in-out infinite;
+  background-size: 220% 100%;
+  animation: state-shimmer 2.4s linear infinite;
+}
+.resto-state--scaffolding::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #b8902f;
+  box-shadow: 0 0 0 0 rgba(184, 144, 47, 0.55);
+  animation: state-blink 1.4s ease-in-out infinite;
 }
 .resto-state--pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: rgba(120, 120, 120, 0.18);
   color: #444;
+}
+.resto-state--pending::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #555;
+  animation: state-blink 1.4s ease-in-out infinite;
+}
+@keyframes state-blink {
+  0%, 100% { opacity: 0.35; box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+  50%      { opacity: 1;    box-shadow: 0 0 0 5px rgba(184, 144, 47, 0); }
 }
 .resto-state--scaffold_failed,
 .resto-state--failed {
