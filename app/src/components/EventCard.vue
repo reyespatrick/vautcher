@@ -39,9 +39,10 @@ const rebateText = computed(() => {
     :to="{ name: 'event-detail', params: { id: event.id } }"
     class="event-link"
   >
-    <article class="event" :class="{ joined: event.joined }">
-      <div class="ev-media" :style="{ backgroundImage: `url(${event.image_url})` }">
-        <div class="ev-date">
+    <article class="event featured" :class="{ joined: event.joined }">
+      <!-- Hero image with overlaid title + bottom info strip. -->
+      <div class="ev-hero" :style="event.image_url ? { backgroundImage: `url(${event.image_url})` } : null">
+        <div class="ev-hero-date">
           <strong>{{ day }}</strong>
           <small>{{ monthShort }}</small>
         </div>
@@ -49,52 +50,44 @@ const rebateText = computed(() => {
           <span>Inscrit</span>
         </div>
         <span v-if="full && !event.joined" class="ev-full">Complet</span>
-      </div>
 
-      <div class="ev-body">
-        <h3>{{ event.title }}</h3>
+        <h3 class="ev-hero-title">{{ event.title }}</h3>
 
-        <ul class="ev-meta">
-          <li><span class="ic">📅</span>{{ fullDate }}</li>
-          <li v-if="event.event_time">
-            <span class="ic">🕖</span>{{ event.event_time }}<template v-if="event.event_end_time"> – {{ event.event_end_time }}</template>
-          </li>
-          <li v-if="event.location"><span class="ic">📍</span>{{ event.location }}</li>
-          <li v-if="event.price"><span class="ic">🎟️</span>{{ event.price }}</li>
-        </ul>
-
-        <p v-if="rebateText" class="ev-rebate">🎁 {{ rebateText }}</p>
-
-        <p class="ev-desc">{{ event.description }}</p>
-
-        <div class="ev-foot">
-          <!-- Attendee count intentionally hidden on the diner side —
-               only the owner needs to see "X inscrits". The Complet
-               badge on the image still communicates a full event. -->
-          <!-- .stop / .prevent so tapping the action button doesn't also
-               navigate to the detail page (the whole card is a link). -->
+        <div class="ev-hero-strip">
+          <ul class="ev-meta">
+            <li v-if="event.event_time">🕖 {{ event.event_time }}<template v-if="event.event_end_time">–{{ event.event_end_time }}</template></li>
+            <li v-if="event.location">📍 {{ event.location }}</li>
+            <li v-if="event.price">🎟️ {{ event.price }}</li>
+          </ul>
           <button
             v-if="event.joined"
-            class="ev-act leave"
+            class="ev-cta leave"
             type="button"
             :disabled="busy"
             @click.stop.prevent="emit('leave', event)"
-          >Annuler ma participation</button>
+          >Annuler</button>
           <button
             v-else-if="full"
-            class="ev-act join"
+            class="ev-cta full"
             type="button"
             disabled
             @click.stop.prevent
           >Complet</button>
           <button
             v-else
-            class="ev-act join"
+            class="ev-cta join"
             type="button"
             :disabled="busy"
             @click.stop.prevent="emit('join', event)"
           >Je participe</button>
         </div>
+      </div>
+
+      <!-- Description + rebate below the hero. Empty when the event
+           has none — the card is then just the visual hero. -->
+      <div v-if="event.description || rebateText" class="ev-foot">
+        <p v-if="rebateText" class="ev-rebate">🎁 {{ rebateText }}</p>
+        <p v-if="event.description" class="ev-desc">{{ event.description }}</p>
       </div>
     </article>
   </RouterLink>
@@ -104,43 +97,58 @@ const rebateText = computed(() => {
 /* RouterLink reset — let the .event styling do all the visual work. */
 .event-link { display: block; color: inherit; text-decoration: none; }
 
+/* Featured-hero layout (option ④):
+   - Full-bleed image at 5:3 with bottom gradient
+   - Date pill top-left, Joined / Complet badges over the image
+   - Title overlaid on the image above a bottom info strip
+   - Bottom info strip carries time/location/price + the brand CTA
+   - Description (if any) appears in a thin footer below the hero */
 .event {
-  display: flex;
+  position: relative;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.10);
   transition: box-shadow 0.2s, transform 0.15s;
 }
-.event:hover { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.13); transform: translateY(-3px); }
+.event:hover { box-shadow: 0 18px 38px rgba(0, 0, 0, 0.14); transform: translateY(-3px); }
 .event.joined { border-color: var(--burgundy); }
 
-.ev-media {
+.ev-hero {
   position: relative;
-  flex: 0 0 38%;
-  min-height: 210px;
+  aspect-ratio: 5 / 3;
   background-size: cover;
   background-position: center;
+  background-color: color-mix(in srgb, var(--burgundy) 12%, #eee);
 }
-.ev-date {
+.ev-hero::after {
+  content: '';
   position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.78) 100%);
+  pointer-events: none;
+}
+
+.ev-hero-date {
+  position: absolute;
+  z-index: 2;
   top: 14px;
   left: 14px;
-  background: #fff;
-  border-radius: 10px;
-  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 4px;
+  padding: 7px 11px;
   text-align: center;
   line-height: 1;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
-.ev-date strong {
+.ev-hero-date strong {
   display: block;
   font-family: 'Rufina', serif;
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   color: var(--burgundy);
 }
-.ev-date small {
+.ev-hero-date small {
   display: block;
   font-size: 0.58rem;
   font-weight: 700;
@@ -148,29 +156,100 @@ const rebateText = computed(() => {
   color: var(--grey);
   margin-top: 3px;
 }
-/* Passport-style "Inscrit" stamp — semi-transparent, slightly rotated,
-   double-bordered, sits on top of the event image so the registration
-   state reads at a glance from across the room. */
+
+.ev-hero-title {
+  position: absolute;
+  z-index: 2;
+  left: 18px;
+  right: 18px;
+  bottom: 62px;
+  margin: 0;
+  color: #fff;
+  font-family: 'Rufina', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.18;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.ev-hero-strip {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px 14px;
+  color: #fff;
+}
+.ev-meta {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  min-width: 0;
+}
+.ev-meta li { white-space: nowrap; }
+
+.ev-cta {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 18px;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+}
+.ev-cta.join {
+  background: var(--burgundy);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.ev-cta.join:hover { background: var(--burgundy-dark); }
+.ev-cta.leave {
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--burgundy);
+}
+.ev-cta.leave:hover { background: #fff; }
+.ev-cta.full {
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: not-allowed;
+}
+.ev-cta:disabled { opacity: 0.65; cursor: not-allowed; }
+
+/* Inscrit stamp — kept distinctive, just nudged so it sits above the title strip. */
 .ev-stamp {
   position: absolute;
-  top: 50%;
+  z-index: 3;
+  top: 42%;
   left: 50%;
-  transform: translate(-50%, -50%) rotate(-14deg);
+  transform: translate(-50%, -50%) rotate(-12deg);
   border: 3px double var(--burgundy);
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--burgundy);
   font-family: 'Rufina', serif;
   font-weight: 800;
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  padding: 8px 22px;
+  padding: 6px 18px;
   border-radius: 4px;
   pointer-events: none;
   white-space: nowrap;
-  opacity: 0.96;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  /* Pop in subtly when state flips to joined. */
   animation: stamp-in 0.32s cubic-bezier(0.18, 1.2, 0.4, 1) both;
 }
 .ev-stamp::before,
@@ -183,17 +262,13 @@ const rebateText = computed(() => {
   pointer-events: none;
 }
 @keyframes stamp-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) rotate(-14deg) scale(1.45);
-  }
-  to {
-    opacity: 0.96;
-    transform: translate(-50%, -50%) rotate(-14deg) scale(1);
-  }
+  from { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(1.45); }
+  to { opacity: 0.94; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
 }
+
 .ev-full {
   position: absolute;
+  z-index: 2;
   top: 14px;
   right: 14px;
   background: var(--burgundy);
@@ -207,68 +282,36 @@ const rebateText = computed(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
 
-.ev-body { flex: 1; padding: 20px 22px; display: flex; flex-direction: column; }
-.ev-body h3 { font-size: 1.3rem; margin-bottom: 10px; }
-
-.ev-meta {
-  list-style: none;
+.ev-foot {
+  padding: 14px 18px 18px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 10px;
 }
-.ev-meta li {
-  font-size: 0.84rem;
+.ev-desc {
   color: var(--grey);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.ev-meta .ic { font-size: 0.9rem; }
-
-.ev-desc { color: var(--grey); font-size: 0.92rem; flex: 1; margin-bottom: 16px; }
 .ev-rebate {
   align-self: flex-start;
   background: linear-gradient(135deg, #fbeec4, #f3d98c);
   color: #6e5414;
   font-size: 0.82rem;
   font-weight: 700;
-  padding: 7px 12px;
+  padding: 6px 12px;
   border-radius: 9px;
-  margin-bottom: 14px;
+  margin: 0;
 }
 
-.ev-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.ev-count { font-size: 0.8rem; font-weight: 600; color: var(--burgundy); }
-.ev-act {
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 0.76rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  transition: background 0.15s, opacity 0.15s;
-}
-.ev-act.join { background: var(--burgundy); color: #fff; padding: 11px 18px; }
-.ev-act.join:hover { background: var(--burgundy-dark); }
-.ev-act.leave {
-  background: #fff;
-  color: var(--burgundy);
-  border: 2px solid var(--burgundy);
-  padding: 9px 16px;
-}
-.ev-act.leave:hover { background: color-mix(in srgb, var(--burgundy) 7%, transparent); }
-.ev-act:disabled { opacity: 0.5; cursor: not-allowed; }
-
-@media (max-width: 620px) {
-  .event { flex-direction: column; }
-  .ev-media { flex: none; min-height: 168px; }
+@media (max-width: 420px) {
+  .ev-hero-title { font-size: 1.2rem; bottom: 58px; }
+  .ev-meta { font-size: 0.72rem; gap: 3px 9px; }
+  .ev-cta { padding: 7px 11px; font-size: 0.72rem; }
 }
 </style>

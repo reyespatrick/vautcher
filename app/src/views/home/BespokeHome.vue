@@ -33,29 +33,30 @@ function renderEventsHtml(list) {
     const attendees = ev.attendees || 0
     const max = ev.max_participants ?? null
     const full = max != null && attendees >= max && !ev.joined
-    const timeStr = [ev.event_time, ev.event_end_time].filter(Boolean).join(' – ')
-    const meta = [timeStr, ev.location, ev.price].filter(Boolean).map((s) => `<li>${esc(s)}</li>`).join('')
+    const timeStr = [ev.event_time, ev.event_end_time].filter(Boolean).join('–')
+    const stripItems = [
+      timeStr ? `🕖 ${esc(timeStr)}` : '',
+      ev.location ? `📍 ${esc(ev.location)}` : '',
+      ev.price ? `🎟️ ${esc(ev.price)}` : ''
+    ].filter(Boolean).map((s) => `<li>${s}</li>`).join('')
     const rebate = (() => {
       const v = ev.rebate_value
       if (!v) return ''
       const amount = ev.rebate_unit === 'chf' ? `${v} CHF` : `${v} %`
       const n = ev.rebate_first_n
       const label = n ? `${amount} pour les ${n} premiers` : `Offre ${amount}`
-      return `<span class="rw-event-rebate">🎟 ${esc(label)}</span>`
+      return `<span class="rw-event-rebate">🎁 ${esc(label)}</span>`
     })()
     return `
     <a class="rw-event${ev.joined ? ' is-joined' : ''}${full ? ' is-full' : ''}" href="/evenements/${esc(ev.id)}">
-      <div class="rw-event-img"${ev.image_url ? ` style="background-image:url('${esc(ev.image_url)}')"` : ''}>
+      <div class="rw-event-hero"${ev.image_url ? ` style="background-image:url('${esc(ev.image_url)}')"` : ''}>
         <div class="rw-event-date">${esc(fmtDate(ev.event_date))}</div>
         ${ev.joined ? '<div class="rw-event-badge rw-event-badge--joined">Inscrit</div>' : ''}
         ${full ? '<div class="rw-event-badge rw-event-badge--full">Complet</div>' : ''}
-      </div>
-      <div class="rw-event-body">
         <h3 class="rw-event-title">${esc(ev.title || '')}</h3>
-        ${meta ? `<ul class="rw-event-meta">${meta}</ul>` : ''}
-        ${ev.description ? `<p class="rw-event-desc">${esc(ev.description)}</p>` : ''}
-        ${rebate}
+        ${stripItems ? `<ul class="rw-event-meta">${stripItems}</ul>` : ''}
       </div>
+      ${(ev.description || rebate) ? `<div class="rw-event-foot">${ev.description ? `<p class="rw-event-desc">${esc(ev.description)}</p>` : ''}${rebate}</div>` : ''}
     </a>`
   }).join('')
   return `<div class="rw-events">${cards}</div>`
@@ -139,24 +140,25 @@ watch(() => site.homeHtml, hydrate)
 </template>
 
 <style>
-/* Default styling for the auto-injected events teaser. Themes through
-   --primary / --primary-dark / --font-display, which are set by
-   site.js from the bespoke theme tokens. Claude can override any of
-   this if it ships its own .rw-event rules in home_css. */
+/* Auto-injected events teaser — Featured-hero layout (option ④):
+   full-bleed image with bottom gradient, title overlaid, meta strip at
+   the bottom, optional description footer below. Themes through
+   --primary / --font-display, set by site.js from the bespoke tokens.
+   Claude can override any of this if it ships its own .rw-event rules. */
 .bespoke-home .rw-events {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
   padding: 24px clamp(20px, 5vw, 56px) 28px;
   max-width: 1100px;
   margin: 0 auto;
 }
 .bespoke-home .rw-event {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  display: block;
   background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
@@ -167,81 +169,42 @@ watch(() => site.homeHtml, hydrate)
   transform: translateY(-2px);
   box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.28);
 }
-.bespoke-home .rw-event-img {
-  aspect-ratio: 16 / 10;
+
+/* Hero — full-bleed image with bottom darkening gradient. */
+.bespoke-home .rw-event-hero {
+  position: relative;
+  aspect-ratio: 5 / 3;
   background-size: cover;
   background-position: center;
-  background-color: color-mix(in srgb, var(--primary, var(--burgundy, #9e053d)) 12%, #eee);
-  position: relative;
+  background-color: color-mix(in srgb, var(--primary, var(--burgundy, #9e053d)) 14%, #eee);
 }
+.bespoke-home .rw-event-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.78) 100%);
+  pointer-events: none;
+}
+
 .bespoke-home .rw-event-date {
   position: absolute;
-  top: 14px; left: 14px;
+  z-index: 2;
+  top: 14px;
+  left: 14px;
   background: rgba(255, 255, 255, 0.96);
   color: var(--primary, var(--burgundy, #9e053d));
   font-weight: 700;
   font-size: .76rem;
   letter-spacing: .04em;
   text-transform: uppercase;
-  padding: 5px 10px;
-  border-radius: 3px;
-}
-.bespoke-home .rw-event-body {
-  padding: 18px 22px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.bespoke-home .rw-event-title {
+  padding: 6px 10px;
+  border-radius: 4px;
   font-family: var(--font-display, 'Playfair Display', Georgia, serif);
-  font-size: 1.2rem;
-  font-weight: 500;
-  margin: 0;
-  line-height: 1.25;
-  color: var(--ink, #1b1b1b);
 }
-.bespoke-home .rw-event-meta {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  color: rgba(0, 0, 0, 0.6);
-  font-size: .88rem;
-}
-.bespoke-home .rw-event-meta li {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.bespoke-home .rw-event-meta li + li::before {
-  content: '·';
-  margin-right: 8px;
-  color: rgba(0, 0, 0, 0.3);
-}
-.bespoke-home .rw-event-desc {
-  font-size: .9rem;
-  line-height: 1.5;
-  color: rgba(0, 0, 0, 0.7);
-  margin: 4px 0 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.bespoke-home .rw-event-rebate {
-  align-self: flex-start;
-  margin-top: 8px;
-  background: color-mix(in srgb, var(--primary, var(--burgundy, #9e053d)) 8%, transparent);
-  color: var(--primary, var(--burgundy, #9e053d));
-  font-size: .78rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 999px;
-}
+
 .bespoke-home .rw-event-badge {
   position: absolute;
+  z-index: 2;
   top: 14px;
   right: 14px;
   font-size: .7rem;
@@ -249,7 +212,7 @@ watch(() => site.homeHtml, hydrate)
   letter-spacing: .06em;
   text-transform: uppercase;
   padding: 5px 10px;
-  border-radius: 3px;
+  border-radius: 18px;
 }
 .bespoke-home .rw-event-badge--joined {
   background: var(--primary, var(--burgundy, #9e053d));
@@ -259,6 +222,67 @@ watch(() => site.homeHtml, hydrate)
   background: rgba(0, 0, 0, 0.82);
   color: #fff;
 }
+
+.bespoke-home .rw-event-title {
+  position: absolute;
+  z-index: 2;
+  left: 18px;
+  right: 18px;
+  bottom: 50px;
+  margin: 0;
+  color: #fff;
+  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.bespoke-home .rw-event-meta {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  list-style: none;
+  padding: 12px 16px 14px;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: .78rem;
+  font-weight: 500;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+.bespoke-home .rw-event-meta li { white-space: nowrap; }
+
+.bespoke-home .rw-event-foot {
+  padding: 14px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bespoke-home .rw-event-desc {
+  font-size: .9rem;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.7);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bespoke-home .rw-event-rebate {
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--primary, var(--burgundy, #9e053d)) 8%, transparent);
+  color: var(--primary, var(--burgundy, #9e053d));
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
 .bespoke-home .rw-event.is-joined { border-color: var(--primary, var(--burgundy, #9e053d)); }
-.bespoke-home .rw-event.is-full .rw-event-img { filter: grayscale(0.4) brightness(0.95); }
+.bespoke-home .rw-event.is-full .rw-event-hero { filter: grayscale(0.4) brightness(0.95); }
 </style>
