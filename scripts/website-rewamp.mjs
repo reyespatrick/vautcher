@@ -45,7 +45,8 @@ const LINK_TEXT_MENU_RE = /^(menu|carte|la\s+carte|notre\s+carte|menus|nos\s+men
 // opaque URLs (/p_…, /pg/…) often still label the contact page
 // "Contact", "Nous contacter", "Coordonnées", "Réservation" etc.
 const LINK_TEXT_CONTACT_RE = /^(contact|nous\s+contacter|nos\s+coordonn[ée]es|coordonn[ée]es|informations?|infos?|horaires|adresse|trouve[rz]\s+nous|find\s+us|où\s+nous\s+trouver|reservation|réservation|reserver|réserver|booking)$/i
-const LINK_TEXT_OTHER_RE = /^(about|à\s+propos|notre\s+maison|histoire|gallery|galerie|photos)$/i
+const LINK_TEXT_GALLERY_RE = /^(gallery|galerie|galleries|photos|nos\s+photos|images?|album|portfolio|notre\s+galerie)$/i
+const LINK_TEXT_OTHER_RE = /^(about|à\s+propos|notre\s+maison|histoire)$/i
 
 // ---------- crawl ----------
 async function fetchHtml(url) {
@@ -175,7 +176,7 @@ function cleanImageUrl(url) {
 function isPlaceholderImage(url) {
   if (!url) return true
   if (/^data:/i.test(url)) return true
-  if (/(favicon|sprite|spacer|arrow_|placeholder|lqip)/i.test(url)) return true
+  if (/(favicon|sprite|spacer|arrow_|placeholder|lqip|svg-loaders|tail-spin|loader|spinner)/i.test(url)) return true
   if (/\.(svg|ico|webmanifest)(\?|$)/i.test(url)) return true
   // Wix dimension marker still small after cleanup → it was tiny in source
   const wix = url.match(/static\.wixstatic\.com[\s\S]*?w_(\d+),h_(\d+)/)
@@ -465,7 +466,7 @@ function discoverSubpages($, baseUrl) {
   //    sites whose URLs are opaque (e.g. /p_53d2, /pg/123).
   // The "menu"-shaped entry is hoisted to the front so it's crawled
   // (and headless-rendered if needed) first.
-  const found = new Map() // url → { isMenu, isContact, score }
+  const found = new Map() // url → { isMenu, isContact, isGallery, score }
   $('a[href]').each((_, el) => {
     const href = $(el).attr('href')
     if (!href || /^(#|javascript:|mailto:|tel:|data:)/i.test(href)) return
@@ -476,21 +477,24 @@ function discoverSubpages($, baseUrl) {
     const textMenu = LINK_TEXT_MENU_RE.test(linkText)
     const urlContact = /\/(contact|coordonn[ée]es|infos?|horaires|reservation|reservations)\b/i.test(abs)
     const textContact = LINK_TEXT_CONTACT_RE.test(linkText)
+    const urlGallery = /\/(gallery|galerie|galleries|photos|album|portfolio)\b/i.test(abs)
+    const textGallery = LINK_TEXT_GALLERY_RE.test(linkText)
     const urlOther = SUBPAGE_RE.test(abs)
     const textOther = LINK_TEXT_OTHER_RE.test(linkText)
-    if (!urlMenu && !textMenu && !urlContact && !textContact && !urlOther && !textOther) return
-    const cur = found.get(abs) || { isMenu: false, isContact: false, score: 0 }
+    if (!urlMenu && !textMenu && !urlContact && !textContact && !urlGallery && !textGallery && !urlOther && !textOther) return
+    const cur = found.get(abs) || { isMenu: false, isContact: false, isGallery: false, score: 0 }
     cur.isMenu = cur.isMenu || urlMenu || textMenu
     cur.isContact = cur.isContact || urlContact || textContact
-    // Score: menu page (3) > contact page (2) > other named page (1).
-    // Same page can be both (e.g. /contact-and-menu) and still pick the highest.
-    const s = (urlMenu || textMenu) ? 3 : (urlContact || textContact) ? 2 : 1
+    cur.isGallery = cur.isGallery || urlGallery || textGallery
+    // Score: menu (3) > contact (2) > gallery (2) > other (1). Higher
+    // score = crawled earlier (priority queue).
+    const s = (urlMenu || textMenu) ? 3 : (urlContact || textContact || urlGallery || textGallery) ? 2 : 1
     cur.score = Math.max(cur.score, s)
     found.set(abs, cur)
   })
   return [...found.entries()]
     .sort((a, b) => b[1].score - a[1].score)
-    .map(([url, info]) => ({ url, isMenu: info.isMenu, isContact: info.isContact }))
+    .map(([url, info]) => ({ url, isMenu: info.isMenu, isContact: info.isContact, isGallery: info.isGallery }))
     .slice(0, 6)
 }
 
@@ -882,10 +886,13 @@ async function main() {
   console.log(`  palette: ${palette.length ? palette.map((p) => `${p.hex}(${p.count})`).join(' ') : '(none)'}${themeColor ? `  theme: ${themeColor}` : ''}`)
 
   const subs = discoverSubpages($h, home.url)
-  console.log(`→ ${subs.length} sub-page(s)${subs.length ? ' (★=menu, ☎=contact)' : ''}`)
-  const pages = [{ url: home.url, $: $h, isMenu: false, isContact: false }]
+  console.log(`→ ${subs.length} sub-page(s)${subs.length ? ' (★=menu, ☎=contact, 📷=gallery)' : ''}`)
+  const pages = [{ url: home.url, $: $h, isMenu: false, isContact: false, isGallery: false }]
   const corpora = [`# ${home.url}\n${pageToText($h)}`]
   const images = collectImages($h, home.url, logo)
+  // Gallery-page images are tracked separately so we can prefer them
+  // for the picker even when they're discovered later in the crawl.
+  const galleryImages = []
   for (const sub of subs) {
     try {
       let p = await fetchHtml(sub.url)
@@ -895,7 +902,7 @@ async function main() {
       // the menu is the highest-value content for the redesign and
       // it's almost always JS-rendered on modern CMSes.
       const needHeadless = visible < 600 || (sub.isMenu && visible < 1500)
-      const marker = sub.isMenu ? '★' : sub.isContact ? '☎' : ' '
+      const marker = sub.isMenu ? '★' : sub.isContact ? '☎' : sub.isGallery ? '📷' : ' '
       if (needHeadless) {
         try {
           const rendered = await renderHtml(sub.url)
@@ -910,9 +917,13 @@ async function main() {
       } else {
         console.log(`  ${marker} ${sub.url}  static=${visible} chars`)
       }
-      pages.push({ url: p.url, $: $p, isMenu: !!sub.isMenu, isContact: !!sub.isContact })
+      pages.push({ url: p.url, $: $p, isMenu: !!sub.isMenu, isContact: !!sub.isContact, isGallery: !!sub.isGallery })
       corpora.push(`# ${p.url}\n${pageToText($p)}`)
-      collectImages($p, p.url, logo).forEach((i) => { if (!images.find((x) => x.src === i.src)) images.push(i) })
+      const pageImages = collectImages($p, p.url, logo)
+      if (sub.isGallery) {
+        for (const i of pageImages) if (!galleryImages.find((x) => x.src === i.src)) galleryImages.push(i)
+      }
+      for (const i of pageImages) if (!images.find((x) => x.src === i.src)) images.push(i)
     } catch (e) { console.warn(`  ! ${sub.url}: ${e.message}`) }
   }
 
@@ -1001,10 +1012,27 @@ async function main() {
   for (const h of structured.hours) console.log(`            • ${h.days}: ${h.time}`)
 
   // Write a small sidecar JSON with the report so the index can read it.
+  // Picker gallery: prefer images discovered on a flagged gallery page
+  // (sub.isGallery), then top up from generic images (home / about /
+  // contact) until we hit 10. Logo is excluded so it doesn't appear
+  // as a candidate event image.
+  const gallerySrcSeen = new Set()
+  const pickerGallery = []
+  const pushImage = (i) => {
+    if (!i.src || i.src === logo) return
+    if (gallerySrcSeen.has(i.src)) return
+    gallerySrcSeen.add(i.src)
+    pickerGallery.push({ src: i.src, caption: i.alt || '' })
+  }
+  for (const i of galleryImages) { if (pickerGallery.length >= 10) break; pushImage(i) }
+  for (const i of images)        { if (pickerGallery.length >= 10) break; pushImage(i) }
+  console.log(`  gallery picker: ${pickerGallery.length} image(s) (${galleryImages.length} from /gallery, rest from other pages)`)
+
   writeFileSync(outPath.replace(/\.html$/, '.report.json'), JSON.stringify({
     url: target, slug, logo, notes,
     palette, themeColor,
     structured,
+    gallery: pickerGallery,
     tokens: { input: usage.input_tokens || 0, output: usage.output_tokens || 0 },
     menu_kept: totalKept, menu_dropped: dropped,
     verify

@@ -4,6 +4,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
 import { useDialog } from '../composables/useDialog'
+import { supabase } from '../lib/supabase'
 import {
   getEvent, createEvent, updateEvent, cancelEvent, IMAGE_OPTIONS,
   uploadEventImage, listUploadedImages, deleteEventImage,
@@ -81,6 +82,27 @@ async function loadUploaded() {
   }
 }
 
+// Tenant-specific image presets — pulled from vautcher_restaurants.config.gallery
+// for whatever tenant is currently active. Falls back to the bundled
+// La-Gioconda presets when the tenant has no gallery yet (older rows
+// or scaffolds that ran before the gallery field was added).
+const tenantGallery = ref([])
+async function loadTenantGallery(id) {
+  if (!id) { tenantGallery.value = []; return }
+  const { data } = await supabase.from('vautcher_restaurants').select('config').eq('id', id).single()
+  const raw = Array.isArray(data?.config?.gallery) ? data.config.gallery : []
+  // Normalize both shapes the codebase already uses:
+  //   diner shape  { src, caption }
+  //   picker shape { url, label }
+  tenantGallery.value = raw
+    .map((g) => ({ url: g.url || g.src, label: g.label || g.caption || '' }))
+    .filter((g) => g.url)
+}
+const galleryOptions = computed(() =>
+  tenantGallery.value.length ? tenantGallery.value : IMAGE_OPTIONS
+)
+watch(activeRestaurantId, (id) => { loadTenantGallery(id) }, { immediate: true })
+
 async function onPickFile(e) {
   const file = e.target.files && e.target.files[0]
   e.target.value = ''
@@ -109,7 +131,7 @@ async function onDeleteImage(img) {
   if (!ok) return
   await deleteEventImage(img.path)
   uploadedImages.value = uploadedImages.value.filter((i) => i.path !== img.path)
-  if (form.value.image_url === img.url) form.value.image_url = IMAGE_OPTIONS[0].url
+  if (form.value.image_url === img.url) form.value.image_url = galleryOptions.value[0]?.url || IMAGE_OPTIONS[0].url
 }
 
 onMounted(async () => {
@@ -523,7 +545,7 @@ async function onCancelEvent() {
           </div>
 
           <button
-            v-for="img in IMAGE_OPTIONS"
+            v-for="img in galleryOptions"
             :key="img.url"
             type="button"
             class="img-opt"

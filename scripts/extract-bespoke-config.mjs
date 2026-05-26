@@ -134,6 +134,9 @@ const out = {
   google_fonts_url: googleFonts[0] || null,
   logo_url: report.logo || null,
   source_url: report.url || null,
+  // Tenant-specific image picker source (gallery page if found, else
+  // home/about images; logo excluded; capped at 10).
+  gallery: Array.isArray(report.gallery) ? report.gallery : [],
   // Flat structured fields used by the shared diner shell:
   address: s.address || null,
   phone: s.phone || null,

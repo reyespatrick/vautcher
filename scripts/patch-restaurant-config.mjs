@@ -69,6 +69,9 @@ const merged = {
   // bundled La Gioconda defaults.
   logo_url: bespoke.logo_url || currentConfig.logo_url || null,
   source_url: bespoke.source_url || currentConfig.source_url || null,
+  // Picker gallery — only overwrite when the new bespoke pass produced
+  // images, so a re-scaffold doesn't wipe a manually curated list.
+  gallery: (bespoke.gallery && bespoke.gallery.length) ? bespoke.gallery : (currentConfig.gallery || []),
   // Flat fields the diner shell uses on shared pages (Contact,
   // Reservation, AppHeader/Footer). null-coalesced so a re-scaffold
   // doesn't clobber a value the moderator may have edited by hand.
