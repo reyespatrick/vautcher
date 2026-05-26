@@ -110,3 +110,19 @@ $$;
 
 revoke all on function public.vautcher_upcoming_events(uuid) from public;
 grant execute on function public.vautcher_upcoming_events(uuid) to anon, authenticated;
+
+-- Moderators acting on behalf of any tenant (admin flow + demo
+-- tenants without a real owner yet) must also be able to INSERT and
+-- DELETE events. Owners already have full CRUD via the policy in
+-- schema.sql, so this is purely additive for the moderator role.
+drop policy if exists "vautcher: moderator inserts events" on public.vautcher_events;
+create policy "vautcher: moderator inserts events"
+  on public.vautcher_events for insert
+  to authenticated
+  with check (public.vautcher_is_moderator());
+
+drop policy if exists "vautcher: moderator deletes events" on public.vautcher_events;
+create policy "vautcher: moderator deletes events"
+  on public.vautcher_events for delete
+  to authenticated
+  using (public.vautcher_is_moderator());
