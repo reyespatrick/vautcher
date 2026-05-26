@@ -9,7 +9,7 @@ import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import {
   adminRestaurants, createRestaurant,
-  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, promoteTenant, setTemplate, deleteTenant
+  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, deleteTenant
 } from '../lib/admin'
 
 const { t } = useI18n()
@@ -88,72 +88,6 @@ async function submitScaffold() {
   } finally {
     stopScaffoldTicker()
     scaffoldBusy.value = false
-  }
-}
-
-// Per-tenant template switch. Updates config.template via the RPC,
-// then redeploys via the scaffold-tenant edge function (redeploy
-// mode — no re-extraction). Used for the commercial "modern preview"
-// flow: moderator can already preview via ?preview=modern without
-// calling this; templateSwitch is the commit step.
-const templateBusyId = ref(null)
-async function switchTemplate(r, template) {
-  if (templateBusyId.value || r.template === template) return
-  const ok = await confirm({
-    title: `Modèle « ${template} »`,
-    body: `Le site sera reconstruit avec le modèle « ${template} » et restera accessible à ${r.slug}.pages.dev. Continuer ?`,
-    confirmLabel: 'Appliquer',
-    cancelLabel: 'Annuler'
-  })
-  if (!ok) return
-  templateBusyId.value = r.id
-  try {
-    const { error } = await setTemplate(r.id, template)
-    if (error) {
-      await alert({ title: 'Échec', body: error.message || '' })
-      return
-    }
-    await alert({
-      title: `Modèle appliqué`,
-      body: `${r.slug}.pages.dev est en cours de redéploiement avec « ${template} ». Le résultat apparaît dans 1-2 minutes.`
-    })
-    await load()
-  } finally {
-    templateBusyId.value = null
-  }
-}
-
-// Per-tenant scaffold tier promotion. T1 (structured) → T2 (AI text).
-// T3 (vision) not built yet. Confirms before spending AI tokens.
-const promoteBusyId = ref(null)
-async function promote(r, toTier) {
-  if (promoteBusyId.value) return
-  const ok = await confirm({
-    title: `Passer à T${toTier}`,
-    body: toTier === 2
-      ? `Une seule extraction IA (Claude) sera lancée contre la source ${r.source_url || '???'} pour compléter le menu et les champs manquants. Continuer ?`
-      : `Continuer ?`,
-    confirmLabel: 'Promouvoir',
-    cancelLabel: 'Annuler'
-  })
-  if (!ok) return
-  promoteBusyId.value = r.id
-  try {
-    const { data, error } = await promoteTenant(r.id, toTier)
-    if (error) {
-      await alert({ title: 'Échec de la promotion', body: error.message || '' })
-      return
-    }
-    const parts = [
-      `Tier passé à T${data.scaffold_tier}.`,
-      `${data.menu_categories} catégorie(s), ${data.menu_items} plat(s).`,
-      `Tokens utilisés : ${data.scaffold_tokens_used}.`,
-      data.ai_rejected?.length ? `Rejets IA : ${data.ai_rejected.length}` : null
-    ].filter(Boolean).join(' ')
-    await alert({ title: `T${data.scaffold_tier} OK`, body: parts })
-    await load()
-  } finally {
-    promoteBusyId.value = null
   }
 }
 
@@ -516,19 +450,10 @@ async function copyLink() {
           <div class="resto-ident">
             <strong>{{ r.name }}</strong>
             <span class="resto-slug">{{ r.slug }}</span>
-            <span
-              v-if="r.scaffold_tier"
-              :class="['tier-badge', `tier-badge--t${r.scaffold_tier}`]"
-              :title="r.scaffold_tokens_used
-                ? `${r.scaffold_tokens_used} tokens IA`
-                : 'Extraction structurée seulement'"
-            >T{{ r.scaffold_tier }}</span>
           </div>
 
           <!-- Tenant URLs: where it lives (pages.dev) + where it came
-               from (the scaffolded source website). Sits above the
-               action buttons so it reads "this is the site → here's
-               what you can do to it". -->
+               from (the scaffolded source website). -->
           <div class="resto-urls">
             <a
               :href="`https://${r.slug}.pages.dev`"
@@ -545,49 +470,15 @@ async function copyLink() {
             >
               <span class="ic">🔗</span>{{ t('admin.sourceUrl') }}
             </a>
-            <!-- Preview the OPPOSITE template at runtime without
-                 committing. Powered by HomeView's ?preview= dispatcher. -->
-            <a
-              :href="`https://${r.slug}.pages.dev/?preview=${(r.template || 'classic') === 'modern' ? 'classic' : 'modern'}`"
-              target="_blank" rel="noopener"
-              class="resto-url resto-url--preview"
-            >
-              <span class="ic">✨</span>
-              Aperçu « {{ (r.template || 'classic') === 'modern' ? 'classic' : 'modern' }} »
-            </a>
           </div>
 
-          <!-- Template selector — Classic / Modern. Committing requires
-               a redeploy; preview link above is non-destructive. -->
-          <div class="resto-templates">
-            <span class="resto-tpl-label">Modèle</span>
-            <button
-              v-for="tpl in ['classic', 'modern']" :key="tpl"
-              type="button"
-              :class="['tpl-chip', { 'tpl-chip--active': (r.template || 'classic') === tpl }]"
-              :disabled="templateBusyId === r.id || (r.template || 'classic') === tpl"
-              @click="switchTemplate(r, tpl)"
-              :title="`Appliquer le modèle ${tpl} (redéploiement)`"
-            >{{ tpl }}</button>
-          </div>
-
-          <!-- Action row: full-width strip, Configurer left, optional
-               Promote-to-Tier-N in the middle, Supprimer pinned right. -->
+          <!-- Action row: full-width strip, Configurer left,
+               Supprimer pinned right. -->
           <div class="resto-actions">
             <RouterLink :to="{ name: 'restaurant-config', params: { id: r.id } }"
                         class="btn btn--ghost btn--sm">
               {{ t('config.edit') }}
             </RouterLink>
-            <button
-              v-if="(r.scaffold_tier || 1) < 2 && r.source_url"
-              type="button"
-              class="btn btn--ghost btn--sm tier-promote"
-              :disabled="promoteBusyId === r.id"
-              @click="promote(r, 2)"
-              title="Lancer une extraction IA pour le menu et les champs manquants"
-            >
-              {{ promoteBusyId === r.id ? '…' : 'Promouvoir ➜ T2' }}
-            </button>
             <button
               type="button"
               class="btn btn--danger btn--sm"
@@ -959,24 +850,6 @@ async function copyLink() {
 .resto-ident strong { font-family: 'Rufina', serif; font-size: 1.1rem; }
 .resto-slug { font-size: 0.74rem; color: var(--mut); }
 
-/* Scaffold-tier badge. T1 = grey (structured only); T2 = burgundy
-   (AI text extraction); T3 reserved for future vision tier. */
-.tier-badge {
-  display: inline-flex;
-  align-items: center;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 2px 7px;
-  border-radius: 10px;
-  text-transform: uppercase;
-  border: 1px solid currentColor;
-}
-.tier-badge--t1 { color: var(--mut); }
-.tier-badge--t2 { color: var(--burgundy); background: color-mix(in srgb, var(--burgundy) 7%, transparent); }
-.tier-badge--t3 { color: #b8860b; background: color-mix(in srgb, #b8860b 7%, transparent); }
-
 .resto-actions {
   display: flex;
   align-items: center;
@@ -987,51 +860,6 @@ async function copyLink() {
   border-top: 1px solid var(--line);
 }
 .resto-actions .btn { flex: 0 0 auto; }
-.tier-promote { margin-left: auto; margin-right: 8px; }
-
-/* Template selector chips — Classic / Modern. Active chip is filled;
-   inactive is a ghost. Click triggers a redeploy with confirm. */
-.resto-templates {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0 4px;
-}
-.resto-tpl-label {
-  font-size: 0.74rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--mut);
-}
-.tpl-chip {
-  font-size: 0.74rem;
-  letter-spacing: 0.04em;
-  text-transform: capitalize;
-  padding: 4px 12px;
-  border: 1px solid var(--line);
-  background: #fff;
-  color: var(--ink);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.tpl-chip:hover:not(:disabled) { border-color: var(--burgundy); color: var(--burgundy); }
-.tpl-chip--active {
-  background: var(--burgundy);
-  color: #fff;
-  border-color: var(--burgundy);
-  cursor: default;
-}
-.tpl-chip:disabled:not(.tpl-chip--active) { opacity: 0.5; cursor: not-allowed; }
-
-/* Preview-other-template link in the URL row. Visual cue that it's
-   non-destructive (different colour + sparkle icon). */
-.resto-url--preview {
-  color: #b8860b;
-}
-.resto-url--preview:hover {
-  background: rgba(184, 134, 11, 0.08);
-}
 
 /* URL chips under the restaurant title — pages.dev (always) +
    scaffolded source URL (only when present). */
