@@ -35,10 +35,19 @@ $$;
 grant execute on function public.vautcher_profile_locked(uuid) to anon, authenticated;
 
 -- ---------- EVENT MODERATION: trust trigger ----------
--- Forces moderation_status on every owner insert/edit so it can't be
--- set client-side: a trusted owner's events auto-approve, everyone
--- else's go to 'pending'. A moderator's own approve/refuse is left
--- untouched.
+-- Forces moderation_status on every event insert/edit so it can't be
+-- bypassed client-side. Rules:
+--
+--  1. A moderator's explicit approve/refuse from the moderation queue
+--     (UPDATE that flips status to 'approved' or 'refused') is kept as-is.
+--  2. Otherwise (INSERT or any other UPDATE) auto-approve when the
+--     tenant has at least one trusted, unlocked owner; pending otherwise.
+--
+-- The previous version only checked the *caller's* trust flag. That
+-- broke the common moderator-as-admin path: a moderator creating an
+-- event on behalf of a trusted tenant left the event 'pending'
+-- because the moderator's own email isn't in vautcher_owners with
+-- trusted=true. Now the check is per-tenant, not per-caller.
 create or replace function public.vautcher_events_set_moderation()
 returns trigger
 language plpgsql
@@ -46,14 +55,24 @@ security definer
 set search_path = public
 as $$
 declare
-  v_trusted boolean;
+  v_any_trusted boolean;
+  v_is_mod boolean := public.vautcher_is_moderator();
 begin
-  if public.vautcher_is_moderator() then
-    return new; -- moderator approve / refuse — keep as set
+  -- Moderator setting an explicit verdict via the approval queue.
+  if v_is_mod and tg_op = 'UPDATE'
+     and new.moderation_status in ('approved', 'refused')
+     and old.moderation_status is distinct from new.moderation_status
+  then
+    return new;
   end if;
-  select trusted into v_trusted from public.vautcher_owners
-   where lower(email) = lower(auth.jwt() ->> 'email');
-  new.moderation_status := case when coalesce(v_trusted, false)
+
+  -- Auto-approve when the tenant has any trusted unlocked owner.
+  select exists(
+    select 1 from public.vautcher_owners
+     where restaurant_id = new.restaurant_id
+       and trusted and not locked
+  ) into v_any_trusted;
+  new.moderation_status := case when v_any_trusted
                                 then 'approved' else 'pending' end;
   if new.moderation_status <> 'refused' then
     new.refusal_reason := null;
