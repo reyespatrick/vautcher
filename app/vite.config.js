@@ -23,7 +23,17 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['assets/logo.jpg'],
-      workbox: { importScripts: ['notif-sw.js'] },
+      // skipWaiting + clientsClaim — the new service worker takes
+      // control of open tabs as soon as it's downloaded, rather than
+      // queuing behind the old SW until every tab of the site is
+      // fully closed. Without these, template / design changes
+      // shipped via a deploy stayed invisible to anyone who'd loaded
+      // the site before (this hid the Modern template entirely).
+      workbox: {
+        importScripts: ['notif-sw.js'],
+        skipWaiting: true,
+        clientsClaim: true
+      },
       manifest: {
         name: PWA_NAME,
         short_name: PWA_SHORT_NAME,
