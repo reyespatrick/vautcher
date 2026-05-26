@@ -460,3 +460,13 @@ begin
    and cd.restaurant_id = v_rest
   where st.id = r.id;
 end $$;
+
+-- Moderators acting on behalf of any tenant (admin / demo flows
+-- where the row exists but no real owner has claimed it yet) get the
+-- same CRUD as an owner. The owner policy above stays unchanged.
+drop policy if exists "vautcher: moderator writes vouchers" on public.vautcher_vouchers;
+create policy "vautcher: moderator writes vouchers"
+  on public.vautcher_vouchers for all
+  to authenticated
+  using (public.vautcher_is_moderator())
+  with check (public.vautcher_is_moderator());
