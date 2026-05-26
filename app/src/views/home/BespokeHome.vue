@@ -29,15 +29,35 @@ function esc(s) {
 
 function renderEventsHtml(list) {
   if (!list.length) return ''
-  const cards = list.slice(0, 2).map((ev) => `
-    <a class="rw-event" href="/evenements/${esc(ev.id)}">
-      ${ev.image_url ? `<div class="rw-event-img" style="background-image:url('${esc(ev.image_url)}')"></div>` : ''}
-      <div class="rw-event-body">
+  const cards = list.slice(0, 2).map((ev) => {
+    const attendees = ev.attendees || 0
+    const max = ev.max_participants ?? null
+    const full = max != null && attendees >= max && !ev.joined
+    const timeStr = [ev.event_time, ev.event_end_time].filter(Boolean).join(' – ')
+    const meta = [timeStr, ev.location, ev.price].filter(Boolean).map((s) => `<li>${esc(s)}</li>`).join('')
+    const rebate = (() => {
+      const v = ev.rebate_value
+      if (!v) return ''
+      const amount = ev.rebate_unit === 'chf' ? `${v} CHF` : `${v} %`
+      const n = ev.rebate_first_n
+      const label = n ? `${amount} pour les ${n} premiers` : `Offre ${amount}`
+      return `<span class="rw-event-rebate">🎟 ${esc(label)}</span>`
+    })()
+    return `
+    <a class="rw-event${ev.joined ? ' is-joined' : ''}${full ? ' is-full' : ''}" href="/evenements/${esc(ev.id)}">
+      <div class="rw-event-img"${ev.image_url ? ` style="background-image:url('${esc(ev.image_url)}')"` : ''}>
         <div class="rw-event-date">${esc(fmtDate(ev.event_date))}</div>
-        <h3 class="rw-event-title">${esc(ev.title || '')}</h3>
-        <p class="rw-event-meta">${esc(ev.event_time || '')}${ev.location ? ' · ' + esc(ev.location) : ''}</p>
+        ${ev.joined ? '<div class="rw-event-badge rw-event-badge--joined">Inscrit</div>' : ''}
+        ${full ? '<div class="rw-event-badge rw-event-badge--full">Complet</div>' : ''}
       </div>
-    </a>`).join('')
+      <div class="rw-event-body">
+        <h3 class="rw-event-title">${esc(ev.title || '')}</h3>
+        ${meta ? `<ul class="rw-event-meta">${meta}</ul>` : ''}
+        ${ev.description ? `<p class="rw-event-desc">${esc(ev.description)}</p>` : ''}
+        ${rebate}
+      </div>
+    </a>`
+  }).join('')
   return `<div class="rw-events">${cards}</div>`
 }
 
@@ -181,8 +201,64 @@ watch(() => site.homeHtml, hydrate)
   color: var(--ink, #1b1b1b);
 }
 .bespoke-home .rw-event-meta {
-  color: rgba(0, 0, 0, 0.55);
-  font-size: .9rem;
+  list-style: none;
+  padding: 0;
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: .88rem;
 }
+.bespoke-home .rw-event-meta li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.bespoke-home .rw-event-meta li + li::before {
+  content: '·';
+  margin-right: 8px;
+  color: rgba(0, 0, 0, 0.3);
+}
+.bespoke-home .rw-event-desc {
+  font-size: .9rem;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.7);
+  margin: 4px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bespoke-home .rw-event-rebate {
+  align-self: flex-start;
+  margin-top: 8px;
+  background: color-mix(in srgb, var(--primary, var(--burgundy, #9e053d)) 8%, transparent);
+  color: var(--primary, var(--burgundy, #9e053d));
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.bespoke-home .rw-event-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 3px;
+}
+.bespoke-home .rw-event-badge--joined {
+  background: var(--primary, var(--burgundy, #9e053d));
+  color: #fff;
+}
+.bespoke-home .rw-event-badge--full {
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+}
+.bespoke-home .rw-event.is-joined { border-color: var(--primary, var(--burgundy, #9e053d)); }
+.bespoke-home .rw-event.is-full .rw-event-img { filter: grayscale(0.4) brightness(0.95); }
 </style>
