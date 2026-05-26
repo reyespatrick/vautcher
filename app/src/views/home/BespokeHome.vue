@@ -110,21 +110,66 @@ async function hydrate() {
     }
   }
 
-  // 2. Rewrite owner-site hrefs (e.g. pointing at pavillonversoix.ch/reservation)
-  //    to the diner's own routes so navigation stays in-app.
+  // 2. Tag the menu section with id="menu" so links like
+  //    "Découvrir le menu" can scroll to it. Try in order:
+  //    a. <!-- @MENU --> comment marker (the scaffold's contract)
+  //    b. an element that already has id="menu"
+  //    c. a section/div whose first heading is /menu|carte|plats/i
+  if (!rootRef.value.querySelector('#menu')) {
+    const cw = document.createTreeWalker(rootRef.value, NodeFilter.SHOW_COMMENT, null)
+    let c, menuTarget = null
+    while ((c = cw.nextNode())) {
+      if (/@MENU/i.test(c.textContent || '')) {
+        menuTarget = c.parentElement
+        // Prefer the section/article around the comment over a deep inline wrap.
+        let up = menuTarget
+        while (up && up !== rootRef.value && !/^(section|article|main|div)$/i.test(up.tagName)) up = up.parentElement
+        if (up) menuTarget = up
+        break
+      }
+    }
+    if (!menuTarget) {
+      for (const el of rootRef.value.querySelectorAll('section, article, div, main')) {
+        const h = el.querySelector('h1, h2, h3')
+        if (h && /menu|carte|plats?\b/i.test(h.textContent || '')) { menuTarget = el; break }
+      }
+    }
+    if (menuTarget) menuTarget.setAttribute('id', 'menu')
+  }
+
+  // 3. Rewrite hrefs that point at the owner's own site (or relative
+  //    paths Claude lifted) into in-app routes / fragments. The menu
+  //    entry is a same-page fragment so it scrolls instead of routing.
   const ROUTE_MAP = [
     { pat: /\/(reservation|reservations|book)\b/i, route: '/reservation' },
-    { pat: /\/(carte|menu|dishes|plats)\b/i, route: '/' },
+    { pat: /\/(carte|menu|dishes|plats)\b/i, route: '#menu' },
     { pat: /\/(contact|infos?|horaires)\b/i, route: '/contact' },
     { pat: /\/(gallery|galerie|photos)\b/i, route: '/galerie' },
     { pat: /\/(evenement|agenda|events?)\b/i, route: '/evenements' }
   ]
   rootRef.value.querySelectorAll('a[href]').forEach((a) => {
     const href = a.getAttribute('href') || ''
-    // External http(s) links → check if they're the owner's own domain.
-    if (/^https?:\/\//i.test(href)) {
-      for (const r of ROUTE_MAP) if (r.pat.test(href)) { a.setAttribute('href', r.route); return }
-    }
+    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return
+    // Match http(s)://...path AND bare /path AND path/ — Claude's
+    // markup sometimes drops the domain when copying from source.
+    const isAbsolute = /^https?:\/\//i.test(href)
+    const isPath = href.startsWith('/') || /^[a-z-]+\/?$/i.test(href)
+    if (!isAbsolute && !isPath) return
+    for (const r of ROUTE_MAP) if (r.pat.test(href)) { a.setAttribute('href', r.route); return }
+  })
+
+  // 4. Smooth-scroll for in-page fragment links (so "Découvrir le menu"
+  //    doesn't snap-jump under the sticky header). The target's CSS
+  //    scroll-margin-top handles the offset.
+  rootRef.value.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (ev) => {
+      const id = (a.getAttribute('href') || '').slice(1)
+      if (!id) return
+      const target = rootRef.value.querySelector('#' + CSS.escape(id))
+      if (!target) return
+      ev.preventDefault()
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   })
 }
 
@@ -285,4 +330,9 @@ watch(() => site.homeHtml, hydrate)
 
 .bespoke-home .rw-event.is-joined { border-color: var(--primary, var(--burgundy, #9e053d)); }
 .bespoke-home .rw-event.is-full .rw-event-hero { filter: grayscale(0.4) brightness(0.95); }
+
+/* In-page anchors (e.g. #menu from "Découvrir le menu") need to clear
+   the sticky header — add a generous offset so the section title is
+   visible after the smooth scroll. */
+.bespoke-home [id] { scroll-margin-top: 92px; }
 </style>
