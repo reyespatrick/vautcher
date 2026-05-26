@@ -41,7 +41,11 @@ const SUBPAGE_RE = /\/(menu|carte|dishes|plats|specialites|sp[ée]cialit[ée]s|a
 // "Carte", "La carte" etc. is the strongest signal that the linked page
 // IS the menu — even if its URL is something opaque like /p_53d2.
 const LINK_TEXT_MENU_RE = /^(menu|carte|la\s+carte|notre\s+carte|menus|nos\s+menus|dishes|plats|sp[ée]cialit[ée]s|food|table|our\s+menu)$/i
-const LINK_TEXT_OTHER_RE = /^(about|à\s+propos|notre\s+maison|histoire|contact|infos?|horaires|reservation|réservation|gallery|galerie|photos)$/i
+// Contact-shaped link text — same idea as menu detection. Sites with
+// opaque URLs (/p_…, /pg/…) often still label the contact page
+// "Contact", "Nous contacter", "Coordonnées", "Réservation" etc.
+const LINK_TEXT_CONTACT_RE = /^(contact|nous\s+contacter|nos\s+coordonn[ée]es|coordonn[ée]es|informations?|infos?|horaires|adresse|trouve[rz]\s+nous|find\s+us|où\s+nous\s+trouver|reservation|réservation|reserver|réserver|booking)$/i
+const LINK_TEXT_OTHER_RE = /^(about|à\s+propos|notre\s+maison|histoire|gallery|galerie|photos)$/i
 
 // ---------- crawl ----------
 async function fetchHtml(url) {
@@ -241,6 +245,53 @@ function parseSchemaHours(spec) {
   }
   return out
 }
+// Hours from visible text — for the many restaurant sites that don't
+// ship schema.org opening hours. Looks for a day-name (or day-range
+// like "Mardi au samedi") followed within ~80 chars by either a
+// time-range ("09:00 – 14:00", "11h30-14h00", "9.00 14.00") or
+// "fermé"/"closed". Returns [{days, time}] in source order.
+const DAY_FR = '(?:lun(?:di)?|mar(?:di)?|mer(?:credi)?|jeu(?:di)?|ven(?:dredi)?|sam(?:edi)?|dim(?:anche)?)'
+const DAY_RANGE = new RegExp(`\\b${DAY_FR}\\b(?:\\s*(?:au|à|jusqu['’]au|-|–|—|et|,|/)\\s*\\b${DAY_FR}\\b)?`, 'gi')
+const TIME_PAIR = /(\d{1,2}[h:.]\d{0,2})\s*(?:[-–—à]|\s+à\s+|\s+au\s+|\s+)\s*(\d{1,2}[h:.]\d{0,2})/i
+// Trailing \b doesn't fire after accented letters in JS regex (the
+// word-boundary spec treats é/è as non-word), so we use a negative
+// lookahead for letter-like chars instead.
+const CLOSED_RE = /\b(ferm[ée]s?|closed)(?![a-zéèêà-ÿ])/i
+function normTime(s) {
+  // "9", "9.00", "09:00", "9h", "9h30" → "09h00" / "09h30"
+  const m = s.match(/(\d{1,2})[h:.]?(\d{0,2})/)
+  if (!m) return s
+  const h = m[1].padStart(2, '0'); const min = (m[2] || '00').padEnd(2, '0').slice(0, 2)
+  return `${h}h${min}`
+}
+function cap(s) {
+  return s.toLowerCase().replace(/\b([a-zà-ÿ])([a-zà-ÿ-]*)\b/g, (_, a, b) => a.toUpperCase() + b)
+}
+function hoursFromText(text) {
+  const t = (text || '').replace(/\s+/g, ' ')
+  const out = []
+  let m
+  while ((m = DAY_RANGE.exec(t)) !== null) {
+    const daysLabel = cap(m[0].replace(/\s+/g, ' ').trim())
+    const tail = t.slice(m.index + m[0].length, m.index + m[0].length + 90)
+    const tm = tail.match(TIME_PAIR)
+    const fm = tail.match(CLOSED_RE)
+    // Time match has to start within 40 chars to be "near" the day-range.
+    if (tm && tail.indexOf(tm[0]) < 40) {
+      out.push({ days: daysLabel, time: `${normTime(tm[1])} – ${normTime(tm[2])}` })
+    } else if (fm && tail.indexOf(fm[0]) < 30) {
+      out.push({ days: daysLabel, time: 'Fermé' })
+    }
+  }
+  // Dedupe — same range can appear multiple times on a page.
+  const seen = new Set(), uniq = []
+  for (const h of out) {
+    const k = h.days + '|' + h.time
+    if (!seen.has(k)) { seen.add(k); uniq.push(h) }
+  }
+  return uniq
+}
+
 function ldAddressToString(a) {
   if (!a) return null
   if (typeof a === 'string') return a
@@ -295,29 +346,34 @@ function extractStructuredFromPage($, baseUrl) {
     const mail = $('a[href^="mailto:"]').first().attr('href')
     if (mail) out.email = mail.replace(/^mailto:/i, '').split('?')[0].trim()
   }
-  // 3) Address from visible body text — used when no JSON-LD ships an
-  //    address (e.g. handcrafted sites that only put it in a footer or
-  //    on the /contact page).
-  if (!out.address) {
-    const bodyText = $('body').text().replace(/\s+/g, ' ')
-    out.address = addressFromText(bodyText)
-  }
+  // 3) Address + hours from visible body text — used when no JSON-LD
+  //    ships them (most hand-built sites). The /contact page typically
+  //    has both; the merge in extractStructured prefers earlier pages
+  //    via ||= so contact-flagged pages can be hoisted by the caller.
+  const bodyText = $('body').text().replace(/\s+/g, ' ')
+  if (!out.address) out.address = addressFromText(bodyText)
+  if (!out.hours.length) out.hours = hoursFromText(bodyText)
   return out
 }
 
-// Merge structured info across all crawled pages. First non-empty
-// value wins per field. The /contact page is typically where address +
-// hours live on hand-built sites, so a multi-page sweep matters.
+// Merge structured info across all crawled pages, EXPLICITLY favouring
+// contact-flagged pages for address / phone / email / hours. The /contact
+// page is the canonical source on hand-built sites; checking it first
+// avoids picking up a partial mention from the home page (e.g. only a
+// phone number in the footer, no address or hours).
 function extractStructured(pages, _baseUrl) {
-  const merged = { name: null, description: null, address: null, phone: null, email: null, hours: [], maps_href: null }
-  for (const p of pages) {
+  const merged = { name: null, description: null, address: null, phone: null, email: null, hours: [], maps_href: null, source: {} }
+  const ordered = [...pages].sort((a, b) => (b.isContact - a.isContact))
+  for (const p of ordered) {
     const got = extractStructuredFromPage(p.$, p.url)
-    merged.name ||= got.name
-    merged.description ||= got.description
-    merged.address ||= got.address
-    merged.phone ||= got.phone
-    merged.email ||= got.email
-    if (!merged.hours.length && got.hours.length) merged.hours = got.hours
+    const tag = p.isContact ? '☎' : p === pages[0] ? '⌂' : ' '
+    for (const k of ['name', 'description', 'address', 'phone', 'email']) {
+      if (!merged[k] && got[k]) { merged[k] = got[k]; merged.source[k] = `${tag} ${p.url}` }
+    }
+    if (!merged.hours.length && got.hours.length) {
+      merged.hours = got.hours
+      merged.source.hours = `${tag} ${p.url}`
+    }
   }
   if (merged.address) merged.maps_href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(merged.address)}`
   return merged
@@ -409,7 +465,7 @@ function discoverSubpages($, baseUrl) {
   //    sites whose URLs are opaque (e.g. /p_53d2, /pg/123).
   // The "menu"-shaped entry is hoisted to the front so it's crawled
   // (and headless-rendered if needed) first.
-  const found = new Map() // url → { isMenu, score }
+  const found = new Map() // url → { isMenu, isContact, score }
   $('a[href]').each((_, el) => {
     const href = $(el).attr('href')
     if (!href || /^(#|javascript:|mailto:|tel:|data:)/i.test(href)) return
@@ -418,17 +474,23 @@ function discoverSubpages($, baseUrl) {
     const linkText = ($(el).text() || '').replace(/\s+/g, ' ').trim()
     const urlMenu = /\/(menu|carte|dishes|plats|specialites|sp[ée]cialit[ée]s)\b/i.test(abs)
     const textMenu = LINK_TEXT_MENU_RE.test(linkText)
+    const urlContact = /\/(contact|coordonn[ée]es|infos?|horaires|reservation|reservations)\b/i.test(abs)
+    const textContact = LINK_TEXT_CONTACT_RE.test(linkText)
     const urlOther = SUBPAGE_RE.test(abs)
     const textOther = LINK_TEXT_OTHER_RE.test(linkText)
-    if (!urlMenu && !textMenu && !urlOther && !textOther) return
-    const cur = found.get(abs) || { isMenu: false, score: 0 }
+    if (!urlMenu && !textMenu && !urlContact && !textContact && !urlOther && !textOther) return
+    const cur = found.get(abs) || { isMenu: false, isContact: false, score: 0 }
     cur.isMenu = cur.isMenu || urlMenu || textMenu
-    cur.score = Math.max(cur.score, (urlMenu || textMenu) ? 3 : (urlOther || textOther) ? 1 : 0)
+    cur.isContact = cur.isContact || urlContact || textContact
+    // Score: menu page (3) > contact page (2) > other named page (1).
+    // Same page can be both (e.g. /contact-and-menu) and still pick the highest.
+    const s = (urlMenu || textMenu) ? 3 : (urlContact || textContact) ? 2 : 1
+    cur.score = Math.max(cur.score, s)
     found.set(abs, cur)
   })
   return [...found.entries()]
     .sort((a, b) => b[1].score - a[1].score)
-    .map(([url, info]) => ({ url, isMenu: info.isMenu }))
+    .map(([url, info]) => ({ url, isMenu: info.isMenu, isContact: info.isContact }))
     .slice(0, 6)
 }
 
@@ -820,8 +882,8 @@ async function main() {
   console.log(`  palette: ${palette.length ? palette.map((p) => `${p.hex}(${p.count})`).join(' ') : '(none)'}${themeColor ? `  theme: ${themeColor}` : ''}`)
 
   const subs = discoverSubpages($h, home.url)
-  console.log(`→ ${subs.length} sub-page(s)${subs.length ? ' (★=menu)' : ''}`)
-  const pages = [{ url: home.url, $: $h }]
+  console.log(`→ ${subs.length} sub-page(s)${subs.length ? ' (★=menu, ☎=contact)' : ''}`)
+  const pages = [{ url: home.url, $: $h, isMenu: false, isContact: false }]
   const corpora = [`# ${home.url}\n${pageToText($h)}`]
   const images = collectImages($h, home.url, logo)
   for (const sub of subs) {
@@ -833,6 +895,7 @@ async function main() {
       // the menu is the highest-value content for the redesign and
       // it's almost always JS-rendered on modern CMSes.
       const needHeadless = visible < 600 || (sub.isMenu && visible < 1500)
+      const marker = sub.isMenu ? '★' : sub.isContact ? '☎' : ' '
       if (needHeadless) {
         try {
           const rendered = await renderHtml(sub.url)
@@ -840,14 +903,14 @@ async function main() {
           $p = load(p.html)
           visible = visibleBodyTextLength($p)
           ;(rendered.pdfs || []).forEach((u) => networkPdfs.add(u))
-          console.log(`  ${sub.isMenu ? '★' : ' '} ${sub.url}  rendered=${visible} chars${rendered.pdfs?.length ? `, ${rendered.pdfs.length} PDF(s)` : ''}`)
+          console.log(`  ${marker} ${sub.url}  rendered=${visible} chars${rendered.pdfs?.length ? `, ${rendered.pdfs.length} PDF(s)` : ''}`)
         } catch (e) {
-          console.warn(`  ${sub.isMenu ? '★' : ' '} ${sub.url}  headless failed: ${e.message}`)
+          console.warn(`  ${marker} ${sub.url}  headless failed: ${e.message}`)
         }
       } else {
-        console.log(`  ${sub.isMenu ? '★' : ' '} ${sub.url}  static=${visible} chars`)
+        console.log(`  ${marker} ${sub.url}  static=${visible} chars`)
       }
-      pages.push({ url: p.url, $: $p })
+      pages.push({ url: p.url, $: $p, isMenu: !!sub.isMenu, isContact: !!sub.isContact })
       corpora.push(`# ${p.url}\n${pageToText($p)}`)
       collectImages($p, p.url, logo).forEach((i) => { if (!images.find((x) => x.src === i.src)) images.push(i) })
     } catch (e) { console.warn(`  ! ${sub.url}: ${e.message}`) }
@@ -929,7 +992,13 @@ async function main() {
   // fields, not from home_html. Extract from JSON-LD + meta + visible
   // tel:/mailto: links.
   const structured = extractStructured(pages, home.url)
-  console.log(`  structured: name=${structured.name ? '✓' : '✗'} addr=${structured.address ? '✓' : '✗'} phone=${structured.phone ? '✓' : '✗'} email=${structured.email ? '✓' : '✗'} hours=${structured.hours.length}`)
+  console.log(`→ structured contact:`)
+  console.log(`  name    ${structured.name ? '✓ ' + structured.name : '✗'}${structured.source.name ? `   ← ${structured.source.name}` : ''}`)
+  console.log(`  address ${structured.address ? '✓ ' + structured.address : '✗'}${structured.source.address ? `   ← ${structured.source.address}` : ''}`)
+  console.log(`  phone   ${structured.phone ? '✓ ' + structured.phone : '✗'}${structured.source.phone ? `   ← ${structured.source.phone}` : ''}`)
+  console.log(`  email   ${structured.email ? '✓ ' + structured.email : '✗'}${structured.source.email ? `   ← ${structured.source.email}` : ''}`)
+  console.log(`  hours   ${structured.hours.length ? '✓ ' + structured.hours.length + ' row(s)' : '✗'}${structured.source.hours ? `   ← ${structured.source.hours}` : ''}`)
+  for (const h of structured.hours) console.log(`            • ${h.days}: ${h.time}`)
 
   // Write a small sidecar JSON with the report so the index can read it.
   writeFileSync(outPath.replace(/\.html$/, '.report.json'), JSON.stringify({
