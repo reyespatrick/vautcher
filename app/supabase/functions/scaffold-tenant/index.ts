@@ -802,7 +802,9 @@ Rules:
    IMPORTANT — list EVERY distinct schedule line you find in the source. If the source has
    separate lines for weekdays vs weekend (or weekend vs holidays), emit BOTH entries even
    when the time digits are identical. Do not collapse duplicates: each labelled line in
-   source becomes one row in your output.
+   source becomes one row in your output. Every entry MUST include the full normalised
+   "time" field (e.g. "11h30 – 23h00") — never leave time empty or blank just because
+   another entry has the same value. Repeat the time on every row.
 3. For menu: every dish needs a real name (e.g. "Tagliatelle aux épinards").
    A bare price ("16.-"), a portion chip ("en entrée"), or a form-field label
    ("Variantes / commentaires:") is NOT a dish name — drop the row.
@@ -972,11 +974,29 @@ ${outlines.join('\n\n---\n\n').slice(0, 80000)}`
     else rejected.push(`description: ${String(ai.description).slice(0, 60)}…`)
   }
   if (Array.isArray(ai.opening_hours)) {
-    const valid = ai.opening_hours.filter((h: any) =>
+    // Models often emit a second entry (e.g. weekend) and omit the
+    // time field because "it's the same as the previous row". Fall
+    // back to the most common time from sibling entries so we don't
+    // lose that row when it really did exist in source.
+    const timesSeen: Record<string, number> = {}
+    for (const h of ai.opening_hours) {
+      const t = (h?.time || '').trim()
+      if (t) timesSeen[t] = (timesSeen[t] || 0) + 1
+    }
+    const fallbackTime = Object.entries(timesSeen).sort((a, b) => b[1] - a[1])[0]?.[0] || ''
+    const hydrated = ai.opening_hours.map((h: any) => {
+      if (!h || !h.days) return h
+      const t = (h.time || '').trim()
+      return t ? h : { ...h, time: fallbackTime }
+    })
+    const valid = hydrated.filter((h: any) =>
       h && h.days && h.time && inSourceLoose(h.days + ' ' + h.time))
     if (valid.length) filled.hours = valid.map(normalizeHourEntry)
-    for (const h of ai.opening_hours) {
-      if (!valid.includes(h)) rejected.push(`hours: ${h?.days} ${h?.time}`)
+    for (let i = 0; i < hydrated.length; i++) {
+      if (!valid.includes(hydrated[i])) {
+        const orig = ai.opening_hours[i]
+        rejected.push(`hours: ${orig?.days} ${orig?.time}`)
+      }
     }
   }
   if (Array.isArray(ai.specialties)) {
