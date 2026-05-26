@@ -8,10 +8,12 @@
 --  for the result.
 --
 --  deploy_status values:
---    null / 'idle' — never deployed (manual deploy still works)
---    'pending'     — workflow_dispatch fired, build in progress
---    'success'     — pages.dev is live
---    'failed'      — last attempt failed; see deploy_log_url
+--    null / 'idle'      — never deployed (manual deploy still works)
+--    'scaffolding'      — bespoke generator running in CI (Claude+Playwright)
+--    'scaffold_failed'  — bespoke generator failed; see deploy_log_url
+--    'pending'          — workflow_dispatch fired, build in progress
+--    'success'          — pages.dev is live
+--    'failed'           — last build failed; see deploy_log_url
 --
 --  Re-runnable (idempotent).
 -- ============================================================
@@ -26,4 +28,5 @@ alter table public.vautcher_restaurants
 alter table public.vautcher_restaurants
   add constraint vautcher_restaurants_deploy_status_chk
   check (deploy_status is null
-      or deploy_status in ('idle', 'pending', 'success', 'failed'));
+      or deploy_status in ('idle', 'pending', 'success', 'failed',
+                           'scaffolding', 'scaffold_failed'));
