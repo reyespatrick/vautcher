@@ -795,9 +795,14 @@ Rules:
 2. EXCEPTION for opening_hours day labels: the digits (times) must match the source exactly,
    but English day labels may be normalised to French in the output:
      Weekdays/Mon-Fri → "Lundi – Vendredi"
-     Weekend → "Samedi – Dimanche"
+     Weekend/Weekends → "Samedi – Dimanche"
+     "Weekends & Holidays" → "Samedi, Dimanche & jours fériés"
      Monday → "Lundi", Tuesday → "Mardi", etc.
    Format times as "11h30 – 14h00".
+   IMPORTANT — list EVERY distinct schedule line you find in the source. If the source has
+   separate lines for weekdays vs weekend (or weekend vs holidays), emit BOTH entries even
+   when the time digits are identical. Do not collapse duplicates: each labelled line in
+   source becomes one row in your output.
 3. For menu: every dish needs a real name (e.g. "Tagliatelle aux épinards").
    A bare price ("16.-"), a portion chip ("en entrée"), or a form-field label
    ("Variantes / commentaires:") is NOT a dish name — drop the row.
