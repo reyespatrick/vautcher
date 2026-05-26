@@ -2,7 +2,7 @@
 // Cross-restaurant overview — restaurants and their owners.
 // The clients view has moved to its own /clients tab using the shared
 // <ClientList /> component, so the segmented control here is gone.
-import { ref, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
@@ -109,6 +109,28 @@ async function load() {
   }
 }
 watch(isModerator, (v) => { if (v) load() }, { immediate: true })
+
+// Poll the list while any tenant is still transitioning (scaffolding
+// generator running in CI, deploy_status='pending' while build runs).
+// The poll stops itself once every row has settled into a terminal
+// state ('success', 'failed', 'scaffold_failed', or null/'idle').
+const TRANSIENT_STATES = new Set(['scaffolding', 'pending'])
+const hasTransientRow = computed(() =>
+  restaurants.value.some((r) => TRANSIENT_STATES.has(r.deploy_status))
+)
+let pollHandle = null
+function startPoll() {
+  if (pollHandle) return
+  pollHandle = setInterval(() => {
+    if (!hasTransientRow.value) { stopPoll(); return }
+    load()
+  }, 10000)
+}
+function stopPoll() {
+  if (pollHandle) { clearInterval(pollHandle); pollHandle = null }
+}
+watch(hasTransientRow, (v) => { if (v) startPoll(); else stopPoll() })
+onBeforeUnmount(stopPoll)
 
 async function submitRestaurant() {
   if (busy.value || !newR.value.name.trim() || !newR.value.slug.trim()) return
@@ -404,10 +426,17 @@ async function copyLink() {
 
       <div v-else class="r-list">
         <div v-for="r in restaurants" :key="r.id" class="card resto">
-          <!-- Identity row: name + slug + tier badge. -->
+          <!-- Identity row: name + slug + deploy-state badge. -->
           <div class="resto-ident">
             <strong>{{ r.name }}</strong>
             <span class="resto-slug">{{ r.slug }}</span>
+            <span
+              v-if="r.deploy_status && r.deploy_status !== 'success'"
+              class="resto-state"
+              :class="`resto-state--${r.deploy_status}`"
+            >
+              {{ t('admin.deployState.' + r.deploy_status) }}
+            </span>
           </div>
 
           <!-- Tenant URLs: where it lives (pages.dev) + where it came
@@ -807,6 +836,39 @@ async function copyLink() {
 }
 .resto-ident strong { font-family: 'Rufina', serif; font-size: 1.1rem; }
 .resto-slug { font-size: 0.74rem; color: var(--mut); }
+.resto-state {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.resto-state--scaffolding {
+  background: linear-gradient(90deg, #fbeec4, #f3d98c);
+  color: #6e5414;
+  /* Shimmer so the eye knows it's not a static badge. */
+  background-size: 200% 100%;
+  animation: state-shimmer 1.6s ease-in-out infinite;
+}
+.resto-state--pending {
+  background: rgba(120, 120, 120, 0.18);
+  color: #444;
+}
+.resto-state--scaffold_failed,
+.resto-state--failed {
+  background: rgba(220, 38, 38, 0.12);
+  color: #6b1010;
+}
+.resto-state--idle {
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--mut);
+}
+@keyframes state-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 
 .resto-actions {
   display: flex;

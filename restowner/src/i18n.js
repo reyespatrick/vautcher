@@ -255,6 +255,13 @@ const fr = {
     scaffoldBlocks: 'blocs extraits',
     scaffoldPages: 'pages scannées',
     scaffoldDeploying: 'Génération du design en cours…',
+    deployState: {
+      scaffolding: 'Génération…',
+      scaffold_failed: 'Échec génération',
+      pending: 'Déploiement…',
+      failed: 'Échec déploiement',
+      idle: 'Non publié'
+    },
     scaffoldManual: 'Déploiement manuel requis',
     scaffoldLogs: 'Voir les logs',
     scaffoldCodeLabel: 'Code propriétaire',
