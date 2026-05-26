@@ -348,53 +348,10 @@ async function copyLink() {
         <p v-if="scaffoldError" class="scaffold-err">{{ scaffoldError }}</p>
       </form>
 
-      <div v-else class="card scaffold scaffold--done"
-           :class="{ 'scaffold--low': scaffoldResult.quality === 'low',
-                     'scaffold--bad': scaffoldResult.quality === 'bad' }">
+      <div v-else class="card scaffold scaffold--done">
         <strong>{{ t('admin.scaffoldDone') }} — {{ scaffoldResult.name }}</strong>
-        <p class="scaffold-result-meta">
-          {{ scaffoldResult.blocks }} {{ t('admin.scaffoldBlocks') }} ·
-          {{ scaffoldResult.pages_crawled }} {{ t('admin.scaffoldPages') }}
-        </p>
+        <p class="scaffold-result-meta">{{ t('admin.scaffoldAsyncHint') }}</p>
         <code class="prov-link">{{ scaffoldResult.pages_url }}</code>
-
-        <!-- Scraper quality verdict. 'ok' is silent; 'low' shows a yellow
-             warning chip; 'bad' shows a red one and the moderator is
-             expected to open Configurer immediately. -->
-        <div
-          v-if="scaffoldResult.quality && scaffoldResult.quality !== 'ok'"
-          class="scaffold-quality"
-          :class="`scaffold-quality--${scaffoldResult.quality}`"
-        >
-          <strong>
-            {{ scaffoldResult.quality === 'bad'
-              ? t('admin.scaffoldQualityBad')
-              : t('admin.scaffoldQualityLow') }}
-          </strong>
-          <ul v-if="scaffoldResult.quality_reasons?.length">
-            <li v-for="(r, i) in scaffoldResult.quality_reasons" :key="i">{{ r }}</li>
-          </ul>
-        </div>
-
-        <!-- AI-enhancement notice. Lists which fields Claude filled in
-             from the source text (after the verbatim-substring gate),
-             and which proposals were rejected for not appearing in
-             source (= would have been hallucinations). -->
-        <div v-if="scaffoldResult.ai_used" class="scaffold-ai">
-          <strong>🤖 {{ t('admin.scaffoldAiUsed') }}</strong>
-          <p v-if="scaffoldResult.ai_filled?.length">
-            {{ t('admin.scaffoldAiFilled') }} :
-            <span class="ai-chips">
-              <span v-for="(f, i) in scaffoldResult.ai_filled" :key="i" class="ai-chip">{{ f }}</span>
-            </span>
-          </p>
-          <p v-if="scaffoldResult.ai_rejected?.length" class="ai-rejected">
-            {{ t('admin.scaffoldAiRejected') }} :
-            <span class="ai-chips">
-              <span v-for="(r, i) in scaffoldResult.ai_rejected" :key="i" class="ai-chip ai-chip--bad">{{ r }}</span>
-            </span>
-          </p>
-        </div>
 
         <!-- Owner claim code — what the moderator hands to the future owner. -->
         <div v-if="scaffoldResult.owner" class="claim-block">
@@ -404,7 +361,8 @@ async function copyLink() {
         </div>
 
         <div class="prov-actions">
-          <span v-if="scaffoldResult.deploy === 'dispatched'" class="badge badge--pending">
+          <span v-if="scaffoldResult.scaffold === 'dispatched' || scaffoldResult.deploy === 'dispatched'"
+                class="badge badge--pending">
             {{ t('admin.scaffoldDeploying') }}
           </span>
           <span v-else class="badge badge--off">{{ t('admin.scaffoldManual') }}</span>

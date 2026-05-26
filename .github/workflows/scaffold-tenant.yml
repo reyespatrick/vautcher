@@ -1,0 +1,126 @@
+# Bespoke scaffolding workflow.
+# Triggered by the scaffold-tenant edge function once a placeholder
+# vautcher_restaurants row has been inserted. Runs the new bespoke
+# generator (Claude-as-designer + verbatim fact gate), patches the
+# row's config JSONB with the home_html / home_css / theme, then fires
+# deploy-tenant.yml so the result lands on <slug>.pages.dev.
+name: Scaffold tenant (bespoke)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Source website URL (e.g. https://example.com)'
+        required: true
+        type: string
+      slug:
+        description: 'Tenant slug (already created in DB)'
+        required: true
+        type: string
+      restaurant_id:
+        description: 'vautcher_restaurants.id (UUID)'
+        required: true
+        type: string
+
+# actions: write so the final step can fire deploy-tenant.yml via gh CLI.
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache Playwright browsers
+        id: cache-pw
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-chromium-${{ runner.os }}-v1
+
+      - name: Install scripts deps
+        working-directory: scripts
+        run: npm ci || npm install
+
+      - name: Install Playwright Chromium
+        if: steps.cache-pw.outputs.cache-hit != 'true'
+        working-directory: scripts
+        run: npx playwright install --with-deps chromium
+
+      - name: Mark row as scaffolding
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          REF=yfyfoqrautdogivalimb
+          RID='${{ inputs.restaurant_id }}'
+          ESC_RID="${RID//\'/\'\'}"
+          SQL="update public.vautcher_restaurants
+                  set deploy_status = 'scaffolding'
+                where id = '${ESC_RID}';"
+          jq -Rs '{query: .}' <<<"$SQL" \
+            | curl -sS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+                -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+                -H "Content-Type: application/json" --data @-
+
+      - name: Run bespoke generator
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NO_OPEN: '1'
+        working-directory: scripts
+        run: node website-rewamp.mjs "${{ inputs.url }}"
+
+      - name: Resolve preview path
+        id: preview
+        run: |
+          set -euo pipefail
+          # website-rewamp writes /tmp/preview-<host>.html where host
+          # is the URL hostname (sans www). Recover the path by listing
+          # /tmp — there's only one preview-*.html per workflow run.
+          PATH_=$(ls /tmp/preview-*.html | head -1)
+          test -f "$PATH_"
+          echo "html=$PATH_" >> "$GITHUB_OUTPUT"
+          echo "preview=$PATH_"
+
+      - name: Extract bespoke config
+        working-directory: scripts
+        run: node extract-bespoke-config.mjs "${{ steps.preview.outputs.html }}" /tmp/bespoke-config.json
+
+      - name: Patch restaurant row
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        working-directory: scripts
+        run: node patch-restaurant-config.mjs "${{ inputs.restaurant_id }}" /tmp/bespoke-config.json
+
+      - name: Dispatch deploy-tenant
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy-tenant.yml -f slug="${{ inputs.slug }}"
+
+      - name: Mark row as failed
+        if: failure()
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          REF=yfyfoqrautdogivalimb
+          RID='${{ inputs.restaurant_id }}'
+          LOG_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          ESC_RID="${RID//\'/\'\'}"
+          ESC_LOG="${LOG_URL//\'/\'\'}"
+          SQL="update public.vautcher_restaurants
+                  set deploy_status = 'scaffold_failed',
+                      deploy_log_url = '${ESC_LOG}'
+                where id = '${ESC_RID}';"
+          jq -Rs '{query: .}' <<<"$SQL" \
+            | curl -sS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+                -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+                -H "Content-Type: application/json" --data @-

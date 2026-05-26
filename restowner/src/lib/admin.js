@@ -70,28 +70,16 @@ async function requireSession() {
   return null
 }
 
-export async function scaffoldTenant(url, tier = 1) {
+// Async by design: the edge function inserts the placeholder row +
+// dispatches scaffold-tenant.yml, then returns immediately. The
+// workflow runs the bespoke generator in CI and patches the row's
+// config when done. The UI polls / surfaces deploy_status to reflect
+// scaffolding → pending → success.
+export async function scaffoldTenant(url) {
   const sessErr = await requireSession()
   if (sessErr) return { error: sessErr }
   const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
-    body: { url, tier }
-  })
-  if (error) return { error: await unwrapFunctionError(error) }
-  if (data && data.error) return { error: { message: data.error } }
-  return { data }
-}
-
-/**
- * Re-run the scaffold pipeline against an existing tenant's saved
- * source_url, at the requested tier. Used by the Admin "Promote" UI
- * to bump T1 → T2 → T3. Replaces the tenant's config and triggers
- * a fresh per-tenant pages.dev build.
- */
-export async function promoteTenant(restaurantId, tier) {
-  const sessErr = await requireSession()
-  if (sessErr) return { error: sessErr }
-  const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
-    body: { restaurant_id: restaurantId, tier }
+    body: { url }
   })
   if (error) return { error: await unwrapFunctionError(error) }
   if (data && data.error) return { error: { message: data.error } }
