@@ -1,12 +1,15 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 
+// Inline SVGs (heroicons-style outline). currentColor stroke means
+// they take their color from the tab's text color, so the active tab
+// turns brand-color in one shot — no per-icon filter tricks needed.
 const tabs = [
-  { to: '/', label: 'Accueil', icon: '🏠' },
-  { to: '/evenements', label: 'Agenda', icon: '🎉' },
-  { to: '/vautcher', label: 'Fidélité', icon: '🎟️' },
-  { to: '/reservation', label: 'Réserver', icon: '📅' },
-  { to: '/contact', label: 'Contact', icon: '📍' }
+  { to: '/',           label: 'Accueil',  icon: 'home' },
+  { to: '/evenements', label: 'Agenda',   icon: 'calendar' },
+  { to: '/vautcher',   label: 'Fidélité', icon: 'star' },
+  { to: '/reservation',label: 'Réserver', icon: 'clock' },
+  { to: '/contact',    label: 'Contact',  icon: 'pin' }
 ]
 </script>
 
@@ -18,7 +21,28 @@ const tabs = [
       :to="tab.to"
       class="tab"
     >
-      <span class="tab-icon">{{ tab.icon }}</span>
+      <span class="tab-icon" aria-hidden="true">
+        <svg v-if="tab.icon === 'home'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 11.5 12 4l9 7.5" />
+          <path d="M5 10v9a1 1 0 0 0 1 1h3.5v-5.5h5V20H18a1 1 0 0 0 1-1v-9" />
+        </svg>
+        <svg v-else-if="tab.icon === 'calendar'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="5.5" width="17" height="15" rx="2" />
+          <path d="M3.5 10h17" />
+          <path d="M8 3.5v4M16 3.5v4" />
+        </svg>
+        <svg v-else-if="tab.icon === 'star'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 3.5 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17.6 6.6 20.4l1-6.1L3.2 10l6.1-.9L12 3.5Z" />
+        </svg>
+        <svg v-else-if="tab.icon === 'clock'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8.5" />
+          <path d="M12 7.5V12l3 2" />
+        </svg>
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21s-7-6.2-7-12a7 7 0 1 1 14 0c0 5.8-7 12-7 12Z" />
+          <circle cx="12" cy="9.5" r="2.5" />
+        </svg>
+      </span>
       <span class="tab-label">{{ tab.label }}</span>
     </RouterLink>
   </nav>
@@ -42,7 +66,7 @@ const tabs = [
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   color: var(--grey);
   font-size: 0.62rem;
   font-weight: 600;
@@ -51,17 +75,19 @@ const tabs = [
   transition: color 0.15s;
 }
 .tab-icon {
-  font-size: 1.2rem;
-  line-height: 1;
-  filter: grayscale(1);
-  opacity: 0.55;
-  transition: filter 0.15s, opacity 0.15s, transform 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  opacity: 0.7;
+  transition: opacity 0.15s, transform 0.15s;
 }
+.tab-icon svg { width: 100%; height: 100%; display: block; }
 .tab.router-link-active { color: var(--burgundy); }
 .tab.router-link-active .tab-icon {
-  filter: none;
   opacity: 1;
-  transform: translateY(-1px) scale(1.12);
+  transform: translateY(-1px) scale(1.08);
 }
 
 /* Hidden on wider screens — the top nav takes over */
