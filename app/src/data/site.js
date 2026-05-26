@@ -125,7 +125,12 @@ function flatten(payload) {
     specialties: c.specialties ?? FALLBACK.specialties,
     menu: c.menu ?? FALLBACK.menu ?? [],
     gallery: c.gallery ?? FALLBACK.gallery,
-    sections: c.sections ?? FALLBACK.sections
+    sections: c.sections ?? FALLBACK.sections,
+    // Which home template to render. Owner-selected via restowner.
+    // 'classic' = the original Rufina-serif, burgundy, vertical layout.
+    // 'modern'  = full-bleed editorial design (work in progress).
+    // Per-tenant; overridable at runtime via ?preview=<name> for demos.
+    template: c.template ?? 'classic'
   }
 }
 

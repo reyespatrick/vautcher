@@ -9,7 +9,7 @@ import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import {
   adminRestaurants, createRestaurant,
-  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, promoteTenant, deleteTenant
+  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, promoteTenant, setTemplate, deleteTenant
 } from '../lib/admin'
 
 const { t } = useI18n()
@@ -88,6 +88,38 @@ async function submitScaffold() {
   } finally {
     stopScaffoldTicker()
     scaffoldBusy.value = false
+  }
+}
+
+// Per-tenant template switch. Updates config.template via the RPC,
+// then redeploys via the scaffold-tenant edge function (redeploy
+// mode — no re-extraction). Used for the commercial "modern preview"
+// flow: moderator can already preview via ?preview=modern without
+// calling this; templateSwitch is the commit step.
+const templateBusyId = ref(null)
+async function switchTemplate(r, template) {
+  if (templateBusyId.value || r.template === template) return
+  const ok = await confirm({
+    title: `Modèle « ${template} »`,
+    body: `Le site sera reconstruit avec le modèle « ${template} » et restera accessible à ${r.slug}.pages.dev. Continuer ?`,
+    confirmLabel: 'Appliquer',
+    cancelLabel: 'Annuler'
+  })
+  if (!ok) return
+  templateBusyId.value = r.id
+  try {
+    const { error } = await setTemplate(r.id, template)
+    if (error) {
+      await alert({ title: 'Échec', body: error.message || '' })
+      return
+    }
+    await alert({
+      title: `Modèle appliqué`,
+      body: `${r.slug}.pages.dev est en cours de redéploiement avec « ${template} ». Le résultat apparaît dans 1-2 minutes.`
+    })
+    await load()
+  } finally {
+    templateBusyId.value = null
   }
 }
 
@@ -513,6 +545,30 @@ async function copyLink() {
             >
               <span class="ic">🔗</span>{{ t('admin.sourceUrl') }}
             </a>
+            <!-- Preview the OPPOSITE template at runtime without
+                 committing. Powered by HomeView's ?preview= dispatcher. -->
+            <a
+              :href="`https://${r.slug}.pages.dev/?preview=${(r.template || 'classic') === 'modern' ? 'classic' : 'modern'}`"
+              target="_blank" rel="noopener"
+              class="resto-url resto-url--preview"
+            >
+              <span class="ic">✨</span>
+              Aperçu « {{ (r.template || 'classic') === 'modern' ? 'classic' : 'modern' }} »
+            </a>
+          </div>
+
+          <!-- Template selector — Classic / Modern. Committing requires
+               a redeploy; preview link above is non-destructive. -->
+          <div class="resto-templates">
+            <span class="resto-tpl-label">Modèle</span>
+            <button
+              v-for="tpl in ['classic', 'modern']" :key="tpl"
+              type="button"
+              :class="['tpl-chip', { 'tpl-chip--active': (r.template || 'classic') === tpl }]"
+              :disabled="templateBusyId === r.id || (r.template || 'classic') === tpl"
+              @click="switchTemplate(r, tpl)"
+              :title="`Appliquer le modèle ${tpl} (redéploiement)`"
+            >{{ tpl }}</button>
           </div>
 
           <!-- Action row: full-width strip, Configurer left, optional
@@ -932,6 +988,50 @@ async function copyLink() {
 }
 .resto-actions .btn { flex: 0 0 auto; }
 .tier-promote { margin-left: auto; margin-right: 8px; }
+
+/* Template selector chips — Classic / Modern. Active chip is filled;
+   inactive is a ghost. Click triggers a redeploy with confirm. */
+.resto-templates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+.resto-tpl-label {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+.tpl-chip {
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.tpl-chip:hover:not(:disabled) { border-color: var(--burgundy); color: var(--burgundy); }
+.tpl-chip--active {
+  background: var(--burgundy);
+  color: #fff;
+  border-color: var(--burgundy);
+  cursor: default;
+}
+.tpl-chip:disabled:not(.tpl-chip--active) { opacity: 0.5; cursor: not-allowed; }
+
+/* Preview-other-template link in the URL row. Visual cue that it's
+   non-destructive (different colour + sparkle icon). */
+.resto-url--preview {
+  color: #b8860b;
+}
+.resto-url--preview:hover {
+  background: rgba(184, 134, 11, 0.08);
+}
 
 /* URL chips under the restaurant title — pages.dev (always) +
    scaffolded source URL (only when present). */

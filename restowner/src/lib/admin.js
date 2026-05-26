@@ -98,6 +98,28 @@ export async function promoteTenant(restaurantId, tier) {
   return { data }
 }
 
+/**
+ * Switch a tenant's home template ('classic' | 'modern'). Two-step:
+ *   1. RPC writes config.template (moderator-gated, atomic).
+ *   2. Edge function dispatches deploy-tenant.yml so the new template
+ *      lands at <slug>.pages.dev. The redeploy mode skips extraction
+ *      since the config didn't change otherwise.
+ */
+export async function setTemplate(restaurantId, template) {
+  const { error: rpcErr } = await supabase.rpc('vautcher_admin_set_template', {
+    p_restaurant_id: restaurantId, p_template: template
+  })
+  if (rpcErr) return { error: rpcErr }
+  const sessErr = await requireSession()
+  if (sessErr) return { error: sessErr }
+  const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
+    body: { restaurant_id: restaurantId, redeploy: true }
+  })
+  if (error) return { error: await unwrapFunctionError(error) }
+  if (data && data.error) return { error: { message: data.error } }
+  return { data }
+}
+
 export async function createRestaurant(name, slug) {
   const { data, error } = await supabase.rpc('vautcher_admin_create_restaurant', {
     p_name: name, p_slug: slug

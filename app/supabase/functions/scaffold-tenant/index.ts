@@ -1086,10 +1086,31 @@ Deno.serve(async (req: Request) => {
   let body: any
   try { body = await req.json() } catch { return json({ error: 'bad json' }, 400) }
 
-  // Two call modes:
-  //   1. Fresh scaffold:  { url, tier? }       — create a new tenant.
-  //   2. Promote existing: { restaurant_id, tier } — re-scaffold an
-  //      existing tenant at a higher tier using its saved source_url.
+  // Three call modes:
+  //   1. Fresh scaffold:   { url, tier? }                    — create a new tenant.
+  //   2. Promote existing: { restaurant_id, tier }           — re-scaffold an
+  //                                                           existing tenant at a higher tier.
+  //   3. Redeploy only:    { restaurant_id, redeploy: true } — fire deploy-tenant.yml
+  //                                                           without re-extracting (e.g. after a
+  //                                                           template flip).
+  if (body?.restaurant_id && body?.redeploy === true) {
+    const { data: row, error } = await admin.from('vautcher_restaurants')
+      .select('id, slug, name').eq('id', body.restaurant_id).single()
+    if (error || !row) return json({ error: 'restaurant not found' }, 404)
+    const workflowUrl = await dispatchDeploy(row.slug)
+    if (workflowUrl) {
+      await admin.from('vautcher_restaurants')
+        .update({ deploy_status: 'pending', deploy_log_url: workflowUrl })
+        .eq('id', row.id)
+    }
+    return json({
+      id: row.id, slug: row.slug, name: row.name,
+      deploy: workflowUrl ? 'dispatched' : 'manual',
+      deploy_log_url: workflowUrl,
+      pages_url: `https://${row.slug}.pages.dev`
+    })
+  }
+
   const requestedTier = Math.max(1, Math.min(3, parseInt(String(body?.tier || '1'), 10) || 1))
   let inputUrl: string = (body?.url || '').trim()
   let existingId: string | null = body?.restaurant_id || null
