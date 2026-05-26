@@ -178,7 +178,7 @@ const rebateText = computed(() => {
   content: '';
   position: absolute;
   inset: 4px;
-  border: 1px solid rgba(158, 5, 61, 0.35);
+  border: 1px solid color-mix(in srgb, var(--burgundy) 35%, transparent);
   border-radius: 2px;
   pointer-events: none;
 }
@@ -264,7 +264,7 @@ const rebateText = computed(() => {
   border: 2px solid var(--burgundy);
   padding: 9px 16px;
 }
-.ev-act.leave:hover { background: rgba(158, 5, 61, 0.07); }
+.ev-act.leave:hover { background: color-mix(in srgb, var(--burgundy) 7%, transparent); }
 .ev-act:disabled { opacity: 0.5; cursor: not-allowed; }
 
 @media (max-width: 620px) {

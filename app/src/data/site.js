@@ -130,7 +130,18 @@ function flatten(payload) {
     // 'classic' = the original Rufina-serif, burgundy, vertical layout.
     // 'modern'  = full-bleed editorial design (work in progress).
     // Per-tenant; overridable at runtime via ?preview=<name> for demos.
-    template: c.template ?? 'classic'
+    template: c.template ?? 'classic',
+    // Bespoke home (AI-designed shell). When present, HomeView renders
+    // home_html via v-html instead of the Vue Classic/Modern layouts.
+    // home_css is Claude's <style> already scoped under .bespoke-home
+    // so it can't leak into the shared header/footer/other views.
+    homeHtml: c.home_html ?? null,
+    homeCss: c.home_css ?? null,
+    googleFontsUrl: c.google_fonts_url ?? null,
+    // Extended theme tokens — feed the shared shell (AppHeader,
+    // AppFooter, EventsView, VoucherView, ReservationView, LoginView)
+    // so they match the bespoke home's identity.
+    theme: c.theme ?? null
   }
 }
 
@@ -148,10 +159,45 @@ function loadCached() {
 function applyBrand(s) {
   if (typeof document === 'undefined') return
   const r = document.documentElement.style
-  r.setProperty('--burgundy', s.brandPrimary)
-  r.setProperty('--burgundy-dark', s.brandDark)
+  // Primary brand colour — keep --burgundy alias for legacy stylesheets,
+  // expose --primary as the canonical name going forward.
+  const primary = s.theme?.primary || s.brandPrimary
+  const primaryDark = s.theme?.primary_dark || s.brandDark
+  if (primary) { r.setProperty('--burgundy', primary); r.setProperty('--primary', primary) }
+  if (primaryDark) { r.setProperty('--burgundy-dark', primaryDark); r.setProperty('--primary-dark', primaryDark) }
+  // Bespoke fonts → CSS vars for all shared shell views to inherit.
+  if (s.theme?.font_display) r.setProperty('--font-display', `'${s.theme.font_display}'`)
+  if (s.theme?.font_body) r.setProperty('--font-body', `'${s.theme.font_body}'`)
+  if (s.theme?.font_menu) r.setProperty('--font-menu', `'${s.theme.font_menu}'`)
 
   applyHeadingFont(s)
+  applyBespokeAssets(s)
+}
+
+// Inject Claude's full Google-Fonts <link> (preferred) and the bespoke
+// home <style> blob. Idempotent — replaced on each tenant refresh.
+function applyBespokeAssets(s) {
+  if (typeof document === 'undefined') return
+
+  // Google Fonts <link> from the bespoke scaffold. Falls back to the
+  // older per-family applyHeadingFont logic when home_html isn't set.
+  if (s.googleFontsUrl) {
+    const id = 'vautcher-bespoke-fonts'
+    document.getElementById(id)?.remove()
+    const link = document.createElement('link')
+    link.id = id; link.rel = 'stylesheet'; link.href = s.googleFontsUrl
+    document.head.appendChild(link)
+  }
+
+  // Scoped home CSS — already prefixed under .bespoke-home by the
+  // extractor, so safe to insert at the end of <head>.
+  if (s.homeCss) {
+    const id = 'vautcher-bespoke-home-css'
+    document.getElementById(id)?.remove()
+    const style = document.createElement('style')
+    style.id = id; style.textContent = s.homeCss
+    document.head.appendChild(style)
+  }
 }
 
 let appliedFontFamily = null

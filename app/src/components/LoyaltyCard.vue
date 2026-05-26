@@ -119,7 +119,7 @@ function tilt(i) { return ((i * 53) % 15) - 7 }
   overflow: hidden;
   padding-bottom: 22px;
 }
-.voucher.done { box-shadow: 0 22px 54px rgba(158, 5, 61, 0.4); }
+.voucher.done { box-shadow: 0 22px 54px color-mix(in srgb, var(--burgundy) 40%, transparent); }
 
 /* Header band */
 .vc-head {
@@ -127,7 +127,7 @@ function tilt(i) { return ((i * 53) % 15) - 7 }
   align-items: center;
   gap: 14px;
   padding: 22px 24px;
-  background: linear-gradient(135deg, #9e053d, #6f001d);
+  background: linear-gradient(135deg, var(--burgundy), var(--burgundy-dark));
   color: #fff;
 }
 .vc-logo {
@@ -200,11 +200,11 @@ function tilt(i) { return ((i * 53) % 15) - 7 }
 
 .slot.filled {
   border: 2.5px solid var(--burgundy);
-  background: rgba(158, 5, 61, 0.07);
+  background: color-mix(in srgb, var(--burgundy) 7%, transparent);
   color: var(--burgundy);
   transform: rotate(var(--tilt));
   opacity: 0.94;
-  box-shadow: inset 0 0 0 2px rgba(158, 5, 61, 0.12);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--burgundy) 12%, transparent);
   animation: stamp-in 0.32s cubic-bezier(0.2, 1.4, 0.5, 1) both;
 }
 @keyframes stamp-in {
@@ -226,7 +226,7 @@ function tilt(i) { return ((i * 53) % 15) - 7 }
 .bar span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #9e053d, #c8295c);
+  background: linear-gradient(90deg, var(--burgundy-dark), var(--burgundy));
   border-radius: 99px;
   transition: width 0.5s ease;
 }

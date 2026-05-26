@@ -326,7 +326,7 @@ async function addToCalendar() {
   content: '';
   position: absolute;
   inset: 5px;
-  border: 1px solid rgba(158, 5, 61, 0.35);
+  border: 1px solid color-mix(in srgb, var(--burgundy) 35%, transparent);
   border-radius: 3px;
   pointer-events: none;
 }
@@ -432,6 +432,6 @@ async function addToCalendar() {
   transition: background 0.15s, color 0.15s;
 }
 .ed-btn-secondary svg { width: 18px; height: 18px; flex: 0 0 auto; }
-.ed-btn-secondary:hover { background: rgba(158, 5, 61, 0.07); }
+.ed-btn-secondary:hover { background: color-mix(in srgb, var(--burgundy) 7%, transparent); }
 .ed-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
