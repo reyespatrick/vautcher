@@ -469,7 +469,8 @@ async function copyLink() {
             <button
               type="button"
               class="btn btn--danger btn--sm"
-              :disabled="deleteBusy"
+              :disabled="deleteBusy || TRANSIENT_STATES.has(r.deploy_status)"
+              :title="TRANSIENT_STATES.has(r.deploy_status) ? t('admin.deleteBlockedByScaffold') : ''"
               @click="startDelete(r)"
             >{{ t('admin.deleteBtn') }}</button>
           </div>

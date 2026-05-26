@@ -272,6 +272,7 @@ const fr = {
     emailSetBtn: 'Enregistrer',
     sourceUrl: 'Site source',
     deleteBtn: 'Supprimer',
+    deleteBlockedByScaffold: 'Suppression bloquée pendant la génération du design.',
     deleteStep1Title: 'Supprimer définitivement {name} ?',
     deleteStep1Body: 'Cette action est IRRÉVERSIBLE. Tous les événements, vautchers, cartes de fidélité, tampons, RSVP et inscriptions push seront effacés. Le projet Cloudflare Pages est également supprimé. {counts} sont liés à ce restaurant.',
     deleteStep1Btn: 'Continuer la suppression',

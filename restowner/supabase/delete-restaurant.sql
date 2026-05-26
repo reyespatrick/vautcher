@@ -49,6 +49,13 @@ begin
   if v_row.slug is null or v_row.slug <> p_confirm_slug then
     raise exception 'slug mismatch (expected % got %)', v_row.slug, p_confirm_slug;
   end if;
+  -- Safety: the bespoke scaffold workflow patches this row's config
+  -- ~3-5 min after insert. Deleting mid-flight makes the workflow
+  -- fail at the patch step with a confusing "restaurant not found".
+  -- Make the moderator wait for the transient state to clear.
+  if v_row.deploy_status in ('scaffolding', 'pending') then
+    raise exception 'cannot delete while deploy_status = % — wait for the build to finish', v_row.deploy_status;
+  end if;
 
   -- Snapshot counts for the response so the UI can summarise.
   select count(*) into v_events from public.vautcher_events where restaurant_id = p_restaurant_id;
