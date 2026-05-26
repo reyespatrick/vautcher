@@ -70,11 +70,28 @@ async function requireSession() {
   return null
 }
 
-export async function scaffoldTenant(url) {
+export async function scaffoldTenant(url, tier = 1) {
   const sessErr = await requireSession()
   if (sessErr) return { error: sessErr }
   const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
-    body: { url }
+    body: { url, tier }
+  })
+  if (error) return { error: await unwrapFunctionError(error) }
+  if (data && data.error) return { error: { message: data.error } }
+  return { data }
+}
+
+/**
+ * Re-run the scaffold pipeline against an existing tenant's saved
+ * source_url, at the requested tier. Used by the Admin "Promote" UI
+ * to bump T1 → T2 → T3. Replaces the tenant's config and triggers
+ * a fresh per-tenant pages.dev build.
+ */
+export async function promoteTenant(restaurantId, tier) {
+  const sessErr = await requireSession()
+  if (sessErr) return { error: sessErr }
+  const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
+    body: { restaurant_id: restaurantId, tier }
   })
   if (error) return { error: await unwrapFunctionError(error) }
   if (data && data.error) return { error: { message: data.error } }

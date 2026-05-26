@@ -128,6 +128,7 @@ jobs:
             restowner/supabase/event-recurrence-pattern.sql \
             restowner/supabase/event-end-time.sql \
             restowner/supabase/scaffold-tier.sql \
+            restowner/supabase/admin-restaurants-tier.sql \
             app/supabase/pass-schema.sql; do
             echo "→ applying $f"
             jq -Rs '{query: .}' "$f" \

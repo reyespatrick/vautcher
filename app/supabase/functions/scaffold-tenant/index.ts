@@ -635,6 +635,421 @@ function buildConfig(pages: { url: string; html: string; $: cheerio.CheerioAPI }
   return { name, og, baseUrl, images }
 }
 
+// ---------- T2: STRUCTURAL-MARKDOWN OUTLINE ----------
+// Walk a crawled page's DOM and emit a compact markdown outline that
+// preserves the semantic shape (headings, list items, paragraphs,
+// prices in context) without the class-name noise. The AI reads these
+// outlines instead of raw HTML — it's far cheaper in tokens and
+// keeps the model focused on content, not markup.
+//
+// Layout:
+//   # https://www.example.com/menu/
+//   ## Notre carte
+//   ### Les entrées
+//   - Salade verte (7.-)
+//   - Salade de crudités (8.-)
+//   …
+function pageToOutline($: cheerio.CheerioAPI, url: string): string {
+  // Clone before mutating so we don't disturb the original $.
+  const $c = cheerio.load($.html())
+  $c('script, style, noscript, svg, iframe, link, meta').remove()
+  // Drop site chrome on archive/menu pages.
+  $c('nav, header, footer').remove()
+
+  const lines: string[] = [`# ${url}`]
+  const seenLine = new Set<string>()
+  const push = (s: string) => {
+    const t = s.replace(/\s+/g, ' ').trim()
+    if (!t) return
+    if (seenLine.has(t)) return
+    seenLine.add(t)
+    lines.push(t)
+  }
+
+  // Direct text content of an element (its own text nodes only),
+  // collapsed. Used for elements like <li> whose nested blocks are
+  // walked separately.
+  const ownText = (el: cheerio.Element): string => {
+    const $el = $c(el)
+    return $el.clone().children().remove().end().text().replace(/\s+/g, ' ').trim()
+  }
+  // Full inner text (including descendants), collapsed. Capped so a
+  // single sprawling <p> can't eat the whole outline.
+  const fullText = (el: cheerio.Element, cap = 400): string => {
+    const t = $c(el).text().replace(/\s+/g, ' ').trim()
+    return t.length > cap ? t.slice(0, cap) + '…' : t
+  }
+
+  function walk(el: cheerio.Element, listDepth: number) {
+    if (!el || !(el as any).tagName) return
+    const tag = ((el as any).tagName || '').toLowerCase()
+
+    // Headings — emit as # / ## / ### …
+    const h = tag.match(/^h([1-6])$/)
+    if (h) {
+      push('#'.repeat(parseInt(h[1], 10)) + ' ' + fullText(el, 200))
+      return
+    }
+    // Paragraph — emit as a plain line.
+    if (tag === 'p') {
+      push(fullText(el))
+      return
+    }
+    // List item — emit as "- text", recurse into nested lists.
+    if (tag === 'li' || tag === 'dd' || tag === 'dt') {
+      // The element's own text (not its sublist content) becomes the
+      // bullet; nested <ul>/<ol>/<dl> are walked at depth+1.
+      const own = ownText(el)
+      // If "own" is empty but the li has a single <p>/<span>/<a> child
+      // with real text, use that instead.
+      let line = own
+      if (!line) line = fullText(el, 300)
+      if (line) push('  '.repeat(listDepth) + '- ' + line)
+      $c(el).find('> ul, > ol, > dl').each((_: number, sub: cheerio.Element) => {
+        $c(sub).children().each((_: number, c: cheerio.Element) => walk(c, listDepth + 1))
+      })
+      return
+    }
+    // Table row — emit a "| cell | cell |" line so menus laid out as
+    // tables stay parseable.
+    if (tag === 'tr') {
+      const cells: string[] = []
+      $c(el).find('> th, > td').each((_: number, td: cheerio.Element) => {
+        cells.push(fullText(td, 150))
+      })
+      if (cells.length) push('| ' + cells.join(' | ') + ' |')
+      return
+    }
+
+    // Containers: recurse into children.
+    if (/^(div|section|article|aside|main|header|footer|ul|ol|dl|table|tbody|thead|tfoot|figure|figcaption|details|summary)$/.test(tag)) {
+      $c(el).children().each((_: number, c: cheerio.Element) => walk(c, listDepth))
+      return
+    }
+
+    // Inline-ish leaves (span, a, strong, em, b, i, small, sup, sub,
+    // br, hr, img) — emit nothing here; their text gets picked up by
+    // the parent block element's fullText() / ownText().
+  }
+
+  $c('body').children().each((_: number, el: cheerio.Element) => walk(el, 0))
+
+  // Cap total outline size — anything beyond ~8KB per page is noise.
+  let out = lines.join('\n')
+  if (out.length > 8000) out = out.slice(0, 8000) + '\n…[truncated]'
+  return out
+}
+
+// ---------- T2: SINGLE AI CALL EXTRACTOR ----------
+// One Claude call per scaffold. Reads:
+//   - JSON-LD scripts (gold-standard structured data)
+//   - The current T1-extracted config (so the AI doesn't re-extract
+//     what we already know — saves tokens, prevents conflict)
+//   - Markdown outlines of every crawled page
+//   - A cleaned-text corpus of every crawled page (for the verbatim
+//     gate — every claim must substring-match this text)
+//
+// Returns the AI's structured output filtered through the verbatim
+// gate. Each rejected claim shows up in `rejected` for the moderator
+// to inspect.
+async function extractAllWithAI(
+  pages: { url: string; html: string; $: cheerio.CheerioAPI }[],
+  currentConfig: any
+): Promise<{ filled: Record<string, any>; rejected: string[]; tokensUsed: number } | null> {
+  if (!ANTHROPIC_API_KEY) return null
+
+  // Build the AI's source package.
+  const jsonLdScripts: string[] = []
+  const outlines: string[] = []
+  const cleanedTexts: string[] = []
+  for (const p of pages) {
+    p.$('script[type="application/ld+json"]').each((_: number, el: cheerio.Element) => {
+      const t = p.$(el).text().trim()
+      if (t) jsonLdScripts.push(t)
+    })
+    outlines.push(pageToOutline(p.$, p.url))
+    // Cleaned text corpus is only used for the verbatim gate.
+    const $c = cheerio.load(p.html)
+    $c('script, style, noscript, svg, iframe').remove()
+    const text = $c('body').text().replace(/\s+/g, ' ').trim()
+    if (text) cleanedTexts.push(`# ${p.url}\n${text.slice(0, 12000)}`)
+  }
+  const verbatimCorpus = cleanedTexts.join('\n\n').slice(0, 100000)
+  if (!verbatimCorpus.trim()) return null
+
+  const prompt = `Extract the restaurant's content from the source below.
+
+Already extracted by the structured pass (do NOT contradict; only fill what's missing):
+${JSON.stringify({
+    name: currentConfig.pwa_name,
+    address: currentConfig.address,
+    phone: currentConfig.phone,
+    email: currentConfig.email,
+    hours_count: (currentConfig.hours || []).length,
+    description_present: !!(currentConfig.about?.paragraphs?.[0])
+  }, null, 2)}
+
+Rules:
+1. Every string you return MUST appear VERBATIM in the source text (JSON-LD or page outlines).
+   No paraphrasing. No translation. No invention. If a fact is not in source, omit it.
+2. EXCEPTION for opening_hours day labels: the digits (times) must match the source exactly,
+   but English day labels may be normalised to French in the output:
+     Weekdays/Mon-Fri → "Lundi – Vendredi"
+     Weekend → "Samedi – Dimanche"
+     Monday → "Lundi", Tuesday → "Mardi", etc.
+   Format times as "11h30 – 14h00".
+3. For menu: every dish needs a real name (e.g. "Tagliatelle aux épinards").
+   A bare price ("16.-"), a portion chip ("en entrée"), or a form-field label
+   ("Variantes / commentaires:") is NOT a dish name — drop the row.
+   Group portion variants under their parent dish:
+     "16.- (en entrée), 23.- (en plat)" → one dish with two variants.
+   Group allergen annotations under their parent dish in the allergens[] array.
+   Max 12 categories, 30 dishes per category.
+4. For specialties: at most 6 signature/highlighted dishes. Each must have a verbatim title.
+
+JSON-LD scripts:
+${jsonLdScripts.join('\n---\n').slice(0, 30000)}
+
+Page outlines (one per crawled page):
+${outlines.join('\n\n---\n\n').slice(0, 80000)}`
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 8192,
+      tools: [{
+        name: 'set_restaurant_content',
+        description: 'Set the restaurant\'s extracted content. Every string must appear verbatim in the source.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            address: { type: ['string', 'null'], description: 'Full postal address, one line.' },
+            phone: { type: ['string', 'null'], description: 'Phone number as displayed.' },
+            email: { type: ['string', 'null'], description: 'Contact email.' },
+            description: { type: ['string', 'null'], description: 'One-paragraph restaurant description, verbatim.' },
+            opening_hours: {
+              type: ['array', 'null'],
+              items: {
+                type: 'object',
+                properties: {
+                  days: { type: 'string' },
+                  service: { type: ['string', 'null'] },
+                  time: { type: 'string' }
+                },
+                required: ['days', 'time']
+              }
+            },
+            specialties: {
+              type: ['array', 'null'],
+              items: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  text: { type: ['string', 'null'] }
+                },
+                required: ['title']
+              }
+            },
+            menu: {
+              type: ['array', 'null'],
+              description: 'Hierarchical menu. Every dish needs a real name; portion variants and allergens group under the parent dish.',
+              items: {
+                type: 'object',
+                properties: {
+                  category: { type: 'string' },
+                  items: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string' },
+                        description: { type: ['string', 'null'] },
+                        ingredients: { type: ['array', 'null'], items: { type: 'string' } },
+                        price: { type: ['string', 'null'] },
+                        variants: {
+                          type: ['array', 'null'],
+                          items: {
+                            type: 'object',
+                            properties: {
+                              label: { type: 'string' },
+                              price: { type: 'string' }
+                            },
+                            required: ['label', 'price']
+                          }
+                        },
+                        allergens: { type: ['array', 'null'], items: { type: 'string' } }
+                      },
+                      required: ['name']
+                    }
+                  }
+                },
+                required: ['category', 'items']
+              }
+            }
+          }
+        }
+      }],
+      tool_choice: { type: 'tool', name: 'set_restaurant_content' },
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+
+  if (!res.ok) {
+    console.error('Anthropic API failed:', res.status, await res.text())
+    return null
+  }
+  const data = await res.json()
+  const tokensUsed = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
+  const toolUse = (data.content || []).find((c: any) => c.type === 'tool_use')
+  if (!toolUse) return { filled: {}, rejected: [], tokensUsed }
+  const ai = toolUse.input || {}
+
+  // Verbatim gate. Case-folded + accent-stripped substring match
+  // against the cleaned text corpus.
+  const norm = (s: string) =>
+    String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, ' ').trim()
+  const sourceN = norm(verbatimCorpus)
+  const inSource = (s: string, minLen = 4): boolean => {
+    if (!s) return false
+    const n = norm(s)
+    if (n.length < minLen) return false
+    if (n.length > 80) {
+      for (let i = 0; i + 40 <= n.length; i += 20) {
+        if (sourceN.includes(n.slice(i, i + 40))) return true
+      }
+      return false
+    }
+    return sourceN.includes(n)
+  }
+  const inSourceLoose = (s: string): boolean => {
+    const digits = (x: string) => String(x || '').replace(/[^\d]/g, '')
+    if (digits(s).length >= 5 && sourceN.replace(/[^\d]/g, '').includes(digits(s))) return true
+    return inSource(s, 3)
+  }
+
+  // The "dish name" shape rule. Pure prices, portion chips, and form
+  // labels can pass a substring check (they're verbatim in source!),
+  // but they're not dish names.
+  const isDishyName = (s: string): boolean => {
+    const t = (s || '').trim()
+    if (!t) return false
+    if (/^\s*(CHF|EUR|€|F)?\s*\d+[.,]?-?\d*\s*(CHF|EUR|€|F)?\s*(\([^)]+\))?\s*$/i.test(t)) return false
+    if (/^\s*(variantes?|commentaires?|options?|all[ée]rg[ée]nes?|suppl[ée]ments?|ingr[ée]dients?)\b[\s/]*[:•]/i.test(t)) return false
+    if (/^\s*\(?\s*en\s+(entr[ée]e|plat|dessert|accompagnement)s?\s*\)?\s*$/i.test(t)) return false
+    if ((t.match(/[\p{L}]/gu) || []).length < 2) return false
+    return true
+  }
+
+  const filled: Record<string, any> = {}
+  const rejected: string[] = []
+
+  if (ai.address) {
+    if (inSource(ai.address, 8)) filled.address = String(ai.address).trim()
+    else rejected.push(`address: ${ai.address}`)
+  }
+  if (ai.phone) {
+    if (inSourceLoose(ai.phone)) filled.phone = String(ai.phone).trim()
+    else rejected.push(`phone: ${ai.phone}`)
+  }
+  if (ai.email) {
+    if (inSource(ai.email, 5)) filled.email = String(ai.email).trim()
+    else rejected.push(`email: ${ai.email}`)
+  }
+  if (ai.description) {
+    if (inSource(ai.description, 20)) filled.description = String(ai.description).trim()
+    else rejected.push(`description: ${String(ai.description).slice(0, 60)}…`)
+  }
+  if (Array.isArray(ai.opening_hours)) {
+    const valid = ai.opening_hours.filter((h: any) =>
+      h && h.days && h.time && inSourceLoose(h.days + ' ' + h.time))
+    if (valid.length) filled.hours = valid.map(normalizeHourEntry)
+    for (const h of ai.opening_hours) {
+      if (!valid.includes(h)) rejected.push(`hours: ${h?.days} ${h?.time}`)
+    }
+  }
+  if (Array.isArray(ai.specialties)) {
+    const valid = ai.specialties.filter((s: any) => s && s.title && inSource(s.title, 4))
+    if (valid.length) {
+      filled.specialties = valid.map((s: any) => ({
+        icon: '🍽️',
+        title: String(s.title).trim(),
+        text: s.text && inSource(s.text, 6) ? String(s.text).trim() : ''
+      }))
+    }
+    for (const s of ai.specialties) {
+      if (!valid.includes(s)) rejected.push(`specialty: ${s?.title}`)
+    }
+  }
+  if (Array.isArray(ai.menu)) {
+    const validCats: any[] = []
+    for (const cat of ai.menu) {
+      if (!cat || !cat.category || !Array.isArray(cat.items)) continue
+      if (!inSource(cat.category, 3)) {
+        rejected.push(`menu category: ${cat.category}`)
+        continue
+      }
+      const validItems: any[] = []
+      for (const it of cat.items) {
+        if (!it || !it.name) { rejected.push(`dish (no name): ${String(it?.description || '').slice(0, 50)}…`); continue }
+        const rawName = String(it.name).trim()
+        if (!isDishyName(rawName)) { rejected.push(`dish (not a name): ${rawName}`); continue }
+        if (!inSource(rawName, 4)) { rejected.push(`dish name: ${rawName}`); continue }
+        let desc = ''
+        if (it.description) {
+          const d = String(it.description).trim()
+          if (inSource(d, 8)) desc = d
+          else rejected.push(`dish desc (${rawName}): ${d.slice(0, 40)}…`)
+        }
+        const ingredients: string[] = []
+        if (Array.isArray(it.ingredients)) {
+          for (const ing of it.ingredients) {
+            const s = String(ing || '').trim()
+            if (s && inSource(s, 3)) ingredients.push(s)
+            else if (s) rejected.push(`ingredient (${rawName}): ${s}`)
+          }
+        }
+        const variants: { label: string; price: string }[] = []
+        if (Array.isArray(it.variants)) {
+          for (const v of it.variants) {
+            if (!v || !v.label || !v.price) continue
+            const lbl = String(v.label).trim()
+            const pr = String(v.price).trim()
+            if (inSource(lbl, 3) && inSourceLoose(pr)) variants.push({ label: lbl, price: pr })
+            else rejected.push(`variant (${rawName}): ${lbl} / ${pr}`)
+          }
+        }
+        const allergens: string[] = []
+        if (Array.isArray(it.allergens)) {
+          for (const al of it.allergens) {
+            const s = String(al || '').trim()
+            if (s && inSource(s, 3)) allergens.push(s)
+            else if (s) rejected.push(`allergen (${rawName}): ${s}`)
+          }
+        }
+        validItems.push({
+          name: rawName,
+          description: desc,
+          price: it.price ? String(it.price).trim() : null,
+          ingredients,
+          variants,
+          allergens
+        })
+      }
+      if (validItems.length) validCats.push({ category: String(cat.category).trim(), items: validItems })
+    }
+    if (validCats.length) filled.menu = validCats
+  }
+
+  return { filled, rejected, tokensUsed }
+}
+
 async function dispatchDeploy(slug: string): Promise<string | null> {
   if (!GITHUB_TOKEN) return null
   const url = `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/deploy-tenant.yml/dispatches`
@@ -670,8 +1085,25 @@ Deno.serve(async (req: Request) => {
 
   let body: any
   try { body = await req.json() } catch { return json({ error: 'bad json' }, 400) }
-  const inputUrl: string = (body?.url || '').trim()
-  if (!inputUrl) return json({ error: 'url required' }, 400)
+
+  // Two call modes:
+  //   1. Fresh scaffold:  { url, tier? }       — create a new tenant.
+  //   2. Promote existing: { restaurant_id, tier } — re-scaffold an
+  //      existing tenant at a higher tier using its saved source_url.
+  const requestedTier = Math.max(1, Math.min(3, parseInt(String(body?.tier || '1'), 10) || 1))
+  let inputUrl: string = (body?.url || '').trim()
+  let existingId: string | null = body?.restaurant_id || null
+  let existingRow: any = null
+
+  if (existingId) {
+    const { data, error } = await admin.from('vautcher_restaurants')
+      .select('id, slug, name, config').eq('id', existingId).single()
+    if (error || !data) return json({ error: 'restaurant not found' }, 404)
+    existingRow = data
+    inputUrl = data.config?.source_url || ''
+    if (!inputUrl) return json({ error: 'no source_url on existing tenant — cannot promote' }, 422)
+  }
+  if (!inputUrl) return json({ error: 'url or restaurant_id required' }, 400)
 
   const target = /^https?:\/\//.test(inputUrl) ? inputUrl : 'https://' + inputUrl
 
@@ -799,61 +1231,120 @@ Deno.serve(async (req: Request) => {
     source_url: target
   }
 
-  // Score on structured fields only — T1 hasn't run AI yet.
+  // ---------- T2: AI EXTRACTION ----------
+  // At T2 we fold in everything an AI can pull from the structural
+  // outlines + cleaned text corpus — menu, specialties, and any
+  // identity fields the JSON-LD pass missed. The verbatim gate inside
+  // extractAllWithAI drops every claim that doesn't substring-match
+  // the source, so this still respects the no-invention rule.
+  let aiUsed = false
+  const aiFilled: string[] = []
+  let aiRejected: string[] = []
+  let tokensUsed = 0
+  if (requestedTier >= 2 && ANTHROPIC_API_KEY) {
+    const enhanced = await extractAllWithAI(pages, config)
+    if (enhanced) {
+      aiUsed = Object.keys(enhanced.filled).length > 0
+      tokensUsed = enhanced.tokensUsed
+      aiRejected = enhanced.rejected
+      const f = enhanced.filled
+      if (f.address && !config.address) {
+        config.address = f.address
+        config.maps_href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.address)}`
+        aiFilled.push('address')
+      }
+      if (f.phone && !config.phone) {
+        config.phone = f.phone
+        config.phone_href = 'tel:' + String(f.phone).replace(/[^\d+]/g, '')
+        aiFilled.push('phone')
+      }
+      if (f.email && !config.email) { config.email = f.email; aiFilled.push('email') }
+      if (f.description && !(config.about?.paragraphs || []).length) {
+        config.about.paragraphs = [f.description]
+        config.pwa_description = f.description
+        config.tagline = config.tagline || f.description.slice(0, 140)
+        config.hero.lead = config.hero.lead || f.description.slice(0, 220)
+        aiFilled.push('description')
+      }
+      if (Array.isArray(f.hours) && f.hours.length && !config.hours.length) {
+        config.hours = f.hours; aiFilled.push('hours')
+      }
+      if (Array.isArray(f.specialties) && f.specialties.length) {
+        config.specialties = f.specialties; aiFilled.push('specialties')
+      }
+      if (Array.isArray(f.menu) && f.menu.length) {
+        config.menu = f.menu; aiFilled.push('menu')
+      }
+    }
+  }
+
+  const scaffoldTier = requestedTier
+
+  // Score (post-AI when applicable).
   const score = scoreScaffold({
     address: config.address,
     phone: config.phone,
     hours: config.hours,
-    description,
+    description: config.about.paragraphs[0] || '',
     specialties: config.specialties,
     menu: config.menu,
     images: config.gallery
   })
 
-  // T1 = no AI. The moderator can Promote to T2 from Admin to pull
-  // menu + missing identity fields via Claude with a verbatim gate.
-  const aiUsed = false
-  const aiFilled: string[] = []
-  const aiRejected: string[] = []
-  const tokensUsed = 0
-  const scaffoldTier = 1
-
-  // Insert the restaurant row (uniqueified slug).
-  const slug = await uniqueSlug(slugify(cfg.name))
-  const { data: inserted, error } = await admin.from('vautcher_restaurants').insert({
-    name: cfg.name,
-    slug,
-    config,
-    deploy_status: GITHUB_TOKEN ? 'pending' : 'idle',
-    scaffold_tier: scaffoldTier,
-    scaffold_tokens_used: tokensUsed
-  }).select('id, slug, name').single()
-  if (error) return json({ error: error.message }, 500)
-
-  // 3. Provision a pre-claimed admin user.
-  //   email = 'pending+<code>@<slug>.vautcher.local' (placeholder PK)
-  //   claim_code = 6-char code the moderator hands to the future owner
-  //   trusted = true (scaffolded tenants come pre-vetted by the
-  //     moderator running this flow)
-  const claimCode = await uniqueClaimCode()
-  const placeholderEmail = `pending+${claimCode.toLowerCase()}@${slug}.vautcher.local`
-  const { error: ownerErr } = await admin.from('vautcher_owners').insert({
-    email: placeholderEmail,
-    restaurant_id: inserted.id,
-    name: `Propriétaire ${cfg.name}`,
-    trusted: true,
-    locked: false,
-    claim_code: claimCode
-  })
-  if (ownerErr) {
-    // Don't blow away the restaurant row if owner creation failed —
-    // the moderator can still use the existing "+ Ajouter un
-    // propriétaire" flow once they have an email.
-    console.error('owner provisioning failed', ownerErr.message)
+  // Insert OR update the restaurant row.
+  let inserted: { id: string; slug: string; name: string }
+  if (existingRow) {
+    // Promote-existing path: update config + tier on the row we loaded.
+    const { data, error } = await admin.from('vautcher_restaurants')
+      .update({
+        config,
+        scaffold_tier: scaffoldTier,
+        scaffold_tokens_used: tokensUsed,
+        deploy_status: GITHUB_TOKEN ? 'pending' : 'idle'
+      })
+      .eq('id', existingRow.id)
+      .select('id, slug, name').single()
+    if (error) return json({ error: error.message }, 500)
+    inserted = data
+  } else {
+    const slug = await uniqueSlug(slugify(cfg.name))
+    const { data, error } = await admin.from('vautcher_restaurants').insert({
+      name: cfg.name,
+      slug,
+      config,
+      deploy_status: GITHUB_TOKEN ? 'pending' : 'idle',
+      scaffold_tier: scaffoldTier,
+      scaffold_tokens_used: tokensUsed
+    }).select('id, slug, name').single()
+    if (error) return json({ error: error.message }, 500)
+    inserted = data
   }
 
-  // 4. Optionally dispatch the Cloudflare Pages build.
-  const workflowUrl = await dispatchDeploy(slug)
+  // Owner provisioning only happens on fresh scaffolds. Promoting an
+  // existing tenant doesn't touch the owner row.
+  let claimCode: string | null = null
+  let placeholderEmail: string | null = null
+  let ownerErr: any = null
+  if (!existingRow) {
+    claimCode = await uniqueClaimCode()
+    placeholderEmail = `pending+${claimCode.toLowerCase()}@${inserted.slug}.vautcher.local`
+    const { error } = await admin.from('vautcher_owners').insert({
+      email: placeholderEmail,
+      restaurant_id: inserted.id,
+      name: `Propriétaire ${cfg.name}`,
+      trusted: true,
+      locked: false,
+      claim_code: claimCode
+    })
+    if (error) {
+      console.error('owner provisioning failed', error.message)
+      ownerErr = error
+    }
+  }
+
+  // Dispatch the Cloudflare Pages build (same workflow for fresh +
+  // promote — the build picks up the updated config either way).
+  const workflowUrl = await dispatchDeploy(inserted.slug)
   if (workflowUrl) {
     await admin.from('vautcher_restaurants')
       .update({ deploy_log_url: workflowUrl })
@@ -870,14 +1361,14 @@ Deno.serve(async (req: Request) => {
     deploy: workflowUrl ? 'dispatched' : 'manual',
     deploy_log_url: workflowUrl,
     pages_url: `https://${inserted.slug}.pages.dev`,
-    quality: score.quality,               // 'ok' | 'low' | 'bad'
+    quality: score.quality,
     quality_reasons: score.reasons,
     ai_used: aiUsed,
     ai_filled: aiFilled,
     ai_rejected: aiRejected,
     menu_categories: (config.menu || []).length,
     menu_items: (config.menu || []).reduce((n: number, c: any) => n + (c.items?.length || 0), 0),
-    owner: ownerErr ? null : {
+    owner: (existingRow || ownerErr) ? null : {
       placeholder_email: placeholderEmail,
       claim_code: claimCode
     }
