@@ -27,15 +27,32 @@ async function onSendOtp() {
   busy.value = true
   error.value = ''
   try {
-    // Dev-only "root" shortcut — skips the email OTP entirely.
-    if (entry.toLowerCase() === 'root') {
+    // Dev-only "root" shortcut — also accept "root@anything" because
+    // iOS autocomplete loves to append a domain to "root". Anything
+    // that starts with "root" before an @ counts.
+    if (/^root($|@)/i.test(entry)) {
       const { error: e } = await rootLogin()
-      if (e) { error.value = t('login.codeInvalid'); return }
+      if (e) { error.value = e.message || t('login.codeInvalid'); return }
       return // the session watcher handles the redirect
     }
     const { error: e } = await sendOtp(entry)
     if (e) { error.value = e.message; return }
     step.value = 'code'
+  } catch (e) {
+    error.value = (e && e.message) || String(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+// Dedicated root login — one click, no typing, no autocomplete to
+// worry about. Same backdoor as the typed shortcut.
+async function onRootLogin() {
+  busy.value = true
+  error.value = ''
+  try {
+    const { error: e } = await rootLogin()
+    if (e) { error.value = e.message || t('login.codeInvalid'); return }
   } catch (e) {
     error.value = (e && e.message) || String(e)
   } finally {
@@ -94,12 +111,24 @@ async function onSignOut() {
         <p class="sub">{{ t('login.subtitle') }}</p>
         <div class="field">
           <label>{{ t('login.email') }}</label>
-          <input v-model="email" type="text" inputmode="email"
-            :placeholder="t('login.emailPlaceholder')" required />
+          <input
+            v-model="email" type="text" inputmode="email"
+            autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+            :placeholder="t('login.emailPlaceholder')" required
+          />
         </div>
         <button class="btn full" type="submit" :disabled="busy">
           {{ busy ? t('login.sending') : t('login.sendCode') }}
         </button>
+
+        <!-- Dev-only one-click root login. Avoids typing 'root' into a
+             field where iOS autocorrect / browser autocomplete can turn
+             it into something else before the form submits. -->
+        <button
+          type="button" class="btn btn--plain btn--root full"
+          :disabled="busy"
+          @click="onRootLogin"
+        >🔑 Entrer en root (dev)</button>
       </form>
 
       <!-- Step 2: code -->
@@ -166,6 +195,12 @@ async function onSignOut() {
 h2 { font-size: 1.4rem; margin-bottom: 4px; color: var(--ink); }
 .sub { color: var(--mut); font-size: 0.85rem; margin-bottom: 20px; }
 .full { width: 100%; }
+.btn--root {
+  margin-top: 14px;
+  font-size: 0.86rem;
+  opacity: 0.85;
+}
+.btn--root:hover { opacity: 1; }
 .code-input {
   text-align: center;
   font-size: 1.5rem;
