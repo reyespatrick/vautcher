@@ -19,7 +19,7 @@
 // No API calls. Pure local transform from an existing preview.
 
 import { load } from 'cheerio'
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync } from 'fs'
 import postcss from 'postcss'
 import prefixer from 'postcss-prefix-selector'
 
@@ -31,6 +31,16 @@ const outPath = process.argv[3] || null
 
 const html = readFileSync(path, 'utf8')
 const $ = load(html)
+
+// 0) Sidecar report.json (sibling .report.json file from website-rewamp.mjs)
+// carries the source logo URL, source palette, and source URL — facts
+// the diner shell needs that the bespoke HTML alone doesn't expose
+// cleanly. Optional: empty fields fall back to nulls.
+const reportPath = path.replace(/\.html$/, '.report.json')
+let report = {}
+if (existsSync(reportPath)) {
+  try { report = JSON.parse(readFileSync(reportPath, 'utf8')) } catch {/* ignore */}
+}
 
 // 1) Google Fonts URLs ------------------------------------------------------
 const googleFonts = []
@@ -119,6 +129,10 @@ const out = {
   home_html: bodyInner.trim(),
   home_css: scoped.css.trim(),
   google_fonts_url: googleFonts[0] || null,
+  // Logo + source URL come from the sidecar report.json so they
+  // survive the chrome-stripping step above.
+  logo_url: report.logo || null,
+  source_url: report.url || null,
   theme: { primary, primary_dark: primaryDark, font_display: fontDisplay, font_body: fontBody, font_menu: fontMenu }
 }
 

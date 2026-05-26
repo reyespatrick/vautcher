@@ -64,6 +64,11 @@ const merged = {
   home_css: bespoke.home_css,
   google_fonts_url: bespoke.google_fonts_url || null,
   theme: bespoke.theme || null,
+  // Source-site values that have to survive into the row so the diner
+  // shell (AppHeader / About / Contact) doesn't fall back to the
+  // bundled La Gioconda defaults.
+  logo_url: bespoke.logo_url || currentConfig.logo_url || null,
+  source_url: bespoke.source_url || currentConfig.source_url || null,
   // Backwards-compatibility — keep brand_primary / heading_font shape
   // that the diner expected from the old scaffolder so AppHeader etc.
   // can still pick them up if they don't read theme.* directly.
