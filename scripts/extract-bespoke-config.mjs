@@ -124,15 +124,24 @@ const scoped = await postcss([
   })
 ]).process(css, { from: undefined })
 
+// Structured contact metadata from the sidecar — diner's ContactView /
+// ReservationView read these as flat config fields.
+const s = report.structured || {}
 const out = {
   source_file: path,
   home_html: bodyInner.trim(),
   home_css: scoped.css.trim(),
   google_fonts_url: googleFonts[0] || null,
-  // Logo + source URL come from the sidecar report.json so they
-  // survive the chrome-stripping step above.
   logo_url: report.logo || null,
   source_url: report.url || null,
+  // Flat structured fields used by the shared diner shell:
+  address: s.address || null,
+  phone: s.phone || null,
+  phone_href: s.phone ? 'tel:' + String(s.phone).replace(/[^\d+]/g, '') : null,
+  email: s.email || null,
+  maps_href: s.maps_href || null,
+  hours: s.hours || [],
+  tagline: s.description || null,
   theme: { primary, primary_dark: primaryDark, font_display: fontDisplay, font_body: fontBody, font_menu: fontMenu }
 }
 

@@ -207,6 +207,122 @@ function findLogo($, baseUrl) {
   if (icons[0]) return cleanImageUrl(absUrl(icons[0].href, baseUrl))
   return cleanImageUrl(absUrl($('meta[property="og:image"]').attr('content'), baseUrl))
 }
+// Structured contact metadata extraction. The bespoke HTML alone doesn't
+// give the diner's shared shell (ContactView, ReservationView, etc.)
+// what it needs — address/phone/email/hours have to land in the row
+// as separate config fields. We pull them from the most reliable
+// sources first (JSON-LD Restaurant), then fall back to meta tags +
+// visible mailto:/tel: links.
+const DOW = { mo: 'Lundi', tu: 'Mardi', we: 'Mercredi', th: 'Jeudi', fr: 'Vendredi', sa: 'Samedi', su: 'Dimanche' }
+function parseSchemaHours(spec) {
+  // Handles both the object form (openingHoursSpecification) and the
+  // string form (openingHours = "Mo-Sa 11:30-14:00 18:30-23:00").
+  const out = []
+  const arr = Array.isArray(spec) ? spec : [spec]
+  for (const s of arr) {
+    if (s && typeof s === 'object') {
+      const days = []
+      const raw = s.dayOfWeek || s.dayofweek || []
+      for (const d of (Array.isArray(raw) ? raw : [raw])) {
+        const k = String(d).replace(/.*\//, '').slice(0, 2).toLowerCase()
+        if (DOW[k]) days.push(DOW[k])
+      }
+      const time = [s.opens, s.closes].filter(Boolean).join(' – ')
+      if (days.length && time) out.push({ days: days.join(', '), time })
+    } else if (typeof s === 'string') {
+      const m = s.match(/([A-Z][a-z](?:-[A-Z][a-z])?)\s+(\d{2}:\d{2})-(\d{2}:\d{2})/g)
+      if (m) for (const tok of m) {
+        const mm = tok.match(/([A-Z][a-z](?:-[A-Z][a-z])?)\s+(\d{2}:\d{2})-(\d{2}:\d{2})/)
+        if (!mm) continue
+        const dayPart = mm[1].split('-').map((d) => DOW[d.toLowerCase()] || d).join(' – ')
+        out.push({ days: dayPart, time: `${mm[2]} – ${mm[3]}` })
+      }
+    }
+  }
+  return out
+}
+function ldAddressToString(a) {
+  if (!a) return null
+  if (typeof a === 'string') return a
+  const parts = [a.streetAddress, [a.postalCode, a.addressLocality].filter(Boolean).join(' '), a.addressRegion, a.addressCountry].filter(Boolean)
+  return parts.join(', ') || null
+}
+// Sniff a Swiss/French-style address from visible text. Matches lines
+// that start with Route / Rue / Chemin / Avenue / Bd / Quai / Place /
+// Av., followed by a number + city. Returns the longest match found,
+// preferring lines with a 4-digit postal code on the same line.
+const ADDR_RE = /(?:Route|Rue|Chemin|Avenue|Av\.|Boulevard|Bd\.?|Quai|Place|Pl\.)\s+[^,\n<]{3,80}(?:,?\s+\d{4}\s+[A-ZÉÈÊ][a-zéèêç-]+)?/gi
+function addressFromText(text) {
+  const matches = (text.match(ADDR_RE) || [])
+    .map((m) => m.replace(/\s+/g, ' ').trim())
+    .filter((m) => m.length > 12)
+  // Prefer matches that include a postal code (e.g. "1290 Versoix").
+  const withCity = matches.filter((m) => /\d{4}\s+[A-Z]/.test(m))
+  return (withCity[0] || matches[0]) || null
+}
+
+function extractStructuredFromPage($, baseUrl) {
+  const out = { name: null, description: null, address: null, phone: null, email: null, hours: [] }
+  // 1) JSON-LD — the gold-standard source.
+  const blobs = []
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try {
+      const data = JSON.parse($(el).contents().text())
+      const flat = Array.isArray(data) ? data : (data['@graph'] || [data])
+      for (const d of flat) blobs.push(d)
+    } catch {/* ignore */}
+  })
+  for (const d of blobs) {
+    const t = String(d?.['@type'] || '').toLowerCase()
+    if (!/restaurant|foodestablish|localbusiness|cafe|bar/.test(t)) continue
+    out.name ||= d.name || null
+    out.description ||= d.description || null
+    out.address ||= ldAddressToString(d.address)
+    out.phone ||= d.telephone || null
+    out.email ||= d.email || null
+    if (!out.hours.length) {
+      const hrs = d.openingHoursSpecification || d.openingHours
+      if (hrs) out.hours = parseSchemaHours(hrs)
+    }
+  }
+  // 2) Visible tel:/mailto: + og/meta description.
+  out.description ||= $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content') || null
+  if (!out.phone) {
+    const tel = $('a[href^="tel:"]').first().attr('href')
+    if (tel) out.phone = tel.replace(/^tel:/i, '').trim()
+  }
+  if (!out.email) {
+    const mail = $('a[href^="mailto:"]').first().attr('href')
+    if (mail) out.email = mail.replace(/^mailto:/i, '').split('?')[0].trim()
+  }
+  // 3) Address from visible body text — used when no JSON-LD ships an
+  //    address (e.g. handcrafted sites that only put it in a footer or
+  //    on the /contact page).
+  if (!out.address) {
+    const bodyText = $('body').text().replace(/\s+/g, ' ')
+    out.address = addressFromText(bodyText)
+  }
+  return out
+}
+
+// Merge structured info across all crawled pages. First non-empty
+// value wins per field. The /contact page is typically where address +
+// hours live on hand-built sites, so a multi-page sweep matters.
+function extractStructured(pages, _baseUrl) {
+  const merged = { name: null, description: null, address: null, phone: null, email: null, hours: [], maps_href: null }
+  for (const p of pages) {
+    const got = extractStructuredFromPage(p.$, p.url)
+    merged.name ||= got.name
+    merged.description ||= got.description
+    merged.address ||= got.address
+    merged.phone ||= got.phone
+    merged.email ||= got.email
+    if (!merged.hours.length && got.hours.length) merged.hours = got.hours
+  }
+  if (merged.address) merged.maps_href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(merged.address)}`
+  return merged
+}
+
 function collectImages($, baseUrl, exclude) {
   const out = []
   const seen = new Set([exclude].filter(Boolean))
@@ -808,10 +924,18 @@ async function main() {
   console.log(`    phones    ${fmt('phones')}`)
   console.log(`    addresses ${fmt('addresses')}`)
 
+  // Structured contact metadata (address, phone, email, hours) — the
+  // diner's ContactView / ReservationView read these as separate config
+  // fields, not from home_html. Extract from JSON-LD + meta + visible
+  // tel:/mailto: links.
+  const structured = extractStructured(pages, home.url)
+  console.log(`  structured: name=${structured.name ? '✓' : '✗'} addr=${structured.address ? '✓' : '✗'} phone=${structured.phone ? '✓' : '✗'} email=${structured.email ? '✓' : '✗'} hours=${structured.hours.length}`)
+
   // Write a small sidecar JSON with the report so the index can read it.
   writeFileSync(outPath.replace(/\.html$/, '.report.json'), JSON.stringify({
     url: target, slug, logo, notes,
     palette, themeColor,
+    structured,
     tokens: { input: usage.input_tokens || 0, output: usage.output_tokens || 0 },
     menu_kept: totalKept, menu_dropped: dropped,
     verify

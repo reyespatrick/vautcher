@@ -69,6 +69,16 @@ const merged = {
   // bundled La Gioconda defaults.
   logo_url: bespoke.logo_url || currentConfig.logo_url || null,
   source_url: bespoke.source_url || currentConfig.source_url || null,
+  // Flat fields the diner shell uses on shared pages (Contact,
+  // Reservation, AppHeader/Footer). null-coalesced so a re-scaffold
+  // doesn't clobber a value the moderator may have edited by hand.
+  address: bespoke.address || currentConfig.address || null,
+  phone: bespoke.phone || currentConfig.phone || null,
+  phone_href: bespoke.phone_href || currentConfig.phone_href || null,
+  email: bespoke.email || currentConfig.email || null,
+  maps_href: bespoke.maps_href || currentConfig.maps_href || null,
+  hours: (bespoke.hours && bespoke.hours.length) ? bespoke.hours : (currentConfig.hours || []),
+  tagline: bespoke.tagline || currentConfig.tagline || null,
   // Backwards-compatibility — keep brand_primary / heading_font shape
   // that the diner expected from the old scaffolder so AppHeader etc.
   // can still pick them up if they don't read theme.* directly.
