@@ -1126,7 +1126,7 @@ async function copyLink() {
 .chip:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Install-the-app card */
-.install-card { display: flex; gap: 18px; align-items: center; }
+.install-card { display: flex; gap: 18px; align-items: center; padding: 16px 18px; }
 .install-info { flex: 1; min-width: 0; }
 .install-h { font-family: 'Rufina', serif; font-size: 1.05rem; color: var(--accent); margin-bottom: 6px; }
 .install-hint { font-size: 0.85rem; color: var(--mut); line-height: 1.45; }
