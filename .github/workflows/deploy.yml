@@ -128,6 +128,7 @@ jobs:
             restowner/supabase/event-recurrence-pattern.sql \
             restowner/supabase/event-end-time.sql \
             restowner/supabase/event-push-now.sql \
+            restowner/supabase/owner-claim-schema.sql \
             restowner/supabase/scaffold-tier.sql \
             restowner/supabase/admin-restaurants-tier.sql \
             restowner/supabase/admin-set-template.sql \
@@ -217,5 +218,6 @@ jobs:
           supabase functions deploy provision-owner --project-ref yfyfoqrautdogivalimb
           supabase functions deploy event-notifier --project-ref yfyfoqrautdogivalimb
           supabase functions deploy rephrase-text --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy claim-owner --project-ref yfyfoqrautdogivalimb
           supabase functions deploy scaffold-tenant --project-ref yfyfoqrautdogivalimb
           supabase functions deploy delete-tenant --project-ref yfyfoqrautdogivalimb

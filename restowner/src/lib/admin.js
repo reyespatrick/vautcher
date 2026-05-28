@@ -115,6 +115,15 @@ export async function createRestaurant(name, slug) {
   return { data, error }
 }
 
+// Generates a durable access code for a new owner of this restaurant. The
+// moderator hands the code to the restaurateur, who activates on /activer.
+export async function createOwnerCode(restaurantId, name) {
+  const { data, error } = await supabase.rpc('vautcher_admin_create_owner_code', {
+    p_restaurant_id: restaurantId, p_name: name || null
+  })
+  return { data, error }
+}
+
 /**
  * Replace a scaffold-provisioned owner's placeholder email with the
  * real one. Moderator-only (the RPC checks).

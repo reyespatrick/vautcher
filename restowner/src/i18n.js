@@ -75,6 +75,7 @@ const fr = {
     title: 'Connexion', subtitle: 'Recevez un code à usage unique par e-mail.',
     email: 'Adresse e-mail', emailPlaceholder: "vous{'@'}restaurant.ch",
     sendCode: 'Recevoir le code', sending: 'Envoi…',
+    haveCode: 'Première connexion ? Activez avec votre code',
     codeTitle: 'Code de vérification',
     codeSentTo: 'Saisissez le code envoyé à {email}.',
     code: 'Code reçu', verify: 'Se connecter', verifying: 'Vérification…',
@@ -321,7 +322,14 @@ const fr = {
     empty: 'Aucun restaurant.', clientsEmpty: 'Aucun client.',
     error: 'Action impossible. Réessayez.',
     installTitle: 'Installer l’application',
-    installHint: 'Faites scanner ce QR code au restaurateur pour ajouter la console à l’écran d’accueil de son téléphone.'
+    installHint: 'Faites scanner ce QR code au restaurateur pour ajouter la console à l’écran d’accueil de son téléphone.',
+    genCode: 'Générer un code d’accès',
+    genCodeHint: 'Le restaurateur enregistrera lui-même son e-mail avec ce code, sur la page d’activation. Le code n’expire pas.',
+    orByEmail: 'Ou créer par e-mail (lien magique)',
+    codeCreated: 'Code d’accès créé',
+    codeCreatedHint: 'Donnez ce code au restaurateur. Il l’active avec son e-mail.',
+    copyCode: 'Copier le code',
+    codeActivateAt: 'Activation sur :'
   },
   install: {
     subtitle: 'Ajoutez restowner à votre écran d’accueil pour un accès en un geste.',
@@ -335,6 +343,18 @@ const fr = {
     installed: 'L’application est déjà installée. Ouvrez-la depuis votre écran d’accueil.',
     open: 'Ouvrir la console',
     foot: 'restowner — la console de fidélité de votre restaurant.'
+  },
+  activate: {
+    title: 'Activer votre compte',
+    subtitle: 'Entrez votre e-mail et le code d’accès fourni par restowner.',
+    email: 'E-mail',
+    emailPlaceholder: 'vous@restaurant.ch',
+    code: 'Code d’accès',
+    activate: 'Activer mon compte',
+    activating: 'Activation…',
+    failed: 'Code invalide ou déjà utilisé.',
+    signinFailed: 'Compte activé, mais connexion impossible. Réessayez via la page de connexion.',
+    foot: 'Le code ne fonctionne qu’une fois. Besoin d’aide ? Contactez votre référent restowner.'
   },
   refuse: {
     title: 'Refuser l’événement',

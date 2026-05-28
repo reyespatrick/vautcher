@@ -9,7 +9,7 @@ import QRCode from 'qrcode'
 import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import {
-  adminRestaurants, createRestaurant,
+  adminRestaurants, createRestaurant, createOwnerCode,
   setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, deleteTenant
 } from '../lib/admin'
 
@@ -29,6 +29,9 @@ const ownerFormFor = ref(null)        // restaurant id with its add-owner form o
 const newO = ref({ email: '', name: '' })
 const provisionResult = ref(null)     // { email, action_link, code }
 const copied = ref(false)
+const codeResult = ref(null)          // { code, restaurant_id } — durable access code
+const codeCopied = ref(false)
+const activateUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/activer'
 
 // Install QR — points to the public /install landing page so a restaurateur
 // can scan and add the console to their phone's home screen.
@@ -191,6 +194,33 @@ async function submitOwner(restaurantId) {
   } finally {
     busy.value = false
   }
+}
+
+// Durable access code: the restaurateur registers their own e-mail later
+// on /activer using this code. No e-mail needed up front.
+async function genOwnerCode(restaurantId) {
+  if (busy.value) return
+  busy.value = true
+  try {
+    const { data, error } = await createOwnerCode(restaurantId, newO.value.name.trim())
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
+    codeResult.value = data
+    ownerFormFor.value = null
+    await load()
+  } finally {
+    busy.value = false
+  }
+}
+
+async function copyCode() {
+  try {
+    await navigator.clipboard.writeText(codeResult.value.code)
+    codeCopied.value = true
+    setTimeout(() => { codeCopied.value = false }, 1500)
+  } catch (e) { /* ignore */ }
 }
 
 async function toggleTrusted(owner) {
@@ -358,6 +388,20 @@ async function copyLink() {
           </span>
         </div>
         <button class="prov-x" @click="provisionResult = null">✕</button>
+      </div>
+
+      <!-- Durable access-code result -->
+      <div v-if="codeResult" class="card prov">
+        <strong>{{ t('admin.codeCreated') }}</strong>
+        <p>{{ t('admin.codeCreatedHint') }}</p>
+        <div class="code-big">{{ codeResult.code }}</div>
+        <div class="prov-actions">
+          <button class="btn btn--sm" @click="copyCode">
+            {{ codeCopied ? t('admin.copied') : t('admin.copyCode') }}
+          </button>
+        </div>
+        <p class="code-url">{{ t('admin.codeActivateAt') }} <code>{{ activateUrl }}</code></p>
+        <button class="prov-x" @click="codeResult = null">✕</button>
       </div>
 
       <!-- ============ Scaffold from URL ============ -->
@@ -582,12 +626,23 @@ async function copyLink() {
             class="owner-form"
             @submit.prevent="submitOwner(r.id)"
           >
-            <input v-model="newO.email" type="email" :placeholder="t('admin.ownerEmail')" required />
             <input v-model="newO.name" type="text" :placeholder="t('admin.ownerName')" />
-            <div class="form-actions">
-              <button class="btn btn--sm" type="submit" :disabled="busy">
+            <button class="btn btn--sm full" type="button" :disabled="busy"
+              @click="genOwnerCode(r.id)">
+              {{ busy ? t('admin.creating') : t('admin.genCode') }}
+            </button>
+            <span class="owner-hint">{{ t('admin.genCodeHint') }}</span>
+
+            <details class="owner-adv">
+              <summary>{{ t('admin.orByEmail') }}</summary>
+              <input v-model="newO.email" type="email" :placeholder="t('admin.ownerEmail')" />
+              <button class="btn btn--plain btn--sm full" type="submit"
+                :disabled="busy || !newO.email.trim()">
                 {{ busy ? t('admin.creating') : t('admin.create') }}
               </button>
+            </details>
+
+            <div class="form-actions">
               <button class="btn btn--plain btn--sm" type="button"
                 @click="ownerFormFor = null">{{ t('admin.cancel') }}</button>
             </div>
@@ -1063,4 +1118,18 @@ async function copyLink() {
   .install-card { flex-direction: column-reverse; align-items: stretch; }
   .install-qr { align-self: center; }
 }
+
+/* Durable access code */
+.code-big {
+  font-family: 'Rufina', serif; font-size: 2rem; font-weight: 700; letter-spacing: 0.14em;
+  color: var(--accent); background: var(--bg); border: 1px dashed var(--accent);
+  border-radius: 12px; padding: 12px; text-align: center; margin: 6px 0 4px;
+}
+.code-url { font-size: 0.8rem; color: var(--mut); margin-top: 10px; }
+.code-url code { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+.full { width: 100%; }
+.owner-hint { display: block; font-size: 0.76rem; color: var(--mut); margin: 8px 0 4px; line-height: 1.4; }
+.owner-adv { margin-top: 12px; }
+.owner-adv summary { font-size: 0.8rem; color: var(--accent); cursor: pointer; font-weight: 600; }
+.owner-adv input { margin-top: 10px; }
 </style>

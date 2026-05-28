@@ -16,12 +16,15 @@ import AdminView from '../views/AdminView.vue'
 import ClientsView from '../views/ClientsView.vue'
 import RestaurantConfigView from '../views/RestaurantConfigView.vue'
 import InstallView from '../views/InstallView.vue'
+import ActivateView from '../views/ActivateView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
   // Public install landing — reachable by anyone (QR target), and never
   // redirected away even when a moderator is signed in.
   { path: '/install', name: 'install', component: InstallView, meta: { open: true } },
+  // Public owner activation — restaurateur enters e-mail + durable code.
+  { path: '/activer', name: 'activate', component: ActivateView, meta: { public: true } },
   { path: '/', name: 'dashboard', component: DashboardView },
   { path: '/event/new', name: 'event-new', component: EventEditorView },
   { path: '/event/:id', name: 'event-detail', component: EventDetailView },

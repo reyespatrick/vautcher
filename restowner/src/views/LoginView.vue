@@ -93,7 +93,7 @@ async function onSignOut() {
   <div class="login-wrap">
     <div class="login card">
       <div class="login-brand">
-        <img src="/assets/logo.jpg" alt="" />
+        <img src="/icon-192.png" alt="" />
         <b>restowner</b>
         <small>{{ t('app.tagline') }} · v{{ version }}</small>
       </div>
@@ -119,6 +119,10 @@ async function onSignOut() {
         </div>
         <button class="btn full" type="submit" :disabled="busy">
           {{ busy ? t('login.sending') : t('login.sendCode') }}
+        </button>
+
+        <button type="button" class="link" @click="router.push({ name: 'activate' })">
+          {{ t('login.haveCode') }}
         </button>
 
         <!-- Dev-only one-click root login. Avoids typing 'root' into a

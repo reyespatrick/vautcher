@@ -140,12 +140,18 @@ export function useAuth() {
     })
   }
 
-  function verifyOtp(email, token) {
-    return supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: token.trim(),
-      type: 'email'
-    })
+  // Verify an OTP. Tries the email-OTP type first (normal login), then
+  // falls back to magiclink (the token minted by claim-owner / provisioning
+  // is a magic-link OTP) so a hand-off code works the same as an emailed one.
+  async function verifyOtp(email, token) {
+    const e = email.trim()
+    const tok = token.trim()
+    const res = await supabase.auth.verifyOtp({ email: e, token: tok, type: 'email' })
+    if (res.error) {
+      const alt = await supabase.auth.verifyOtp({ email: e, token: tok, type: 'magiclink' })
+      if (!alt.error) return alt
+    }
+    return res
   }
 
   // Dev-only "root" shortcut — signs straight in with the fixed

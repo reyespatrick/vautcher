@@ -31,3 +31,9 @@ verify_jwt = true
 # before spending an Anthropic call.
 [functions.rephrase-text]
 verify_jwt = true
+
+# claim-owner — a restaurateur activates with their durable code on the
+# public /activer page. No JWT (they aren't signed in yet); the unguessable
+# claim code is the secret.
+[functions.claim-owner]
+verify_jwt = false

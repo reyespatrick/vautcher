@@ -58,7 +58,7 @@ async function doSignOut() {
     <template v-if="showShell">
       <header class="app-header">
         <RouterLink :to="{ name: 'dashboard' }" class="brand">
-          <img src="/assets/logo.jpg" alt="" />
+          <img src="/icon-192.png" alt="" />
           <span>
             <b>restowner</b>
             <small>{{ t('app.tagline') }}</small>
