@@ -146,7 +146,8 @@ create trigger vautcher_cards_loyalty_bcast
 -- when one fills, and reports card progress + the redemption count
 -- back to the scanner.
 drop function if exists public.vautcher_add_stamp(uuid);
-create function public.vautcher_add_stamp(p_profile_id uuid)
+drop function if exists public.vautcher_add_stamp(uuid, uuid);
+create function public.vautcher_add_stamp(p_profile_id uuid, p_restaurant_id uuid default null)
 returns table (
   name              text,
   lifetime_visits   bigint,
@@ -168,6 +169,10 @@ declare
   v_next    uuid;
 begin
   v_rest := public.vautcher_owner_restaurant();
+  -- A moderator (root) can stamp for the restaurant currently in scope.
+  if v_rest is null and p_restaurant_id is not null and public.vautcher_is_moderator() then
+    v_rest := p_restaurant_id;
+  end if;
   if v_rest is null then
     raise exception 'caller is not a restaurant owner';
   end if;
@@ -235,11 +240,13 @@ begin
 end;
 $$;
 
-revoke all on function public.vautcher_add_stamp(uuid) from public;
-grant execute on function public.vautcher_add_stamp(uuid) to authenticated;
+revoke all on function public.vautcher_add_stamp(uuid, uuid) from public;
+grant execute on function public.vautcher_add_stamp(uuid, uuid) to authenticated;
 
 -- ---------- OWNER: redeem a completed card by scanning it ----------
-create or replace function public.vautcher_redeem_card(p_card_id uuid)
+drop function if exists public.vautcher_redeem_card(uuid);
+drop function if exists public.vautcher_redeem_card(uuid, uuid);
+create function public.vautcher_redeem_card(p_card_id uuid, p_restaurant_id uuid default null)
 returns table (name text, reward_text text, vouchers_redeemed bigint)
 language plpgsql
 security definer
@@ -250,6 +257,9 @@ declare
   v_card public.vautcher_cards;
 begin
   v_rest := public.vautcher_owner_restaurant();
+  if v_rest is null and p_restaurant_id is not null and public.vautcher_is_moderator() then
+    v_rest := p_restaurant_id;
+  end if;
   if v_rest is null then
     raise exception 'caller is not a restaurant owner';
   end if;
@@ -283,8 +293,8 @@ begin
 end;
 $$;
 
-revoke all on function public.vautcher_redeem_card(uuid) from public;
-grant execute on function public.vautcher_redeem_card(uuid) to authenticated;
+revoke all on function public.vautcher_redeem_card(uuid, uuid) from public;
+grant execute on function public.vautcher_redeem_card(uuid, uuid) to authenticated;
 
 -- ---------- DINER: read the loyalty state ----------
 -- Returns the active card + any completed-not-yet-redeemed cards, the

@@ -4,8 +4,10 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Html5Qrcode } from 'html5-qrcode'
 import { supabase } from '../lib/supabase'
+import { useScope } from '../composables/useScope'
 
 const { t } = useI18n()
+const { activeRestaurantId } = useScope()
 const route = useRoute()
 const scanning = ref(false)
 const busy = ref(false)
@@ -58,7 +60,7 @@ async function handleCode(text) {
     if (redeem) {
       // Completed card → mark the reward as given.
       const { data, error } = await supabase.rpc('vautcher_redeem_card', {
-        p_card_id: redeem[1]
+        p_card_id: redeem[1], p_restaurant_id: activeRestaurantId.value
       })
       const r = row(data)
       if (error) {
@@ -74,7 +76,7 @@ async function handleCode(text) {
     } else {
       // Active card → add a loyalty stamp.
       const { data, error } = await supabase.rpc('vautcher_add_stamp', {
-        p_profile_id: stamp[1]
+        p_profile_id: stamp[1], p_restaurant_id: activeRestaurantId.value
       })
       const r = row(data)
       if (error) {
