@@ -45,9 +45,12 @@ as $$
 declare
   v_secret text;
 begin
+  -- Announce on approval only when announce_now is set. The N-days-before
+  -- reminder is independent (daily cron) — the two are combinable. The
+  -- legacy notify_days_before = 0 is kept as a fallback for the deploy gap.
   if new.moderation_status is distinct from 'approved' then return new; end if;
   if new.announced_at is not null then return new; end if;
-  if new.notify_days_before is distinct from 0 then return new; end if;
+  if not (coalesce(new.announce_now, false) or new.notify_days_before = 0) then return new; end if;
   if tg_op = 'UPDATE' and old.moderation_status = 'approved' then
     return new;
   end if;

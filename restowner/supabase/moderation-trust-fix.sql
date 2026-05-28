@@ -21,6 +21,10 @@
 --  Re-runnable (idempotent).
 -- ============================================================
 
+-- NOTE: superseded by root-admin-schema.sql — kept identical here so
+-- re-applying either file yields the same trigger. A moderator (root) is
+-- implicitly trusted (their own events auto-approve); owners fall back to
+-- per-tenant trust.
 create or replace function public.vautcher_events_set_moderation()
 returns trigger
 language plpgsql
@@ -28,37 +32,29 @@ security definer
 set search_path = public
 as $$
 declare
-  v_email   text := lower(auth.jwt() ->> 'email');
-  v_trusted boolean;
+  v_any_trusted boolean;
+  v_is_mod boolean := public.vautcher_is_moderator();
 begin
-  -- Is the caller an owner of THIS event's restaurant?
-  select trusted into v_trusted
-    from public.vautcher_owners
-   where restaurant_id = new.restaurant_id
-     and lower(email) = v_email
-   limit 1;
-
-  if found then
-    -- Owner of this restaurant — trust flag decides, every time.
-    new.moderation_status := case when coalesce(v_trusted, false)
-                                  then 'approved' else 'pending' end;
-    if new.moderation_status <> 'refused' then
-      new.refusal_reason := null;
+  if v_is_mod then
+    if tg_op = 'UPDATE' and new.moderation_status = 'refused'
+       and old.moderation_status is distinct from 'refused' then
+      return new;
     end if;
+    new.moderation_status := 'approved';
+    new.refusal_reason := null;
     return new;
   end if;
 
-  -- Not an owner of this restaurant. A moderator acting from the
-  -- approval queue (approving / refusing somebody else's event) is
-  -- the only legitimate path here — keep their status as set.
-  if public.vautcher_is_moderator() then
-    return new;
+  select exists(
+    select 1 from public.vautcher_owners
+     where restaurant_id = new.restaurant_id
+       and trusted and not locked
+  ) into v_any_trusted;
+  new.moderation_status := case when v_any_trusted
+                                then 'approved' else 'pending' end;
+  if new.moderation_status <> 'refused' then
+    new.refusal_reason := null;
   end if;
-
-  -- Anyone else shouldn't really reach this (RLS gates inserts),
-  -- but be safe and force pending.
-  new.moderation_status := 'pending';
-  new.refusal_reason := null;
   return new;
 end;
 $$;

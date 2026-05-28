@@ -48,6 +48,14 @@ export async function updateEvent(id, payload) {
   return { error }
 }
 
+// Sends the event's push to all subscribers right now and cancels any
+// scheduled reminder. Gated server-side (moderator or owner of the
+// restaurant); the cron secret never leaves the DB. See event-push-now.sql.
+export async function pushEventNow(id) {
+  const { error } = await supabase.rpc('vautcher_event_push_now', { p_event_id: id })
+  return { error }
+}
+
 export async function cancelEvent(id) {
   const { error } = await supabase
     .from(TABLE)

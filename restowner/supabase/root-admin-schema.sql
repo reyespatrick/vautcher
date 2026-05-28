@@ -38,16 +38,17 @@ grant execute on function public.vautcher_profile_locked(uuid) to anon, authenti
 -- Forces moderation_status on every event insert/edit so it can't be
 -- bypassed client-side. Rules:
 --
---  1. A moderator's explicit approve/refuse from the moderation queue
---     (UPDATE that flips status to 'approved' or 'refused') is kept as-is.
---  2. Otherwise (INSERT or any other UPDATE) auto-approve when the
---     tenant has at least one trusted, unlocked owner; pending otherwise.
+--  1. A moderator (root/admin) is IMPLICITLY TRUSTED: anything they
+--     create or edit is auto-approved — they are the approval authority,
+--     so queuing their own event is pointless. An explicit 'refused' they
+--     set from the queue still stands.
+--  2. Otherwise (an owner via restowner) auto-approve when the tenant has
+--     at least one trusted, unlocked owner; pending otherwise.
 --
--- The previous version only checked the *caller's* trust flag. That
--- broke the common moderator-as-admin path: a moderator creating an
--- event on behalf of a trusted tenant left the event 'pending'
--- because the moderator's own email isn't in vautcher_owners with
--- trusted=true. Now the check is per-tenant, not per-caller.
+-- History: the original checked the *caller's* trust flag, which left a
+-- moderator's own events 'pending' (their email isn't a trusted owner).
+-- The fix makes moderators implicitly trusted and falls back to per-tenant
+-- trust for owners.
 create or replace function public.vautcher_events_set_moderation()
 returns trigger
 language plpgsql
@@ -58,15 +59,19 @@ declare
   v_any_trusted boolean;
   v_is_mod boolean := public.vautcher_is_moderator();
 begin
-  -- Moderator setting an explicit verdict via the approval queue.
-  if v_is_mod and tg_op = 'UPDATE'
-     and new.moderation_status in ('approved', 'refused')
-     and old.moderation_status is distinct from new.moderation_status
-  then
+  -- Moderator/root: implicitly trusted. Keep an explicit refusal from the
+  -- queue; otherwise approve whatever they create or edit.
+  if v_is_mod then
+    if tg_op = 'UPDATE' and new.moderation_status = 'refused'
+       and old.moderation_status is distinct from 'refused' then
+      return new;
+    end if;
+    new.moderation_status := 'approved';
+    new.refusal_reason := null;
     return new;
   end if;
 
-  -- Auto-approve when the tenant has any trusted unlocked owner.
+  -- Owner path: auto-approve when the tenant has any trusted unlocked owner.
   select exists(
     select 1 from public.vautcher_owners
      where restaurant_id = new.restaurant_id

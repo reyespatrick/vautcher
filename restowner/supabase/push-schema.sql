@@ -5,9 +5,10 @@
 --  diner grants notification permission. The event-notifier edge
 --  function reads these to send Web-Push payloads:
 --    - "announce" pushes go to every subscription of a restaurant
---      shortly after one of its events is approved
---    - "remind" pushes go to RSVPed profiles, fired daily via
---      pg_cron when event_date − notify_days_before = today
+--      shortly after one of its events is approved (when announce_now)
+--    - "remind" pushes go to every subscription of the restaurant,
+--      fired daily via pg_cron when event_date − notify_days_before
+--      = today (broadcast, not RSVP-only)
 --
 --  Re-runnable (idempotent).
 -- ============================================================
@@ -38,7 +39,12 @@ alter table public.vautcher_push_subscriptions enable row level security;
 -- without one blocking the other.
 alter table public.vautcher_events
   add column if not exists announced_at timestamptz,
-  add column if not exists reminded_at  timestamptz;
+  add column if not exists reminded_at  timestamptz,
+  -- Announce ("Nouvel événement") and the N-days-before reminder are now
+  -- INDEPENDENT. announce_now drives the on-approval broadcast; the
+  -- reminder is driven solely by notify_days_before >= 1. The old
+  -- convention (notify_days_before = 0 meaning "announce now") is gone.
+  add column if not exists announce_now boolean not null default false;
 
 -- ---------- RPCs ----------
 -- Diner calls this after a successful pushManager.subscribe(). Upsert
@@ -125,10 +131,13 @@ declare
   v_secret text;
 begin
   -- Only fire on the transition INTO approved, and only when the owner
-  -- chose "notify now" (notify_days_before = 0). N≥1 = reminder cron.
+  -- ticked "announce now". The reminder (notify_days_before >= 1) is a
+  -- separate path (daily cron) and the two are independent/combinable.
+  -- The legacy notify_days_before = 0 is still honoured for safety during
+  -- the deploy gap before the editor starts writing announce_now.
   if new.moderation_status is distinct from 'approved' then return new; end if;
   if new.announced_at is not null then return new; end if;
-  if new.notify_days_before is distinct from 0 then return new; end if;
+  if not (coalesce(new.announce_now, false) or new.notify_days_before = 0) then return new; end if;
   if tg_op = 'UPDATE' and old.moderation_status = 'approved' then
     return new;
   end if;

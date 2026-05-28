@@ -4,10 +4,11 @@
 //  Two kinds:
 //   - ?kind=announce&event_id=<uuid>  → push every subscriber of that
 //     event's restaurant. Fired by a DB trigger after an event is
-//     approved (see push-trigger-schema.sql).
+//     approved AND announce_now is set (see push-vault-schema.sql).
 //   - ?kind=remind                    → for each event due today
-//     (event_date − notify_days_before = today), push the profiles
-//     that RSVPed. Fired daily via pg_cron.
+//     (event_date − notify_days_before = today), push EVERY subscriber
+//     of that event's restaurant (broadcast — not RSVP-only). Fired
+//     daily via pg_cron.
 //
 //  Authentication: this function runs with verify_jwt=false so pg_cron
 //  / DB triggers can call it without a user JWT. Instead it checks the
@@ -137,20 +138,12 @@ async function doRemind() {
     const restName = rest?.name ?? 'Le restaurant'
     const restLogo = (rest?.config as any)?.logo_url ?? '/assets/logo.jpg'
 
-    const { data: rsvps } = await admin
-      .from('vautcher_event_rsvps')
-      .select('profile_id')
-      .eq('event_id', ev.id)
-    const profileIds = (rsvps ?? []).map((r: any) => r.profile_id)
-    if (!profileIds.length) {
-      await admin.from('vautcher_events').update({ reminded_at: new Date().toISOString() }).eq('id', ev.id)
-      continue
-    }
-
+    // Broadcast to every subscriber of the restaurant (Option A), the
+    // same audience as the announce push — not only RSVPed profiles.
     const { data: subs } = await admin
       .from('vautcher_push_subscriptions')
       .select('id, endpoint, p256dh, auth')
-      .in('profile_id', profileIds)
+      .eq('restaurant_id', ev.restaurant_id)
     if (!subs?.length) {
       await admin.from('vautcher_events').update({ reminded_at: new Date().toISOString() }).eq('id', ev.id)
       continue

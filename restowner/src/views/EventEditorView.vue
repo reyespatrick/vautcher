@@ -8,13 +8,13 @@ import { supabase } from '../lib/supabase'
 import {
   getEvent, createEvent, updateEvent, cancelEvent, IMAGE_OPTIONS,
   uploadEventImage, listUploadedImages, deleteEventImage,
-  materializeSeries
+  materializeSeries, pushEventNow
 } from '../lib/events'
 
 const route = useRoute()
 const router = useRouter()
 const { activeRestaurantId } = useScope()
-const { confirm } = useDialog()
+const { confirm, alert } = useDialog()
 const { t } = useI18n()
 
 const editingId = computed(() => (route.name === 'event-edit' ? route.params.id : null))
@@ -31,6 +31,7 @@ const form = ref({
   event_time: '', event_end_time: '',
   location: '', price: '', image_url: '/assets/photo1.jpg',
   age_min: null, age_max: null, points_min: null, points_max: null,
+  announce_now: true,
   notify_days_before: 1,
   rebate_value: null, rebate_unit: 'percent', rebate_first_n: null,
   max_participants: null,
@@ -61,6 +62,7 @@ function fillFrom(ev) {
     image_url: ev.image_url || '/assets/photo1.jpg',
     age_min: ev.age_min, age_max: ev.age_max,
     points_min: ev.points_min, points_max: ev.points_max,
+    announce_now: ev.announce_now ?? false,
     notify_days_before: ev.notify_days_before ?? null,
     rebate_value: ev.rebate_value, rebate_unit: ev.rebate_unit || 'percent',
     rebate_first_n: ev.rebate_first_n,
@@ -321,6 +323,7 @@ async function save() {
     }
   }, 12000)
 
+  let savedId = null
   try {
     const payload = {
       restaurant_id: activeRestaurantId.value,
@@ -336,15 +339,16 @@ async function save() {
       age_max: ageTargeted.value ? (Number(form.value.age_max) || null) : null,
       points_min: pointsTargeted.value ? (Number(form.value.points_min) || null) : null,
       points_max: pointsTargeted.value ? (Number(form.value.points_max) || null) : null,
-      // Days-before-event the diner gets a reminder push. 0 means
-      // "announce now on approval"; null means no reminder. Don't use
-      // `Number(x) || null` here — that collapses 0 to null because 0
-      // is falsy in JS, which silently disables the announce path.
+      // Announce + reminder are independent. announce_now broadcasts a
+      // "Nouvel événement" push to all subscribers on approval; the
+      // reminder fires notify_days_before (>=1) days before the event.
+      // Both can be on at once; null reminder = no reminder.
+      announce_now: !!form.value.announce_now,
       notify_days_before: (() => {
         const v = form.value.notify_days_before
         if (v === null || v === '' || v === undefined) return null
         const n = Number(v)
-        return Number.isFinite(n) ? n : null
+        return Number.isFinite(n) && n >= 1 ? n : null
       })(),
       rebate_value: rebateOn.value ? (Number(form.value.rebate_value) || null) : null,
       rebate_unit: form.value.rebate_unit,
@@ -372,6 +376,7 @@ async function save() {
       ? await updateEvent(editingId.value, payload)
       : await createEvent(payload)
     if (res.error) { error.value = res.error.message; return }
+    savedId = editingId.value || res.data?.id
 
     // For a brand-new recurring event, materialise the number of
     // occurrences the owner asked for via the duration picker.
@@ -379,12 +384,63 @@ async function save() {
     if (!editingId.value && form.value.recurrence !== 'none' && res.data?.id) {
       await materializeSeries(res.data.id, recurCount.value)
     }
-    router.push({ name: 'dashboard' })
   } catch (e) {
     error.value = (e && e.message) || String(e)
   } finally {
     clearTimeout(watchdog)
     saving.value = false
+  }
+
+  // Post-save: tell the owner when the push goes out, with the option to
+  // send it now. Outside the saving guard so a slow response to the dialog
+  // doesn't trip the 12s watchdog.
+  if (savedId) {
+    await showPushDialog(savedId)
+    router.push({ name: 'dashboard' })
+  }
+}
+
+// Reads back the saved row and explains the notification schedule. When a
+// reminder is scheduled, offers "send now" — which broadcasts immediately
+// and cancels the scheduled reminder (vautcher_event_push_now).
+async function showPushDialog(id) {
+  const { data: ev } = await getEvent(id)
+  if (!ev) return
+
+  const approved = ev.moderation_status === 'approved'
+  const n = ev.notify_days_before
+  const hasReminder = approved && typeof n === 'number' && n >= 1 && !ev.reminded_at
+
+  const lines = []
+  if (!approved) {
+    lines.push(t('editor.savedPending'))
+  } else {
+    if (ev.announce_now) lines.push(t('editor.savedAnnounced'))
+    if (hasReminder) {
+      const d = new Date(ev.event_date + 'T00:00:00')
+      d.setDate(d.getDate() - n)
+      const date = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+      lines.push(t('editor.savedReminder', { date }))
+    }
+    if (!ev.announce_now && !hasReminder) lines.push(t('editor.savedNone'))
+  }
+
+  if (hasReminder) {
+    const sendNow = await confirm({
+      title: t('editor.savedTitle'),
+      body: lines.join('\n') + '\n\n' + t('editor.savedPushNowQ'),
+      confirmLabel: t('editor.pushNow'),
+      cancelLabel: t('editor.keepSchedule')
+    })
+    if (sendNow) {
+      const { error: e } = await pushEventNow(id)
+      await alert({
+        title: e ? t('editor.pushFailedTitle') : t('editor.pushSentTitle'),
+        body: e ? t('editor.pushFailed') : t('editor.pushSentBody')
+      })
+    }
+  } else {
+    await alert({ title: t('editor.savedTitle'), body: lines.join('\n') })
   }
 }
 
@@ -658,10 +714,15 @@ async function onCancelEvent() {
       <!-- Informer le client — when to notify + who to target -->
       <div class="opt">
         <span class="tg-text">{{ t('editor.notify') }}</span>
+        <label class="toggle" style="margin-top:8px">
+          <input type="checkbox" v-model="form.announce_now" />
+          <span class="track"></span>
+          <span class="tg-text">{{ t('editor.announceNow') }}</span>
+        </label>
         <div class="opt-body">
+          <span class="opt-sublabel">{{ t('editor.remindLabel') }}</span>
           <select v-model="form.notify_days_before" class="opt-select">
-            <option :value="null">{{ t('editor.notifyNone') }}</option>
-            <option :value="0">{{ t('editor.notifyNow') }}</option>
+            <option :value="null">{{ t('editor.remindNone') }}</option>
             <option :value="1">{{ t('editor.notifyDays', { n: 1 }) }}</option>
             <option :value="2">{{ t('editor.notifyDays', { n: 2 }) }}</option>
             <option :value="3">{{ t('editor.notifyDays', { n: 3 }) }}</option>
@@ -945,6 +1006,12 @@ async function onCancelEvent() {
   color: var(--mut);
   margin: 7px 0 0 56px;
   line-height: 1.45;
+}
+.opt-sublabel {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--mut);
+  margin-bottom: 5px;
 }
 
 .rebate-body { margin-left: 56px; }

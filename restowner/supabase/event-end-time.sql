@@ -101,14 +101,14 @@ begin
     insert into public.vautcher_events (
       title, description, event_date, event_time, event_end_time, location, price, image_url,
       restaurant_id, age_min, age_max, points_min, points_max,
-      notify_days_before, rebate_value, rebate_unit, rebate_first_n,
+      announce_now, notify_days_before, rebate_value, rebate_unit, rebate_first_n,
       max_participants, published, status, recurrence, recurrence_pattern,
       moderation_status, announced_at
     ) values (
       parent.title, parent.description, d, parent.event_time, parent.event_end_time,
       parent.location, parent.price, parent.image_url, parent.restaurant_id,
       parent.age_min, parent.age_max, parent.points_min, parent.points_max,
-      parent.notify_days_before, parent.rebate_value, parent.rebate_unit,
+      parent.announce_now, parent.notify_days_before, parent.rebate_value, parent.rebate_unit,
       parent.rebate_first_n, parent.max_participants, parent.published,
       parent.status, parent.recurrence, parent.recurrence_pattern,
       parent.moderation_status, now()
