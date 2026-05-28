@@ -221,7 +221,7 @@ const fr = {
     statRedeemed: 'cartes utilisées',
     statCompleted: '{n} complétées',
     statRate: '{rate}% utilisées',
-    perCompleted: '{n} complétées', perRedeemed: '{n} utilisées',
+    perActive: '{n} en cours', perCompleted: '{n} complétées', perRedeemed: '{n} utilisées',
     edit: 'Modifier', moveUp: 'Monter', moveDown: 'Descendre'
   },
   voucherEditor: {

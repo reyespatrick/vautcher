@@ -391,6 +391,13 @@ as $$
         'id', d.id,
         'label', d.label,
         'stamps_required', d.stamps_required,
+        'active', (
+          select count(*) from public.vautcher_cards c
+          where c.voucher_id = d.id and c.status = 'active'),
+        'stamps', (
+          select count(*) from public.vautcher_stamps s
+          join public.vautcher_cards c on c.id = s.card_id
+          where c.voucher_id = d.id),
         'completed', (
           select count(*) from public.vautcher_cards c
           where c.voucher_id = d.id and c.status in ('completed', 'redeemed')),

@@ -48,7 +48,7 @@ const rate = computed(() =>
 // Per-vautcher { completed, redeemed }, keyed by id.
 function statFor(id) {
   const row = (stats.value?.per_voucher || []).find((v) => v.id === id)
-  return row || { completed: 0, redeemed: 0 }
+  return row || { active: 0, stamps: 0, completed: 0, redeemed: 0 }
 }
 
 // Reorder = swap the sequence value with the adjacent vautcher.
@@ -107,6 +107,7 @@ async function move(index, dir) {
             </div>
             <p class="vrow-reward">🎁 {{ v.reward_text }}</p>
             <p class="vrow-stat">
+              {{ t('vouchers.perActive', { n: statFor(v.id).active }) }} ·
               {{ t('vouchers.perCompleted', { n: statFor(v.id).completed }) }} ·
               {{ t('vouchers.perRedeemed', { n: statFor(v.id).redeemed }) }}
             </p>
