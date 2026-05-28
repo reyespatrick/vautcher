@@ -329,7 +329,9 @@ const fr = {
     codeCreated: 'Code d’accès créé',
     codeCreatedHint: 'Donnez ce code au restaurateur. Il l’active avec son e-mail.',
     copyCode: 'Copier le code',
-    codeActivateAt: 'Activation sur :'
+    codeActivateAt: 'Activation sur :',
+    regenCode: 'Changer le code',
+    regenCodeConfirm: 'Régénérer le code d’accès de ce restaurateur ? L’ancien code ne fonctionnera plus.'
   },
   install: {
     subtitle: 'Ajoutez restowner à votre écran d’accueil pour un accès en un geste.',

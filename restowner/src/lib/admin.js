@@ -124,6 +124,15 @@ export async function createOwnerCode(restaurantId, name) {
   return { data, error }
 }
 
+// Root: (re)issue an access code for an existing owner. The old code stops
+// working; returns { code }.
+export async function regenerateOwnerCode(email) {
+  const { data, error } = await supabase.rpc('vautcher_admin_regenerate_owner_code', {
+    p_email: email
+  })
+  return { data, error }
+}
+
 /**
  * Replace a scaffold-provisioned owner's placeholder email with the
  * real one. Moderator-only (the RPC checks).

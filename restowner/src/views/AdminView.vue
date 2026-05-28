@@ -9,7 +9,7 @@ import QRCode from 'qrcode'
 import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import {
-  adminRestaurants, createRestaurant, createOwnerCode,
+  adminRestaurants, createRestaurant, createOwnerCode, regenerateOwnerCode,
   setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, deleteTenant
 } from '../lib/admin'
 
@@ -221,6 +221,30 @@ async function copyCode() {
     codeCopied.value = true
     setTimeout(() => { codeCopied.value = false }, 1500)
   } catch (e) { /* ignore */ }
+}
+
+// Root: (re)issue an owner's access code. The old one stops working.
+async function regenOwnerCode(owner) {
+  if (busy.value) return
+  const ok = await confirm({
+    title: t('admin.regenCode'),
+    body: t('admin.regenCodeConfirm'),
+    confirmLabel: t('admin.regenCode'),
+    cancelLabel: t('admin.cancel')
+  })
+  if (!ok) return
+  busy.value = true
+  try {
+    const { data, error } = await regenerateOwnerCode(owner.email)
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
+    codeResult.value = data
+    await load()
+  } finally {
+    busy.value = false
+  }
 }
 
 async function toggleTrusted(owner) {
@@ -617,6 +641,9 @@ async function copyLink() {
                   class="chip chip--lock" :class="{ on: o.locked }"
                   :disabled="busy" @click="toggleOwnerLock(o)"
                 >{{ o.locked ? t('admin.locked') : t('admin.lock') }}</button>
+                <button
+                  class="chip" :disabled="busy" @click="regenOwnerCode(o)"
+                >{{ t('admin.regenCode') }}</button>
               </div>
             </li>
           </ul>
