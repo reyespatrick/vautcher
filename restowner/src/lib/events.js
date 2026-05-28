@@ -56,6 +56,15 @@ export async function pushEventNow(id) {
   return { error }
 }
 
+// Asks the rephrase-text edge function to polish a description (<=200 chars).
+// The Anthropic key stays server-side. Returns { data: { text } } or { error }.
+export async function rephraseText(text) {
+  const { data, error } = await supabase.functions.invoke('rephrase-text', { body: { text } })
+  if (error) return { error }
+  if (data && data.error) return { error: { message: data.error } }
+  return { data }
+}
+
 export async function cancelEvent(id) {
   const { error } = await supabase
     .from(TABLE)

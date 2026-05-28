@@ -25,3 +25,9 @@ verify_jwt = true
 # also requires the moderator to pass the slug back as confirmation.
 [functions.delete-tenant]
 verify_jwt = true
+
+# rephrase-text — "improve my description with AI" from the event editor.
+# JWT required; the function also checks the caller is an owner/moderator
+# before spending an Anthropic call.
+[functions.rephrase-text]
+verify_jwt = true

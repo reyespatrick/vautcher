@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase'
 import {
   getEvent, createEvent, updateEvent, cancelEvent, IMAGE_OPTIONS,
   uploadEventImage, listUploadedImages, deleteEventImage,
-  materializeSeries, pushEventNow
+  materializeSeries, pushEventNow, rephraseText
 } from '../lib/events'
 import BackBar from '../components/BackBar.vue'
 
@@ -53,6 +53,7 @@ const uploading = ref(false)
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
+const aiBusy = ref(false)
 
 function fillFrom(ev) {
   form.value = {
@@ -311,6 +312,28 @@ const recurPreview = computed(() => {
   }
 })
 
+// "Améliorer avec l'IA" — rephrase the description (<=200 chars) via the
+// rephrase-text edge function and drop the result back into the field.
+async function improveDescription() {
+  const text = form.value.description.trim()
+  if (!text) {
+    await alert({ title: t('editor.aiTitle'), body: t('editor.aiEmpty') })
+    return
+  }
+  if (aiBusy.value) return
+  aiBusy.value = true
+  try {
+    const { data, error: e } = await rephraseText(text)
+    if (e || !data?.text) {
+      await alert({ title: t('editor.aiTitle'), body: t('editor.aiFailed') })
+      return
+    }
+    form.value.description = data.text
+  } finally {
+    aiBusy.value = false
+  }
+}
+
 async function save() {
   if (!valid.value || saving.value) return
   saving.value = true
@@ -475,6 +498,15 @@ async function onCancelEvent() {
         <label>{{ t('editor.description') }}</label>
         <textarea v-model="form.description" rows="4"
           :placeholder="t('editor.descriptionPlaceholder')"></textarea>
+        <button type="button" class="ai-btn" :disabled="aiBusy" @click="improveDescription">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z" />
+            <path d="M18 14l.7 2L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-1z" />
+          </svg>
+          <span>{{ aiBusy ? t('editor.aiBusy') : t('editor.aiRephrase') }}</span>
+        </button>
+        <span class="ai-hint">{{ t('editor.aiHint') }}</span>
       </div>
 
       <div class="field">
@@ -1011,6 +1043,19 @@ async function onCancelEvent() {
   color: var(--mut);
   margin-bottom: 5px;
 }
+.ai-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 9px;
+  font-family: inherit; font-weight: 700; font-size: 0.8rem;
+  color: var(--accent);
+  background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
+  padding: 8px 14px; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.ai-btn:hover { background: #faf4ea; border-color: var(--accent); }
+.ai-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.ai-btn svg { width: 16px; height: 16px; }
+.ai-hint { display: block; font-size: 0.72rem; color: var(--mut); margin-top: 6px; }
 
 .rebate-body { margin-left: 56px; }
 .rebate-line {

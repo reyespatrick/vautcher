@@ -216,5 +216,6 @@ jobs:
           supabase functions deploy vautcher-pass --project-ref yfyfoqrautdogivalimb
           supabase functions deploy provision-owner --project-ref yfyfoqrautdogivalimb
           supabase functions deploy event-notifier --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy rephrase-text --project-ref yfyfoqrautdogivalimb
           supabase functions deploy scaffold-tenant --project-ref yfyfoqrautdogivalimb
           supabase functions deploy delete-tenant --project-ref yfyfoqrautdogivalimb
