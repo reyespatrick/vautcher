@@ -41,6 +41,7 @@ watch(activeRestaurantId, load, { immediate: true })
 
 const redeemed = computed(() => stats.value?.redeemed || 0)
 const completed = computed(() => stats.value?.completed || 0)
+const stampsTotal = computed(() => stats.value?.stamps_total || 0)
 const rate = computed(() =>
   completed.value ? Math.round((redeemed.value / completed.value) * 100) : 0
 )
@@ -88,6 +89,7 @@ async function move(index, dir) {
           {{ t('vouchers.statCompleted', { n: completed }) }} ·
           {{ t('vouchers.statRate', { rate }) }}
         </span>
+        <span class="vstats-stamps">{{ t('vouchers.statStamps', { n: stampsTotal }) }}</span>
       </div>
 
       <RouterLink to="/voucher/new" class="btn btn--full create-btn">
@@ -178,6 +180,11 @@ async function move(index, dir) {
   transition: width 0.5s ease;
 }
 .vstats-sub { display: block; font-size: 0.8rem; color: var(--mut); margin-top: 9px; }
+.vstats-stamps {
+  display: inline-block; margin-top: 12px; padding: 5px 12px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent); font-size: 0.82rem; font-weight: 700;
+}
 
 .create-btn { margin-bottom: 22px; }
 .plus { font-size: 1.15rem; font-weight: 700; line-height: 0; }
