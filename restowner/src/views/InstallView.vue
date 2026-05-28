@@ -26,8 +26,8 @@ async function onInstall() {
 <template>
   <div class="install">
     <div class="card">
-      <img class="app-icon" src="/icon-192.png" alt="vautcher" />
-      <h1>vautcher</h1>
+      <img class="app-icon" src="/icon-192.png" alt="restowner" />
+      <h1>restowner</h1>
       <p class="sub">{{ t('install.subtitle') }}</p>
 
       <!-- Already installed / running standalone -->

@@ -324,7 +324,7 @@ const fr = {
     installHint: 'Faites scanner ce QR code au restaurateur pour ajouter la console à l’écran d’accueil de son téléphone.'
   },
   install: {
-    subtitle: 'Ajoutez vautcher à votre écran d’accueil pour un accès en un geste.',
+    subtitle: 'Ajoutez restowner à votre écran d’accueil pour un accès en un geste.',
     androidBtn: 'Installer l’application',
     androidFallback: 'Ouvrez le menu (⋮) de votre navigateur, puis « Ajouter à l’écran d’accueil ».',
     iosTitle: 'Installer sur iPhone / iPad',
@@ -334,7 +334,7 @@ const fr = {
     desktopHint: 'Scannez le QR code depuis votre smartphone pour installer l’application.',
     installed: 'L’application est déjà installée. Ouvrez-la depuis votre écran d’accueil.',
     open: 'Ouvrir la console',
-    foot: 'vautcher — la console de fidélité de votre restaurant.'
+    foot: 'restowner — la console de fidélité de votre restaurant.'
   },
   refuse: {
     title: 'Refuser l’événement',

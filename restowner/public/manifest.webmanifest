@@ -1,6 +1,6 @@
 {
-  "name": "vautcher — Console restaurateur",
-  "short_name": "vautcher",
+  "name": "restowner — Console restaurateur",
+  "short_name": "restowner",
   "description": "La console de fidélité pour votre restaurant.",
   "start_url": "/",
   "scope": "/",
