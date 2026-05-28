@@ -19,6 +19,13 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body, #app { height: 100%; }
+/* Native-app feel: no pinch-zoom / double-tap zoom, no text auto-zoom.
+   Panning (scroll) still works. */
+html, body {
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 body {
   font-family: 'Montserrat', system-ui, sans-serif;
   background: #2a2024;          /* surround behind the phone frame on desktop */
