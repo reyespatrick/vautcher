@@ -127,6 +127,7 @@ jobs:
             restowner/supabase/events-recurrence-schema.sql \
             restowner/supabase/event-recurrence-pattern.sql \
             restowner/supabase/event-end-time.sql \
+            restowner/supabase/event-push-now.sql \
             restowner/supabase/scaffold-tier.sql \
             restowner/supabase/admin-restaurants-tier.sql \
             restowner/supabase/admin-set-template.sql \
