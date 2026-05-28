@@ -319,7 +319,22 @@ const fr = {
     copyLink: 'Copier le lien', copied: 'Copié ✓', code: 'Code',
     stamps: '{n} tampons',
     empty: 'Aucun restaurant.', clientsEmpty: 'Aucun client.',
-    error: 'Action impossible. Réessayez.'
+    error: 'Action impossible. Réessayez.',
+    installTitle: 'Installer l’application',
+    installHint: 'Faites scanner ce QR code au restaurateur pour ajouter la console à l’écran d’accueil de son téléphone.'
+  },
+  install: {
+    subtitle: 'Ajoutez vautcher à votre écran d’accueil pour un accès en un geste.',
+    androidBtn: 'Installer l’application',
+    androidFallback: 'Ouvrez le menu (⋮) de votre navigateur, puis « Ajouter à l’écran d’accueil ».',
+    iosTitle: 'Installer sur iPhone / iPad',
+    iosStep1: 'Appuyez sur le bouton Partager, en bas de Safari.',
+    iosStep2: 'Faites défiler et choisissez « Sur l’écran d’accueil ».',
+    iosStep3: 'Appuyez sur « Ajouter », en haut à droite.',
+    desktopHint: 'Scannez le QR code depuis votre smartphone pour installer l’application.',
+    installed: 'L’application est déjà installée. Ouvrez-la depuis votre écran d’accueil.',
+    open: 'Ouvrir la console',
+    foot: 'vautcher — la console de fidélité de votre restaurant.'
   },
   refuse: {
     title: 'Refuser l’événement',

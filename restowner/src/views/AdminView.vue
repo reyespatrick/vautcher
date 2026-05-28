@@ -2,9 +2,10 @@
 // Cross-restaurant overview — restaurants and their owners.
 // The clients view has moved to its own /clients tab using the shared
 // <ClientList /> component, so the segmented control here is gone.
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import QRCode from 'qrcode'
 import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import {
@@ -28,6 +29,24 @@ const ownerFormFor = ref(null)        // restaurant id with its add-owner form o
 const newO = ref({ email: '', name: '' })
 const provisionResult = ref(null)     // { email, action_link, code }
 const copied = ref(false)
+
+// Install QR — points to the public /install landing page so a restaurateur
+// can scan and add the console to their phone's home screen.
+const installUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/install'
+const installQr = ref('')
+const copiedInstall = ref(false)
+onMounted(() => {
+  QRCode.toDataURL(installUrl, { width: 320, margin: 1, color: { dark: '#241b1d', light: '#ffffff' } })
+    .then((d) => { installQr.value = d })
+    .catch(() => {})
+})
+async function copyInstall() {
+  try {
+    await navigator.clipboard.writeText(installUrl)
+    copiedInstall.value = true
+    setTimeout(() => { copiedInstall.value = false }, 1500)
+  } catch (e) { /* ignore */ }
+}
 
 // "From URL" scaffolder
 const scaffoldUrl = ref('')
@@ -308,6 +327,23 @@ async function copyLink() {
     </div>
 
     <template v-else>
+      <!-- Install the console — QR for a restaurateur to scan -->
+      <div class="card install-card">
+        <div class="install-info">
+          <h2 class="install-h">{{ t('admin.installTitle') }}</h2>
+          <p class="install-hint">{{ t('admin.installHint') }}</p>
+          <div class="install-link">
+            <code>{{ installUrl }}</code>
+            <button class="btn btn--sm" @click="copyInstall">
+              {{ copiedInstall ? t('admin.copied') : t('admin.copyLink') }}
+            </button>
+          </div>
+        </div>
+        <a class="install-qr" :href="installUrl" target="_blank" rel="noopener">
+          <img v-if="installQr" :src="installQr" alt="QR — installer l'application" />
+        </a>
+      </div>
+
       <!-- New-owner result panel -->
       <div v-if="provisionResult" class="card prov">
         <strong>{{ t('admin.provisioned') }} — {{ provisionResult.email }}</strong>
@@ -1006,4 +1042,25 @@ async function copyLink() {
 .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .chip--lock.on { background: var(--danger); border-color: var(--danger); }
 .chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Install-the-app card */
+.install-card { display: flex; gap: 18px; align-items: center; }
+.install-info { flex: 1; min-width: 0; }
+.install-h { font-family: 'Rufina', serif; font-size: 1.05rem; color: var(--accent); margin-bottom: 6px; }
+.install-hint { font-size: 0.85rem; color: var(--mut); line-height: 1.45; }
+.install-link { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.install-link code {
+  font-size: 0.78rem; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px;
+  word-break: break-all;
+}
+.install-qr {
+  flex: 0 0 auto; width: 118px; height: 118px; border-radius: 12px;
+  background: #fff; border: 1px solid var(--line); padding: 7px; display: block;
+}
+.install-qr img { width: 100%; height: 100%; display: block; }
+@media (max-width: 460px) {
+  .install-card { flex-direction: column-reverse; align-items: stretch; }
+  .install-qr { align-self: center; }
+}
 </style>

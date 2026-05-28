@@ -18,8 +18,9 @@ const route = useRoute()
 const { t } = useI18n()
 const { hydrateFromOwner } = useUiPrefs()
 
-// Shell (header + tab bar) shows everywhere except the login screen.
-const showShell = computed(() => route.name && route.name !== 'login')
+// Shell (header + tab bar) shows everywhere except the login screen and
+// always-open public pages like the install landing.
+const showShell = computed(() => route.name && route.name !== 'login' && !route.meta?.open)
 
 // Event editor is a sub-page of the Événements tab.
 const activeTab = computed(() => {

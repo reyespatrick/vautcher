@@ -15,9 +15,13 @@ import VoucherEditorView from '../views/VoucherEditorView.vue'
 import AdminView from '../views/AdminView.vue'
 import ClientsView from '../views/ClientsView.vue'
 import RestaurantConfigView from '../views/RestaurantConfigView.vue'
+import InstallView from '../views/InstallView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
+  // Public install landing — reachable by anyone (QR target), and never
+  // redirected away even when a moderator is signed in.
+  { path: '/install', name: 'install', component: InstallView, meta: { open: true } },
   { path: '/', name: 'dashboard', component: DashboardView },
   { path: '/event/new', name: 'event-new', component: EventEditorView },
   { path: '/event/:id', name: 'event-detail', component: EventDetailView },
@@ -43,6 +47,9 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  // Always-open routes (e.g. the install landing) render for anyone,
+  // signed in or not — skip the auth gate entirely.
+  if (to.meta.open) return true
   console.log('[boot] router: guard awaiting auth for', to.path)
   await whenAuthReady()
   const { session, owner, isModerator } = useAuth()
