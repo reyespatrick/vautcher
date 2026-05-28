@@ -114,12 +114,6 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 .page-head { margin-bottom: 18px; }
 .page-head h1 { font-size: 1.5rem; color: var(--accent-dark); }
 .page-head p { color: var(--mut); font-size: 0.85rem; margin-top: 3px; }
-.back-link {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 0.8rem; font-weight: 700; color: var(--mut);
-  margin-bottom: 12px;
-}
-.back-link:active { color: var(--accent); }
 
 /* ---- Buttons ---- */
 .btn {

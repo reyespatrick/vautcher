@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
 import { useDialog } from '../composables/useDialog'
 import { getVoucher, createVoucher, updateVoucher, archiveVoucher } from '../lib/vouchers'
+import BackBar from '../components/BackBar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -103,10 +104,7 @@ async function onArchive() {
 
 <template>
   <div class="page">
-    <RouterLink :to="{ name: 'vouchers' }" class="back-link">‹ {{ t('nav.vouchers') }}</RouterLink>
-    <div class="page-head">
-      <h1>{{ editingId ? t('voucherEditor.editTitle') : t('voucherEditor.newTitle') }}</h1>
-    </div>
+    <BackBar :to="{ name: 'vouchers' }" :label="editingId ? t('voucherEditor.editTitle') : t('voucherEditor.newTitle')" />
 
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 

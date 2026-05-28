@@ -10,6 +10,7 @@ import {
   uploadEventImage, listUploadedImages, deleteEventImage,
   materializeSeries, pushEventNow
 } from '../lib/events'
+import BackBar from '../components/BackBar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -460,10 +461,7 @@ async function onCancelEvent() {
 
 <template>
   <div class="page">
-    <RouterLink to="/" class="back-link">‹ {{ t('nav.events') }}</RouterLink>
-    <div class="page-head">
-      <h1>{{ editingId ? t('editor.editTitle') : t('editor.newTitle') }}</h1>
-    </div>
+    <BackBar to="/" :label="editingId ? t('editor.editTitle') : t('editor.newTitle')" />
 
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
 

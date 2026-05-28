@@ -154,7 +154,7 @@ const fr = {
     capacityOpen: 'Ouvert à tous, sans limite d’inscrits.',
     capacitySuffix: 'inscrits au maximum',
     notify: 'Informer le client',
-    announceNow: 'Annoncer dès la validation (à tous les abonnés)',
+    announceNow: 'Envoyer une notification push aux clients',
     remindLabel: 'Rappel avant l’événement',
     remindNone: 'Aucun rappel',
     notifyDays: '{n} jour(s) avant l’événement/offre',

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getRestaurant, updateRestaurant, uploadRestaurantLogo } from '../lib/admin'
+import BackBar from '../components/BackBar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -132,9 +133,8 @@ function removeItem(list, i) { list.splice(i, 1) }
 
 <template>
   <div class="page">
-    <RouterLink :to="{ name: 'admin' }" class="back-link">‹ {{ t('nav.admin') }}</RouterLink>
+    <BackBar :to="{ name: 'admin' }" :label="t('config.title')" />
     <div class="page-head">
-      <h1>{{ t('config.title') }}</h1>
       <p>{{ t('config.subtitle') }}</p>
     </div>
 

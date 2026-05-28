@@ -9,6 +9,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getEvent, listEventStats, cancelEvent } from '../lib/events'
 import { useDialog } from '../composables/useDialog'
+import BackBar from '../components/BackBar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -115,7 +116,7 @@ async function onCancel() {
 
 <template>
   <div class="page">
-    <RouterLink :to="{ name: 'dashboard' }" class="back-link">‹ {{ t('nav.events') }}</RouterLink>
+    <BackBar :to="{ name: 'dashboard' }" :label="event ? event.title : t('nav.events')" />
 
     <div class="preview-flag">
       <span class="dot"></span>
@@ -220,7 +221,6 @@ async function onCancel() {
 </template>
 
 <style scoped>
-.back-link { display: inline-block; margin-bottom: 8px; }
 .retry { display: block; margin: 14px auto 0; }
 
 /* ---- Preview banner ---- */

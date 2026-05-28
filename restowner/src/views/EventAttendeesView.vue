@@ -4,6 +4,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getEvent, eventAttendees } from '../lib/events'
+import BackBar from '../components/BackBar.vue'
 
 const route = useRoute()
 const { t, locale } = useI18n()
@@ -60,13 +61,12 @@ function age(d) {
 
 <template>
   <div class="page">
-    <RouterLink
+    <BackBar
       :to="{ name: 'event-detail', params: { id: route.params.id } }"
-      class="back-link"
-    >‹ {{ event ? event.title : t('attendees.back') }}</RouterLink>
+      :label="t('attendees.title')"
+    />
 
     <div class="page-head">
-      <h1>{{ t('attendees.title') }}</h1>
       <p v-if="!loading && !loadError">
         <strong>{{ attendees.length }}</strong>
         {{ attendees.length === 1 ? t('event.attendeesOne') : t('event.attendeesMany') }}
@@ -119,7 +119,6 @@ function age(d) {
 </template>
 
 <style scoped>
-.back-link { display: inline-block; margin-bottom: 6px; }
 .page-head h1 { margin-bottom: 4px; }
 .page-head p { color: var(--mut); font-size: 0.92rem; margin-bottom: 14px; }
 .page-head strong {
