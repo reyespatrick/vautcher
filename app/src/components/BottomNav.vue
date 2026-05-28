@@ -6,7 +6,7 @@ import { RouterLink } from 'vue-router'
 // turns brand-color in one shot — no per-icon filter tricks needed.
 const tabs = [
   { to: '/',           label: 'Accueil',  icon: 'home' },
-  { to: '/evenements', label: 'Agenda',   icon: 'calendar' },
+  { to: '/evenements', label: 'Promo',    icon: 'calendar' },
   { to: '/vautcher',   label: 'Fidélité', icon: 'star' },
   { to: '/reservation',label: 'Réserver', icon: 'clock' },
   { to: '/contact',    label: 'Contact',  icon: 'pin' }

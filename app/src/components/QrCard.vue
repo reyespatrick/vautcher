@@ -9,16 +9,16 @@ const props = defineProps({
 const holder = ref(null)
 let qr = null
 
+// No centred logo image: loading it could make qr-code-styling fail to
+// render the whole code (the QR then "disappears"). The branded burgundy
+// dots keep it recognisable, and the code always renders.
 function build() {
   return new QRCodeStyling({
     width: 248,
     height: 248,
     type: 'svg',
     data: props.data,
-    image: '/assets/logo.jpg',
-    // High error correction so the centred logo never breaks scanning.
-    qrOptions: { errorCorrectionLevel: 'H' },
-    imageOptions: { crop: true, margin: 6, imageSize: 0.4 },
+    qrOptions: { errorCorrectionLevel: 'M' },
     dotsOptions: { color: '#9e053d', type: 'rounded' },
     cornersSquareOptions: { color: '#870024', type: 'extra-rounded' },
     cornersDotOptions: { color: '#9e053d', type: 'dot' },
@@ -27,8 +27,12 @@ function build() {
 }
 
 onMounted(() => {
-  qr = build()
-  qr.append(holder.value)
+  try {
+    qr = build()
+    qr.append(holder.value)
+  } catch (e) {
+    console.error('[qr] render failed', e)
+  }
 })
 
 watch(() => props.data, (v) => {
