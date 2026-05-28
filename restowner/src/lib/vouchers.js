@@ -60,7 +60,9 @@ export async function archiveVoucher(id) {
  * Returns { data:null } if the stats function isn't deployed yet —
  * callers treat that as all-zero.
  */
-export async function voucherStats() {
-  const { data, error } = await supabase.rpc('vautcher_voucher_stats')
+export async function voucherStats(restaurantId) {
+  const { data, error } = await supabase.rpc('vautcher_voucher_stats', {
+    p_restaurant_id: restaurantId || null
+  })
   return { data: data || null, error }
 }

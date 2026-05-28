@@ -356,14 +356,22 @@ grant execute on function public.vautcher_get_voucher(uuid, uuid) to anon, authe
 -- ---------- OWNER: vautcher statistics ----------
 -- `completed` counts every card that reached full (redeemed ones were
 -- completed too); `redeemed` is the headline "vautchers actually used".
-create or replace function public.vautcher_voucher_stats()
+drop function if exists public.vautcher_voucher_stats();
+drop function if exists public.vautcher_voucher_stats(uuid);
+create function public.vautcher_voucher_stats(p_restaurant_id uuid default null)
 returns jsonb
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  with r as (select public.vautcher_owner_restaurant() as rid)
+  -- Owner: their own restaurant. Moderator (root): the scoped restaurant.
+  with r as (
+    select coalesce(
+      public.vautcher_owner_restaurant(),
+      case when public.vautcher_is_moderator() then p_restaurant_id end
+    ) as rid
+  )
   select jsonb_build_object(
     'completed', (
       select count(*) from public.vautcher_cards c, r
@@ -396,8 +404,8 @@ as $$
   );
 $$;
 
-revoke all on function public.vautcher_voucher_stats() from public;
-grant execute on function public.vautcher_voucher_stats() to authenticated;
+revoke all on function public.vautcher_voucher_stats(uuid) from public;
+grant execute on function public.vautcher_voucher_stats(uuid) to authenticated;
 
 -- ---------- ONE-TIME BACKFILL ----------
 -- Give every restaurant a default vautcher (from the old global

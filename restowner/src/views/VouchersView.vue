@@ -25,7 +25,7 @@ async function load() {
       if (error) throw error
       vouchers.value = data
       // Stats are best-effort — never block the list on them.
-      stats.value = (await voucherStats()).data
+      stats.value = (await voucherStats(activeRestaurantId.value)).data
     } else {
       vouchers.value = []
     }
