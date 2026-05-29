@@ -52,10 +52,12 @@ $$;
 revoke all on function public.vautcher_register_admin_push(text, text, text, text) from public, anon;
 grant execute on function public.vautcher_register_admin_push(text, text, text, text) to authenticated;
 
--- ---------- SCAFFOLD-DONE TRIGGER ----------
--- When a row goes scaffolding → success, ping the notify-scaffold edge
--- function (Vault secret, like the announce trigger). Only that exact
--- transition fires it, so ordinary redeploys don't notify.
+-- ---------- SCAFFOLD-DONE / FAILED TRIGGER ----------
+-- Ping notify-scaffold (Vault secret, like the announce trigger) when a
+-- scaffold finishes (scaffolding → success) OR fails (scaffolding/pending
+-- → scaffold_failed/failed). notify-scaffold reads deploy_status to push
+-- either "Site en ligne" or an error with detail. Ordinary redeploy
+-- successes (idle → success) don't notify.
 create or replace function public.vautcher_scaffold_done_trg()
 returns trigger
 language plpgsql
@@ -65,7 +67,11 @@ as $$
 declare
   v_secret text;
 begin
-  if not (new.deploy_status = 'success' and old.deploy_status = 'scaffolding') then
+  if not (
+    (new.deploy_status = 'success' and old.deploy_status = 'scaffolding') or
+    (new.deploy_status in ('scaffold_failed', 'failed')
+       and old.deploy_status in ('scaffolding', 'pending'))
+  ) then
     return new;
   end if;
   v_secret := public.vautcher_cron_secret();

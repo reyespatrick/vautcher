@@ -75,7 +75,9 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NO_OPEN: '1'
         working-directory: scripts
-        run: node website-rewamp.mjs "${{ inputs.url }}"
+        run: |
+          set -o pipefail
+          node website-rewamp.mjs "${{ inputs.url }}" 2>&1 | tee -a /tmp/scaffold.log
 
       - name: Resolve preview path
         id: preview
@@ -91,14 +93,18 @@ jobs:
 
       - name: Extract bespoke config
         working-directory: scripts
-        run: node extract-bespoke-config.mjs "${{ steps.preview.outputs.html }}" /tmp/bespoke-config.json
+        run: |
+          set -o pipefail
+          node extract-bespoke-config.mjs "${{ steps.preview.outputs.html }}" /tmp/bespoke-config.json 2>&1 | tee -a /tmp/scaffold.log
 
       - name: Patch restaurant row
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         working-directory: scripts
-        run: node patch-restaurant-config.mjs "${{ inputs.restaurant_id }}" /tmp/bespoke-config.json
+        run: |
+          set -o pipefail
+          node patch-restaurant-config.mjs "${{ inputs.restaurant_id }}" /tmp/bespoke-config.json 2>&1 | tee -a /tmp/scaffold.log
 
       - name: Dispatch deploy-tenant
         env:
@@ -110,15 +116,22 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           REF=yfyfoqrautdogivalimb
           RID='${{ inputs.restaurant_id }}'
           LOG_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          # Last lines of the generator/extract/patch output as the error
+          # detail. iconv -c drops any byte that a -c byte-cut would have
+          # left invalid, so jq never chokes on bad UTF-8.
+          ERR="$(tail -n 12 /tmp/scaffold.log 2>/dev/null | iconv -f utf-8 -t utf-8 -c 2>/dev/null || true)"
+          [ -z "$ERR" ] && ERR="Échec du scaffolding (voir les logs)."
           ESC_RID="${RID//\'/\'\'}"
           ESC_LOG="${LOG_URL//\'/\'\'}"
+          ESC_ERR="${ERR//\'/\'\'}"
           SQL="update public.vautcher_restaurants
                   set deploy_status = 'scaffold_failed',
-                      deploy_log_url = '${ESC_LOG}'
+                      deploy_log_url = '${ESC_LOG}',
+                      config = coalesce(config, '{}'::jsonb) || jsonb_build_object('deploy_error', '${ESC_ERR}')
                 where id = '${ESC_RID}';"
           jq -Rs '{query: .}' <<<"$SQL" \
             | curl -sS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \

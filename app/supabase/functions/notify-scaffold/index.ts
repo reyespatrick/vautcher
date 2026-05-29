@@ -1,11 +1,14 @@
 // ============================================================
-//  notify-scaffold — push the admin who scaffolded a site when it goes live
+//  notify-scaffold — push the admin who scaffolded a site when it
+//  finishes OR fails
 //
 //  POST /notify-scaffold?restaurant_id=<uuid>
 //  Called by the vautcher_scaffold_done_trg DB trigger (scaffolding →
-//  success transition) with the X-Cron-Secret header. Looks up who
-//  scaffolded the restaurant (config.scaffolded_by) and Web-Pushes that
-//  admin's restowner devices.
+//  success, or scaffolding/pending → scaffold_failed/failed) with the
+//  X-Cron-Secret header. Looks up who scaffolded the restaurant
+//  (config.scaffolded_by) and Web-Pushes that admin's restowner devices —
+//  "Site en ligne" on success, or the error detail (config.deploy_error)
+//  on failure.
 // ============================================================
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
@@ -32,7 +35,7 @@ Deno.serve(async (req) => {
   if (!id) return json({ error: 'restaurant_id required' }, 400)
 
   const { data: rest } = await admin
-    .from('vautcher_restaurants').select('id, name, config').eq('id', id).maybeSingle()
+    .from('vautcher_restaurants').select('id, name, config, deploy_status').eq('id', id).maybeSingle()
   if (!rest) return json({ error: 'restaurant not found' }, 404)
 
   const email = String((rest.config as any)?.scaffolded_by ?? '').toLowerCase()
@@ -42,13 +45,27 @@ Deno.serve(async (req) => {
     .from('vautcher_admin_push').select('endpoint, p256dh, auth').eq('email', email)
   if (!subs?.length) return json({ ok: true, sent: 0 })
 
-  const payload = JSON.stringify({
-    title: 'Site en ligne',
-    body: `${rest.name ?? 'Le restaurant'} est en ligne.`,
-    url: '/admin',
-    icon: '/icon-192.png',
-    tag: 'scaffold-' + id
-  })
+  const name = rest.name ?? 'Le restaurant'
+  const failed = rest.deploy_status === 'scaffold_failed' || rest.deploy_status === 'failed'
+  const errDetail = String((rest.config as any)?.deploy_error ?? '').trim()
+
+  const payload = JSON.stringify(
+    failed
+      ? {
+          title: `Échec — ${name}`,
+          body: errDetail ? errDetail.slice(0, 240) : 'Le déploiement a échoué. Voir les logs.',
+          url: '/admin',
+          icon: '/icon-192.png',
+          tag: 'scaffold-fail-' + id
+        }
+      : {
+          title: 'Site en ligne',
+          body: `${name} est en ligne.`,
+          url: '/admin',
+          icon: '/icon-192.png',
+          tag: 'scaffold-' + id
+        }
+  )
 
   let sent = 0
   for (const s of subs as any[]) {

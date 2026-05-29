@@ -27,7 +27,9 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: bash deploy-tenant.sh "${{ inputs.slug }}"
+        run: |
+          set -o pipefail
+          bash deploy-tenant.sh "${{ inputs.slug }}" 2>&1 | tee -a /tmp/deploy.log
 
       # Update the row so restowner's UI can stop polling.
       - name: Mark restaurant row as deployed
@@ -53,15 +55,19 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           REF=yfyfoqrautdogivalimb
           SLUG='${{ inputs.slug }}'
           LOG_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          ERR="$(tail -n 12 /tmp/deploy.log 2>/dev/null | iconv -f utf-8 -t utf-8 -c 2>/dev/null || true)"
+          [ -z "$ERR" ] && ERR="Échec du déploiement (voir les logs)."
           ESC_SLUG="${SLUG//\'/\'\'}"
           ESC_LOG="${LOG_URL//\'/\'\'}"
+          ESC_ERR="${ERR//\'/\'\'}"
           SQL="update public.vautcher_restaurants
                   set deploy_status = 'failed',
-                      deploy_log_url = '${ESC_LOG}'
+                      deploy_log_url = '${ESC_LOG}',
+                      config = coalesce(config, '{}'::jsonb) || jsonb_build_object('deploy_error', '${ESC_ERR}')
                 where slug = '${ESC_SLUG}';"
           jq -Rs '{query: .}' <<<"$SQL" \
             | curl -sS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
