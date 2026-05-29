@@ -244,7 +244,7 @@ export async function uploadRestaurantLogo(restaurantId, file) {
     .toLowerCase().replace(/[^a-z0-9]/g, '')
   const path = `restaurant-logos/${restaurantId}/${Date.now()}.${ext}`
   const { error } = await supabase.storage.from(LOGO_BUCKET).upload(path, file, {
-    cacheControl: '3600',
+    cacheControl: '604800',
     contentType: file.type || undefined
   })
   if (error) return { error }

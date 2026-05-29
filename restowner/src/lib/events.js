@@ -100,7 +100,7 @@ export async function uploadEventImage(restaurantId, file) {
   const path = `${restaurantId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
   const { error } = await supabase.storage
     .from(IMAGE_BUCKET)
-    .upload(path, file, { cacheControl: '3600', contentType: file.type || undefined })
+    .upload(path, file, { cacheControl: '604800', contentType: file.type || undefined })
   if (error) return { error }
   return { url: publicUrl(path), path }
 }

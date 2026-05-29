@@ -55,10 +55,16 @@ const recurrenceBadge = computed(() => {
 <template>
   <RouterLink :to="target" class="ev-row-link">
     <div class="ev-row card">
-      <div
-        class="ev-thumb"
-        :style="event.image_url ? { backgroundImage: `url(${event.image_url})` } : null"
-      ></div>
+      <div class="ev-thumb">
+        <img
+          v-if="event.image_url"
+          :src="event.image_url"
+          :alt="event.title"
+          loading="lazy"
+          decoding="async"
+          class="ev-thumb-img"
+        />
+      </div>
 
       <div class="ev-info">
         <div class="ev-titleline">
@@ -118,7 +124,14 @@ const recurrenceBadge = computed(() => {
   height: 78px;
   flex: 0 0 auto;
   border-radius: 11px;
-  background: #ece4d5 center/cover no-repeat;
+  background: #ece4d5;
+  overflow: hidden;
+}
+.ev-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .ev-info { flex: 1; min-width: 0; }
 .ev-titleline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }

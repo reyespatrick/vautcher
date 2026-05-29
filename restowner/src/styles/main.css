@@ -97,13 +97,16 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   -webkit-overflow-scrolling: touch;
 }
 
-/* ---- Bottom tab bar ---- */
+/* ---- Bottom tab bar ----
+   Padding-bottom is exactly the iOS safe-area inset (the home-indicator
+   strip): no extra slack, so the icons sit tight against the bottom edge
+   instead of floating with a wide empty band underneath. */
 .tabbar {
   flex: 0 0 auto;
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--line);
-  padding: 7px 0 calc(env(safe-area-inset-bottom) + 7px);
+  padding: 5px 0 env(safe-area-inset-bottom);
 }
 .tabbar a {
   flex: 1;
