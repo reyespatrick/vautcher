@@ -19,8 +19,11 @@ watch(() => route.fullPath, () => {
 </script>
 
 <template>
-  <div class="app-shell">
-    <AppHeader />
+  <!-- /install is a takeover landing for the QR scan — no header, no
+       bottom nav, so it doesn't look like just another tab inside the
+       app to a first-time visitor. -->
+  <div class="app-shell" :class="{ 'app-shell--bare': route.name === 'install' }">
+    <AppHeader v-if="route.name !== 'install'" />
 
     <main class="app-main" ref="mainEl">
       <router-view v-slot="{ Component }">
@@ -30,7 +33,7 @@ watch(() => route.fullPath, () => {
       </router-view>
     </main>
 
-    <BottomNav />
+    <BottomNav v-if="route.name !== 'install'" />
   </div>
 
   <OnboardingDialog v-if="dialogOpen" />
