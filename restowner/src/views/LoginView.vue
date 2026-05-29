@@ -1,10 +1,13 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 
-const { session, owner, isModerator, sendOtp, verifyOtp, rootLogin, signOut } = useAuth()
+const {
+  session, owner, pendingOwner, isModerator,
+  sendOtp, verifyOtp, rootLogin, requestAccess, refreshOwner, signOut
+} = useAuth()
 const router = useRouter()
 const { t } = useI18n()
 const version = __APP_VERSION__
@@ -14,6 +17,33 @@ const email = ref('')
 const code = ref('')
 const error = ref('')
 const busy = ref(false)
+
+// While the owner waits on the "pending" screen, poll their approval
+// status so the app drops them into the console the instant root approves
+// — that IS the in-app notification of acceptance.
+let pendingPoll = null
+watch(pendingOwner, (p) => {
+  if (p && !pendingPoll) {
+    pendingPoll = setInterval(() => { refreshOwner() }, 5000)
+  } else if (!p && pendingPoll) {
+    clearInterval(pendingPoll); pendingPoll = null
+  }
+}, { immediate: true })
+onBeforeUnmount(() => { if (pendingPoll) clearInterval(pendingPoll) })
+
+async function onRequestAccess() {
+  busy.value = true
+  error.value = ''
+  try {
+    const { error: e } = await requestAccess()
+    if (e) { error.value = e.message || String(e); return }
+    await refreshOwner()  // flips the UI to the pending screen
+  } catch (e) {
+    error.value = (e && e.message) || String(e)
+  } finally {
+    busy.value = false
+  }
+}
 
 watch([session, owner, isModerator], () => {
   if (session.value && (owner.value || isModerator.value)) {
@@ -98,11 +128,24 @@ async function onSignOut() {
         <small>{{ t('app.tagline') }} · v{{ version }}</small>
       </div>
 
-      <!-- Signed in but the email is not a registered owner -->
+      <!-- Signed in but the email is not (yet) an approved owner -->
       <div v-if="session && !owner" class="denied">
-        <h2>{{ t('login.deniedTitle') }}</h2>
-        <p>{{ t('login.deniedBody', { email: session.user.email }) }}</p>
-        <button class="btn btn--plain full" @click="onSignOut">{{ t('login.useAnother') }}</button>
+        <!-- Waiting for root to authorise this account. -->
+        <template v-if="pendingOwner">
+          <h2 class="pending-title">{{ t('login.pendingTitle') }}</h2>
+          <p>{{ t('login.pendingBody') }}</p>
+          <span class="pending-dot" aria-hidden="true"></span>
+          <button class="btn btn--plain full" @click="onSignOut">{{ t('login.useAnother') }}</button>
+        </template>
+        <!-- Unknown email: offer to request owner access. -->
+        <template v-else>
+          <h2>{{ t('login.deniedTitle') }}</h2>
+          <p>{{ t('login.deniedBody', { email: session.user.email }) }}</p>
+          <button class="btn full request-access" :disabled="busy" @click="onRequestAccess">
+            {{ busy ? t('login.requesting') : t('login.requestAccess') }}
+          </button>
+          <button class="btn btn--plain full" @click="onSignOut">{{ t('login.useAnother') }}</button>
+        </template>
       </div>
 
       <!-- Step 1: email -->
@@ -232,4 +275,19 @@ h2 { font-size: 1.4rem; margin-bottom: 4px; color: var(--ink); }
 .denied { text-align: center; }
 .denied h2 { color: var(--danger); }
 .denied p { color: var(--mut); font-size: 0.88rem; margin: 10px 0 20px; }
+.denied h2.pending-title { color: var(--accent-dark); }
+.request-access { margin-bottom: 10px; }
+/* Pulsing dot while we poll for root's approval. */
+.pending-dot {
+  display: block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin: 0 auto 18px;
+  animation: pendingPulse 1.4s ease-in-out infinite;
+}
+@keyframes pendingPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
 </style>

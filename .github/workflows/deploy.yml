@@ -129,6 +129,7 @@ jobs:
             restowner/supabase/event-end-time.sql \
             restowner/supabase/event-push-now.sql \
             restowner/supabase/owner-claim-schema.sql \
+            restowner/supabase/owner-approval-schema.sql \
             restowner/supabase/admin-push-schema.sql \
             restowner/supabase/default-event-seed.sql \
             restowner/supabase/scaffold-tier.sql \

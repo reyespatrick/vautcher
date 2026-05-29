@@ -5,9 +5,10 @@ import { ref } from 'vue'
 import { supabase } from '../lib/supabase'
 
 const session = ref(null)
-const owner = ref(null)        // { email, restaurant_id, name }
-const restaurant = ref(null)   // { id, name, slug }
-const isModerator = ref(false) // email is in vautcher_moderators
+const owner = ref(null)         // { email, restaurant_id, name } — APPROVED owner
+const pendingOwner = ref(null)  // owner row awaiting root approval (approved=false)
+const restaurant = ref(null)    // { id, name, slug }
+const isModerator = ref(false)  // email is in vautcher_moderators
 const ready = ref(false)
 
 let resolveInit
@@ -54,6 +55,7 @@ function loadOwner() {
 async function applyOwner(email) {
   if (!email) {
     owner.value = null
+    pendingOwner.value = null
     restaurant.value = null
     isModerator.value = false
     return
@@ -69,7 +71,12 @@ async function applyOwner(email) {
   console.log('[boot] auth: loadOwner — vautcher_owners returned')
 
   // A locked owner is treated as having no owner record — access revoked.
-  const activeOwner = o && !o.locked ? o : null
+  // `approved` may be missing before the approval migration runs, so a
+  // missing value counts as approved (backward compatible).
+  const isApproved = !o || o.approved !== false
+  const activeOwner = o && !o.locked && isApproved ? o : null
+  // A row that exists but isn't approved yet → pending root authorisation.
+  pendingOwner.value = (o && !o.locked && !isApproved) ? o : null
 
   // Load the restaurant BEFORE publishing `owner` — anything that reacts
   // to `owner` (the login redirect) then sees a fully-loaded state.
@@ -168,9 +175,26 @@ export function useAuth() {
     try { await supabase.auth.signOut() } catch (e) { /* ignore */ }
     session.value = null
     owner.value = null
+    pendingOwner.value = null
     restaurant.value = null
     isModerator.value = false
   }
 
-  return { session, owner, restaurant, isModerator, ready, sendOtp, verifyOtp, rootLogin, signOut }
+  // The signed-in user asks to become an owner. Creates a pending row
+  // (approved=false, no restaurant) that root then approves. Idempotent.
+  function requestAccess() {
+    return supabase.rpc('vautcher_request_owner_access')
+  }
+
+  // Force a re-evaluation of owner/pending state for the current session
+  // (used right after requestAccess so the UI flips to the pending screen).
+  async function refreshOwner() {
+    loadedFor = null
+    await loadOwner()
+  }
+
+  return {
+    session, owner, pendingOwner, restaurant, isModerator, ready,
+    sendOtp, verifyOtp, rootLogin, requestAccess, refreshOwner, signOut
+  }
 }

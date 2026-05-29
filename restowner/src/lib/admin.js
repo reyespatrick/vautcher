@@ -8,6 +8,26 @@ export async function adminRestaurants() {
   return { data: data || [], error }
 }
 
+/** Owners who self-registered and are awaiting root approval. */
+export async function pendingOwners() {
+  const { data, error } = await supabase.rpc('vautcher_admin_pending_owners')
+  return { data: data || [], error }
+}
+
+/** Approve a pending owner, assigning the restaurant they will manage. */
+export async function approveOwner(email, restaurantId, trusted = false) {
+  const { error } = await supabase.rpc('vautcher_admin_approve_owner', {
+    p_email: email, p_restaurant_id: restaurantId, p_trusted: trusted
+  })
+  return { error }
+}
+
+/** Reject (delete) a pending owner request. */
+export async function rejectOwner(email) {
+  const { error } = await supabase.rpc('vautcher_admin_reject_owner', { p_email: email })
+  return { error }
+}
+
 /**
  * Diner profiles with stamp count + lock state. When restaurantId is
  * given, scopes to clients who have at least one stamp at that

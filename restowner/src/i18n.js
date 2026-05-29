@@ -82,8 +82,12 @@ const fr = {
     changeEmail: '← Changer d’adresse',
     codeInvalid: 'Code invalide ou expiré. Réessayez.',
     deniedTitle: 'Accès refusé',
-    deniedBody: 'L’adresse {email} n’est pas enregistrée comme propriétaire de restaurant.',
-    useAnother: 'Utiliser une autre adresse'
+    deniedBody: 'L’adresse {email} n’est pas encore enregistrée comme propriétaire de restaurant.',
+    requestAccess: 'Demander un accès',
+    requesting: 'Envoi…',
+    useAnother: 'Utiliser une autre adresse',
+    pendingTitle: 'Demande en attente',
+    pendingBody: 'Votre demande a bien été envoyée. Un administrateur doit autoriser votre accès avant que vous puissiez continuer.'
   },
   dashboard: {
     title: 'Événements/offres à venir', create: 'Créer un événement/offre',
@@ -325,6 +329,16 @@ const fr = {
     deleteDoneTitle: 'Restaurant supprimé',
     deleteDoneBody: '{name} a été effacé : {events} événement(s), {owners} propriétaire(s), {vouchers} vautcher(s).',
     tabRestaurants: 'Restaurants', tabClients: 'Clients',
+    pendingTitle: 'Demandes d’accès en attente',
+    pendingSub: 'Ces personnes se sont connectées avec leur e-mail et demandent à gérer un restaurant. Choisissez le restaurant puis approuvez.',
+    approveSelectRestaurant: 'Choisir le restaurant…',
+    approveBtn: 'Approuver',
+    rejectBtn: 'Refuser',
+    approveTitle: 'Approuver le propriétaire',
+    approveNeedRestaurant: 'Choisissez d’abord le restaurant à attribuer.',
+    rejectTitle: 'Refuser la demande',
+    rejectBody: 'Refuser et supprimer la demande de {email} ?',
+    rejectConfirm: 'Refuser',
     newRestaurant: 'Nouveau restaurant',
     restaurantName: 'Nom du restaurant', restaurantSlug: 'Identifiant (slug)',
     createRestaurant: 'Créer le restaurant',
@@ -369,16 +383,14 @@ const fr = {
     foot: 'restowner — la console de fidélité de votre restaurant.'
   },
   activate: {
-    title: 'Activer votre compte',
-    subtitle: 'Entrez votre e-mail et le code d’accès fourni par restowner.',
-    email: 'E-mail',
-    emailPlaceholder: 'vous@restaurant.ch',
+    title: 'Connexion par code',
+    subtitle: 'Entrez le code d’accès fourni par restowner. Aucun e-mail requis.',
     code: 'Code d’accès',
-    activate: 'Activer mon compte',
-    activating: 'Activation…',
+    activate: 'Se connecter',
+    activating: 'Connexion…',
     failed: 'Code invalide ou déjà utilisé.',
-    signinFailed: 'Compte activé, mais connexion impossible. Réessayez via la page de connexion.',
-    foot: 'Le code ne fonctionne qu’une fois. Besoin d’aide ? Contactez votre référent restowner.'
+    signinFailed: 'Connexion impossible. Réessayez via la page de connexion.',
+    foot: 'Gardez ce code : il vous reconnecte à tout moment. Besoin d’aide ? Contactez votre référent restowner.'
   },
   refuse: {
     title: 'Refuser l’événement',

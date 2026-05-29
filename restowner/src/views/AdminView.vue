@@ -11,7 +11,8 @@ import { useDialog } from '../composables/useDialog'
 import { usePushAdmin } from '../composables/usePushAdmin'
 import {
   adminRestaurants, createRestaurant, createOwnerCode, regenerateOwnerCode,
-  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, rescaffoldTenant, deleteTenant
+  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, rescaffoldTenant, deleteTenant,
+  pendingOwners, approveOwner, rejectOwner
 } from '../lib/admin'
 
 const { t } = useI18n()
@@ -133,9 +134,13 @@ async function load() {
     if (loading.value) { loading.value = false; loadError.value = true }
   }, 9000)
   try {
-    const { data, error } = await adminRestaurants()
+    const [{ data, error }, { data: pend }] = await Promise.all([
+      adminRestaurants(),
+      pendingOwners()
+    ])
     if (error) throw error
     restaurants.value = data
+    pendingList.value = pend || []
   } catch (e) {
     loadError.value = true
   } finally {
@@ -144,6 +149,54 @@ async function load() {
   }
 }
 watch(isModerator, (v) => { if (v) load() }, { immediate: true })
+
+// ---- Pending owner requests (self-signups awaiting approval) ----
+const pendingList = ref([])
+const pendingAssign = ref({})   // email -> restaurant_id picked by root
+const pendingBusy = ref('')     // email currently being approved/rejected
+
+async function onApproveOwner(p) {
+  const restaurantId = pendingAssign.value[p.email]
+  if (!restaurantId) {
+    await alert({ title: t('admin.approveTitle'), body: t('admin.approveNeedRestaurant') })
+    return
+  }
+  if (pendingBusy.value) return
+  pendingBusy.value = p.email
+  try {
+    const { error } = await approveOwner(p.email, restaurantId, false)
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
+    delete pendingAssign.value[p.email]
+    await load()
+  } finally {
+    pendingBusy.value = ''
+  }
+}
+
+async function onRejectOwner(p) {
+  if (pendingBusy.value) return
+  const ok = await confirm({
+    title: t('admin.rejectTitle'),
+    body: t('admin.rejectBody', { email: p.email }),
+    confirmLabel: t('admin.rejectConfirm'),
+    danger: true
+  })
+  if (!ok) return
+  pendingBusy.value = p.email
+  try {
+    const { error } = await rejectOwner(p.email)
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
+    await load()
+  } finally {
+    pendingBusy.value = ''
+  }
+}
 
 // Poll the list while any tenant is still transitioning (scaffolding
 // generator running in CI, deploy_status='pending' while build runs).
@@ -330,8 +383,12 @@ async function submitEmailRebind(owner) {
     busy.value = false
   }
 }
+// Internal, non-deliverable accounts: the scaffolded admin@<slug> code
+// account and legacy pending+ placeholders. We hide the address and show
+// the access code instead.
 function isPlaceholderEmail(email) {
-  return typeof email === 'string' && email.startsWith('pending+')
+  return typeof email === 'string' &&
+    (email.startsWith('pending+') || email.endsWith('.vautcher.local'))
 }
 
 // ---- DELETE TENANT ----
@@ -502,6 +559,32 @@ async function copyLink() {
         <p class="code-url">{{ t('admin.codeActivateAt') }} <code>{{ activateUrl }}</code></p>
         <button class="prov-x" @click="codeResult = null">✕</button>
       </div>
+
+      <!-- ============ Pending owner requests ============ -->
+      <section v-if="pendingList.length" class="pending-card card">
+        <strong class="pending-h">{{ t('admin.pendingTitle') }}</strong>
+        <p class="pending-sub">{{ t('admin.pendingSub') }}</p>
+        <div v-for="p in pendingList" :key="p.email" class="pending-row">
+          <div class="pending-id">
+            <span class="pending-email">{{ p.email }}</span>
+            <span v-if="p.name" class="pending-name">{{ p.name }}</span>
+          </div>
+          <div class="pending-controls">
+            <select v-model="pendingAssign[p.email]" class="pending-select">
+              <option :value="undefined" disabled>{{ t('admin.approveSelectRestaurant') }}</option>
+              <option v-for="r in restaurants" :key="r.id" :value="r.id">{{ r.name }}</option>
+            </select>
+            <div class="pending-actions">
+              <button class="btn btn--sm" :disabled="pendingBusy === p.email" @click="onApproveOwner(p)">
+                {{ t('admin.approveBtn') }}
+              </button>
+              <button class="btn btn--plain btn--sm" :disabled="pendingBusy === p.email" @click="onRejectOwner(p)">
+                {{ t('admin.rejectBtn') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- Trigger — opens the "new restaurant" dialog. -->
       <button
@@ -812,6 +895,44 @@ async function copyLink() {
 .retry { display: block; margin: 14px auto 0; }
 .create-btn { margin-bottom: 18px; }
 .plus { font-size: 1.15rem; font-weight: 700; line-height: 0; }
+
+/* ===== Pending owner requests ===== */
+.pending-card {
+  margin-bottom: 16px;
+  border-color: var(--accent);
+  background: #fdf3f6;
+  padding: 16px 18px;
+}
+.pending-h {
+  display: block;
+  color: var(--accent-dark);
+  font-family: 'Rufina', serif;
+  font-size: 1.02rem;
+}
+.pending-sub { font-size: 0.8rem; color: var(--mut); margin: 4px 0 12px; line-height: 1.45; }
+.pending-row {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 12px;
+  margin-bottom: 10px;
+}
+.pending-row:last-child { margin-bottom: 0; }
+.pending-id { display: flex; flex-direction: column; margin-bottom: 9px; }
+.pending-email { font-weight: 600; color: var(--ink); font-size: 0.9rem; word-break: break-all; }
+.pending-name { font-size: 0.78rem; color: var(--mut); }
+.pending-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pending-select {
+  flex: 1 1 160px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.pending-actions { display: flex; gap: 8px; flex: 0 0 auto; }
 
 /* ===== New-restaurant dialog ===== */
 .new-backdrop {

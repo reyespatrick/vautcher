@@ -235,14 +235,15 @@ Deno.serve(async (req: Request) => {
   }).select('id, slug, name').single()
   if (insErr) return json({ error: insErr.message }, 500)
 
-  // Owner with a claim code. The moderator hands this code to the future
-  // restaurant owner so they can take over the tenant from restowner.
+  // "admin" owner account with a durable claim code. The moderator hands
+  // the code to the restaurateur, who signs into restowner with the code
+  // alone (no e-mail, no mail) — see the code-only path in claim-owner.
   const claimCode = await uniqueClaimCode()
-  const placeholderEmail = `pending+${claimCode.toLowerCase()}@${inserted.slug}.vautcher.local`
+  const placeholderEmail = `admin@${inserted.slug}.vautcher.local`
   const { error: ownerErr } = await admin.from('vautcher_owners').insert({
     email: placeholderEmail,
     restaurant_id: inserted.id,
-    name: `Propriétaire ${name}`,
+    name: 'admin',
     trusted: true,
     locked: false,
     claim_code: claimCode

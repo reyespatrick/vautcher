@@ -1,11 +1,15 @@
-// Public owner activation — calls the claim-owner edge function with the
-// durable code + the restaurateur's e-mail. Returns { data: { email, otp } }
-// on success so the caller can sign in immediately, or { error }.
+// Owner sign-in by access code — calls the claim-owner edge function.
+// The e-mail is optional: pass it only to bind a real address (one-shot).
+// With code alone it is a durable code-only login. Returns
+// { data: { email, otp } } so the caller can sign in immediately, or { error }.
 import { supabase } from './supabase'
 
 export async function claimOwner(code, email) {
+  const payload = { code: (code || '').trim() }
+  const e = (email || '').trim()
+  if (e) payload.email = e
   const { data, error } = await supabase.functions.invoke('claim-owner', {
-    body: { code: (code || '').trim(), email: (email || '').trim() }
+    body: payload
   })
   if (error) {
     let msg = 'Activation impossible.'

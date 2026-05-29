@@ -1,16 +1,20 @@
 // ============================================================
-//  claim-owner — a restaurateur activates their account with a code
+//  claim-owner — sign into restowner with an owner access code
 //
-//  POST /claim-owner   { code, email }
+//  POST /claim-owner   { code }            ← code-only login (durable)
+//  POST /claim-owner   { code, email }     ← bind a real e-mail (one-shot)
 //
 //  Public (verify_jwt = false): the durable claim code IS the secret.
 //  Steps (service role):
-//    1. find the pending owner row carrying this claim_code,
-//    2. refuse if the e-mail is already used by another owner,
-//    3. rebind that row to the real e-mail and clear the code (one-shot),
+//    1. find the owner row carrying this claim_code,
+//    2. CODE-ONLY (no email): sign in as the row's own e-mail (e.g. the
+//       scaffolded admin@<slug>.vautcher.local). The code is NOT consumed,
+//       so the restaurateur can reuse it to sign in again.
+//    3. WITH email: rebind the row to that real e-mail and clear the code
+//       (one-shot), refusing if the e-mail already belongs to someone else.
 //    4. ensure the Supabase auth user exists,
 //    5. mint a fresh login OTP and return it so the client can sign in
-//       immediately — no expiring link, no e-mail round-trip.
+//       immediately — no expiring link, no e-mail round-trip (no mail sent).
 // ============================================================
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -36,11 +40,13 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({} as any))
     const code = String(body.code ?? '').trim().toUpperCase()
-    const email = String(body.email ?? '').trim().toLowerCase()
-    if (!code || !email) return json({ error: 'Code et e-mail requis.' }, 400)
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'E-mail invalide.' }, 400)
+    const email = String(body.email ?? '').trim().toLowerCase()  // optional
+    if (!code) return json({ error: 'Code requis.' }, 400)
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return json({ error: 'E-mail invalide.' }, 400)
+    }
 
-    // 1. Find the pending owner row for this code.
+    // 1. Find the owner row for this code.
     const { data: row } = await admin
       .from('vautcher_owners')
       .select('email, restaurant_id, locked')
@@ -49,37 +55,42 @@ Deno.serve(async (req) => {
     if (!row) return json({ error: 'Code invalide ou déjà utilisé.' }, 404)
     if (row.locked) return json({ error: 'Ce compte est verrouillé.' }, 403)
 
-    // 2. Refuse if the e-mail already belongs to a different owner.
-    if (email !== row.email) {
+    // The e-mail we sign in as: the row's own (code-only login) unless the
+    // caller is binding a real address.
+    let loginEmail = row.email
+
+    if (email && email !== row.email) {
+      // Binding a real e-mail (one-shot): refuse a clash, rebind, consume code.
       const { data: clash } = await admin
         .from('vautcher_owners')
         .select('email')
         .eq('email', email)
         .maybeSingle()
       if (clash) return json({ error: 'Cet e-mail est déjà associé à un compte.' }, 409)
-    }
 
-    // 3. Rebind the e-mail and consume the code.
-    const { error: uErr } = await admin
-      .from('vautcher_owners')
-      .update({ email, claim_code: null })
-      .eq('claim_code', code)
-    if (uErr) return json({ error: uErr.message }, 400)
+      const { error: uErr } = await admin
+        .from('vautcher_owners')
+        .update({ email, claim_code: null })
+        .eq('claim_code', code)
+      if (uErr) return json({ error: uErr.message }, 400)
+      loginEmail = email
+    }
+    // else: code-only login — keep the row's e-mail, leave the code valid.
 
     // 4. Ensure the auth user exists.
-    await admin.auth.admin.createUser({ email, email_confirm: true }).catch(() => {})
+    await admin.auth.admin.createUser({ email: loginEmail, email_confirm: true }).catch(() => {})
 
     // 5. Mint a fresh login OTP for an immediate sign-in.
     const { data: link, error: lErr } = await admin.auth.admin.generateLink({
       type: 'magiclink',
-      email,
+      email: loginEmail,
       options: { redirectTo: RESTOWNER_URL }
     })
     if (lErr) return json({ error: lErr.message }, 400)
 
     return json({
       ok: true,
-      email,
+      email: loginEmail,
       otp: link?.properties?.email_otp ?? null,
       action_link: link?.properties?.action_link ?? null
     })

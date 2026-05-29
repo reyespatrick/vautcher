@@ -1,7 +1,7 @@
 <script setup>
-// Public owner activation. The restaurateur enters their e-mail + the
-// durable code given by the moderator → claim-owner binds the e-mail and
-// returns a fresh OTP → we verify it → they're signed in. No expiring link.
+// Owner sign-in by access code. The restaurateur enters only the durable
+// code handed over by the moderator → claim-owner mints a fresh OTP for
+// the account → we verify it → they're signed in. No e-mail, no mail sent.
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -13,7 +13,6 @@ const router = useRouter()
 const { t } = useI18n()
 const { session, owner, isModerator, verifyOtp } = useAuth()
 
-const email = ref('')
 const code = ref('')
 const error = ref('')
 const busy = ref(false)
@@ -32,18 +31,17 @@ watch([session, owner, isModerator], () => {
 
 async function onActivate() {
   if (busy.value) return
-  const e = email.value.trim()
   const c = code.value.trim()
-  if (!e || !c) return
+  if (!c) return
   busy.value = true
   error.value = ''
   try {
-    const { data, error: cErr } = await claimOwner(c, e)
+    const { data, error: cErr } = await claimOwner(c)
     if (cErr || !data?.otp) {
       error.value = cErr?.message || t('activate.failed')
       return
     }
-    const { error: vErr } = await verifyOtp(data.email || e, data.otp)
+    const { error: vErr } = await verifyOtp(data.email, data.otp)
     if (vErr) {
       error.value = t('activate.signinFailed')
       return
@@ -65,14 +63,6 @@ async function onActivate() {
       <p class="sub">{{ t('activate.subtitle') }}</p>
 
       <form @submit.prevent="onActivate">
-        <div class="field">
-          <label>{{ t('activate.email') }}</label>
-          <input
-            v-model="email" type="text" inputmode="email"
-            autocomplete="email" autocorrect="off" autocapitalize="none" spellcheck="false"
-            :placeholder="t('activate.emailPlaceholder')" required
-          />
-        </div>
         <div class="field">
           <label>{{ t('activate.code') }}</label>
           <input
