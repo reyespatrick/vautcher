@@ -32,7 +32,29 @@ export default defineConfig({
       workbox: {
         importScripts: ['notif-sw.js'],
         skipWaiting: true,
-        clientsClaim: true
+        clientsClaim: true,
+        // Aggressive cache busting so a stale SW can never serve last
+        // week's index.html when a new bundle is deployed:
+        //  • cleanupOutdatedCaches: delete every prior precache the
+        //    moment the new SW activates.
+        //  • navigationPreload: kick the network in parallel with the SW
+        //    boot so HTML navigations always race against fresh content.
+        //  • NetworkFirst for HTML: try the network for index.html with
+        //    a 3-second timeout; only fall back to the precached copy
+        //    when offline. JS/CSS bundles are hashed and stay in
+        //    precache (instant).
+        cleanupOutdatedCaches: true,
+        navigationPreload: true,
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'pages',
+              networkTimeoutSeconds: 3
+            }
+          }
+        ]
       },
       manifest: {
         name: PWA_NAME,
