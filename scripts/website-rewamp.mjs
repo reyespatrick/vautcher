@@ -737,6 +737,61 @@ async function askClaude(input, pdfDocs, attempt = 1) {
   return { html, menu, notes: tool.input.design_notes || '', usage: data.usage || {} }
 }
 
+// Dedicated menu reader — used when the design pass returns no menu (the
+// big HTML generation often crowds the structured menu out). This call
+// does ONE thing: read the menu PDF(s) visually (Claude renders the pages,
+// so column layouts and even scanned/image PDFs work) and return the full
+// structured menu with the whole token budget to itself.
+const MENU_TOOL = {
+  name: 'submit_menu',
+  description: 'Submit the complete restaurant menu extracted from the PDF(s).',
+  input_schema: {
+    type: 'object',
+    properties: { menu: TOOL.input_schema.properties.menu },
+    required: ['menu']
+  }
+}
+const MENU_EXTRACT_PROMPT = `You are reading a restaurant's menu, provided as PDF document(s). Extract the COMPLETE menu as structured data.
+
+- Return categories: { category, items: [{ name, description?, price?, variants? }] }.
+- Dishes and their prices are laid out in visual COLUMNS. Use the page's visual layout — not the raw text order — to pair each dish with its correct price.
+- Copy dish names and descriptions VERBATIM: same language, accents, punctuation. Never translate or paraphrase.
+- A dish's descriptive line (ingredients, garnish, preparation) goes in "description", copied verbatim.
+- Include EVERY dish and section (entrées, plats, desserts, etc.). If a separate drinks/wine PDF is attached, add those under their own categories.
+- Prices: keep the number + currency as printed ("24.-", "CHF 18", "12.50").
+- Do NOT invent anything — only what is printed in the PDF(s).`
+
+async function extractMenuFromPdf(pdfDocs, attempt = 1) {
+  const content = [{ type: 'text', text: MENU_EXTRACT_PROMPT }]
+  for (const pdf of pdfDocs) {
+    content.push({
+      type: 'document',
+      source: { type: 'base64', media_type: 'application/pdf', data: pdf.base64 },
+      title: pdf.title || 'Menu PDF'
+    })
+  }
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 12000,
+      tools: [MENU_TOOL],
+      tool_choice: { type: 'tool', name: 'submit_menu' },
+      messages: [{ role: 'user', content }]
+    })
+  })
+  if (res.status === 429 && attempt < 2) {
+    console.warn('  menu-extract rate-limited (429) — waiting 65s and retrying once…')
+    await new Promise((r) => setTimeout(r, 65000))
+    return extractMenuFromPdf(pdfDocs, attempt + 1)
+  }
+  if (!res.ok) { console.warn(`  menu-extract failed: Anthropic ${res.status}`); return [] }
+  const data = await res.json()
+  const tool = (data.content || []).find((c) => c.type === 'tool_use')
+  return Array.isArray(tool?.input?.menu) ? tool.input.menu : []
+}
+
 // ---------- fact gate ----------
 // Normalise for verbatim matching: lowercase, strip accents, and unify
 // typographic apostrophes/quotes (curly ' vs straight ') so a dish like
@@ -1009,9 +1064,23 @@ async function main() {
 
   console.log(`→ designer (${ANTHROPIC_MODEL}, ~${Math.round(sourceText.length / 4)} tokens in${pdfDocs.length ? ` + ${pdfDocs.length} PDF doc(s)` : ''})…`)
   const t0 = Date.now()
-  const { html: rawHtml, menu: rawMenu, notes, usage } = await askClaude({ sourceUrl: target, sourceText, logoUrl: logo, images, palette, themeColor }, pdfDocs)
+  const { html: rawHtml, menu: designMenu, notes, usage } = await askClaude({ sourceUrl: target, sourceText, logoUrl: logo, images, palette, themeColor }, pdfDocs)
   console.log(`  ${Math.round((Date.now() - t0) / 1000)}s · ${usage.input_tokens || 0} in / ${usage.output_tokens || 0} out`)
   if (notes) console.log(`  notes: ${notes}`)
+
+  // The design pass often returns an empty menu when the page HTML is
+  // large. When there are menu PDFs and no dishes came back, run a
+  // dedicated menu reader on the PDF(s) — it gets the whole token budget
+  // and Claude's PDF vision, which handles column layouts (and scans).
+  let rawMenu = designMenu || []
+  const designDishes = rawMenu.reduce((n, c) => n + (c.items?.length || 0), 0)
+  if (designDishes === 0 && pdfDocs.length) {
+    console.log('  no menu from design pass → dedicated PDF menu extraction…')
+    const t1 = Date.now()
+    rawMenu = await extractMenuFromPdf(pdfDocs)
+    const n = rawMenu.reduce((acc, c) => acc + (c.items?.length || 0), 0)
+    console.log(`  ${Math.round((Date.now() - t1) / 1000)}s · ${n} dishes from PDF`)
+  }
 
   // 100% verifiable menu — drop anything Claude wrote that isn't in
   // the source text/PDF. This is the hard guarantee.
