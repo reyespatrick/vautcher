@@ -67,6 +67,20 @@ async function callerModeratorEmail(req: Request): Promise<string | null> {
   return data ? email : null
 }
 
+// Decode HTML entities a <title> may carry (e.g. "l&#039;Arc" → "l'Arc")
+// so the name and slug aren't polluted with "&#039;" / "039".
+function decodeEntities(s: string): string {
+  return (s || '')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&amp;/gi, '&')
+}
+
 // ---------- SLUG ----------
 function slugify(s: string): string {
   return (s || '')
@@ -105,8 +119,7 @@ async function deriveNameAndSlug(url: string): Promise<{ name: string; slug: str
       const head = (await res.text()).slice(0, 8192)
       const m = head.match(/<title>([\s\S]*?)<\/title>/i)
       if (m) {
-        title = m[1]
-          .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+        title = decodeEntities(m[1])
           .trim()
           .replace(/\s*[\|\-–—·•].*$/, '')
           .trim()
