@@ -28,6 +28,14 @@ export async function rejectOwner(email) {
   return { error }
 }
 
+/** Hide/show a tenant's menu section (config.hide_menu). Runtime — no redeploy. */
+export async function setMenuHidden(restaurantId, hidden) {
+  const { error } = await supabase.rpc('vautcher_admin_set_menu_hidden', {
+    p_restaurant_id: restaurantId, p_hidden: hidden
+  })
+  return { error }
+}
+
 /**
  * Diner profiles with stamp count + lock state. When restaurantId is
  * given, scopes to clients who have at least one stamp at that

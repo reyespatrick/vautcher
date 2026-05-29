@@ -306,6 +306,8 @@ const fr = {
     regenerateBody: 'Le site sera reconstruit à partir de son site source. Le contenu actuel sera remplacé. Cette opération prend ≈ 3–5 min.',
     regenerateConfirm: 'Régénérer',
     regenerateNoSource: 'Ce restaurant n’a pas de site source — régénération impossible.',
+    menuHide: 'Masquer la carte',
+    menuShow: 'Afficher la carte',
     scaffoldFailedBadge: 'Échec du déploiement',
     scaffoldLogs: 'Voir les logs',
     scaffoldCodeLabel: 'Code propriétaire',

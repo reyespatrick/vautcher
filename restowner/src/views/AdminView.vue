@@ -12,7 +12,7 @@ import { usePushAdmin } from '../composables/usePushAdmin'
 import {
   adminRestaurants, createRestaurant, createOwnerCode, regenerateOwnerCode,
   setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, rescaffoldTenant, deleteTenant,
-  pendingOwners, approveOwner, rejectOwner
+  pendingOwners, approveOwner, rejectOwner, setMenuHidden
 } from '../lib/admin'
 
 const { t } = useI18n()
@@ -399,6 +399,22 @@ function isPlaceholderEmail(email) {
 const deleteBusy = ref(false)
 const deleteDebug = ref('')   // shown only on caught errors
 const regenBusy = ref(false)
+const menuBusy = ref('')
+
+async function onToggleMenuHidden(r) {
+  if (menuBusy.value) return
+  menuBusy.value = r.id
+  try {
+    const { error } = await setMenuHidden(r.id, !r.menu_hidden)
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
+    await load()
+  } finally {
+    menuBusy.value = ''
+  }
+}
 
 async function startRegenerate(r) {
   if (regenBusy.value) return
@@ -785,6 +801,13 @@ async function copyLink() {
               :disabled="regenBusy || deleteBusy"
               @click="startRegenerate(r)"
             >{{ t('admin.regenerate') }}</button>
+            <button
+              type="button"
+              class="btn btn--ghost btn--sm"
+              :class="{ 'btn--on': r.menu_hidden }"
+              :disabled="menuBusy === r.id"
+              @click="onToggleMenuHidden(r)"
+            >{{ r.menu_hidden ? t('admin.menuShow') : t('admin.menuHide') }}</button>
             <button
               type="button"
               class="btn btn--danger btn--sm"
@@ -1465,6 +1488,9 @@ async function copyLink() {
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .chip:hover:not(:disabled):not(.on) { border-color: var(--accent); color: var(--accent); }
+
+/* Active toggle (e.g. menu currently hidden) on an action button. */
+.btn--on { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }
 .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .chip--lock.on { background: var(--danger); border-color: var(--danger); }
 .chip:disabled { opacity: 0.5; cursor: not-allowed; }

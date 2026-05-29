@@ -53,6 +53,8 @@ begin
     select jsonb_agg(jsonb_build_object(
       'id', r.id, 'name', r.name, 'slug', r.slug,
       'source_url', r.config ->> 'source_url',
+      'deploy_status', r.deploy_status,
+      'menu_hidden', coalesce((r.config ->> 'hide_menu')::boolean, false),
       'template', coalesce(r.config ->> 'template', 'classic'),
       'scaffold_tier', r.scaffold_tier,
       'scaffold_tokens_used', r.scaffold_tokens_used,

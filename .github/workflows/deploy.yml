@@ -136,6 +136,7 @@ jobs:
             restowner/supabase/scaffold-tier.sql \
             restowner/supabase/admin-restaurants-tier.sql \
             restowner/supabase/admin-set-template.sql \
+            restowner/supabase/menu-hidden-schema.sql \
             app/supabase/pass-schema.sql \
             restowner/supabase/api-grants.sql; do
             echo "→ applying $f"

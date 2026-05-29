@@ -124,6 +124,8 @@ function flatten(payload) {
     about: c.about ?? FALLBACK.about,
     specialties: c.specialties ?? FALLBACK.specialties,
     menu: c.menu ?? FALLBACK.menu ?? [],
+    // Moderator kill-switch for a badly-recognised scaffolded menu.
+    hideMenu: c.hide_menu ?? false,
     gallery: c.gallery ?? FALLBACK.gallery,
     sections: c.sections ?? FALLBACK.sections,
     // Which home template to render. Owner-selected via restowner.
@@ -196,6 +198,19 @@ function applyBespokeAssets(s) {
     document.getElementById(id)?.remove()
     const style = document.createElement('style')
     style.id = id; style.textContent = s.homeCss
+    document.head.appendChild(style)
+  }
+
+  // Menu kill-switch: hide the scaffolded menu section (+ any in-page
+  // "see the menu" links) when the moderator flagged its recognition as
+  // bad. Reapplied on every refresh, so toggling in restowner reflects
+  // on the next load without a redeploy.
+  const hideId = 'vautcher-hide-menu'
+  document.getElementById(hideId)?.remove()
+  if (s.hideMenu) {
+    const style = document.createElement('style')
+    style.id = hideId
+    style.textContent = '.bespoke-home .rw-menu, .bespoke-home #menu, .bespoke-home a[href$="#menu"] { display: none !important; }'
     document.head.appendChild(style)
   }
 }
