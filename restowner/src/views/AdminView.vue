@@ -123,6 +123,22 @@ async function load() {
 }
 watch(isModerator, (v) => { if (v) load() }, { immediate: true })
 
+// Silent background refresh used by the transient-row poll: updates the
+// lists in place WITHOUT toggling `loading` (which swaps the list for a
+// spinner and yanks the page back to the top every tick). Stable :key by
+// id means Vue patches only the rows that actually changed — e.g. a
+// skeleton flipping to a live card — instead of re-rendering everything.
+async function refreshSilent() {
+  try {
+    const [{ data, error }, { data: pend }] = await Promise.all([
+      adminRestaurants(),
+      pendingOwners()
+    ])
+    if (!error && data) restaurants.value = data
+    if (pend) pendingList.value = pend
+  } catch (e) { /* keep current data on a transient error */ }
+}
+
 // ---- Pending owner requests (self-signups awaiting approval) ----
 const pendingList = ref([])
 const pendingAssign = ref({})   // email -> restaurant_id picked by root
@@ -201,7 +217,7 @@ function startPoll() {
   if (pollHandle) return
   pollHandle = setInterval(() => {
     if (!hasTransientRow.value) { stopPoll(); return }
-    load()
+    refreshSilent()
   }, 10000)
 }
 function stopPoll() {
