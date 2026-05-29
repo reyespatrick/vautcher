@@ -36,6 +36,8 @@ watch(() => route.fullPath, () => {
     <BottomNav v-if="route.name !== 'install'" />
   </div>
 
-  <OnboardingDialog v-if="dialogOpen" />
-  <NotifyPrompt />
+  <!-- Neither overlay belongs on the install landing — that page is the
+       customer's first contact and must be just the install card. -->
+  <OnboardingDialog v-if="dialogOpen && route.name !== 'install'" />
+  <NotifyPrompt v-if="route.name !== 'install'" />
 </template>
