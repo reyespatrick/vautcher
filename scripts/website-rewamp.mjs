@@ -560,14 +560,15 @@ async function fetchPdf(url) {
   const buf = Buffer.from(await res.arrayBuffer())
   if (buf.length > 30 * 1024 * 1024) throw new Error(`pdf too large (>${Math.round(buf.length / 1024 / 1024)}MB)`)
   const parser = new PDFParse({ data: buf })
-  let text = ''
+  let text = '', numPages = 0
   try {
     const out = await parser.getText()
+    numPages = (out.pages || []).length || out.total || out.numpages || 0
     text = (out.text || (out.pages || []).map((p) => p.text).join('\n') || '').replace(/\s+/g, ' ').trim()
   } finally {
     try { await parser.destroy() } catch { /* ignore */ }
   }
-  return { buf, text, base64: buf.toString('base64') }
+  return { buf, text, base64: buf.toString('base64'), numPages }
 }
 
 // ---------- Claude designer ----------
@@ -1046,16 +1047,27 @@ async function main() {
   // Network-intercepted PDFs win the priority order — they're what
   // the LIVE site uses, not stale links.
   const linkedPdfs = discoverPdfs(pages, home.url)
+  // Only spend Anthropic page-render tokens on PDFs that LOOK like menus
+  // (filename / url hint) — never on unrelated PDFs (allergens, terms,
+  // brochures). And cap vision at 5 pages per PDF.
+  const MAX_PDF_PAGES = 5
   const pdfUrls = [...networkPdfs, ...linkedPdfs.filter((u) => !networkPdfs.has(u))]
+    .filter((u) => PDF_HINT_RE.test(u))
   const pdfDocs = []
   if (pdfUrls.length) {
-    console.log(`→ ${pdfUrls.length} PDF(s) found`)
+    console.log(`→ ${pdfUrls.length} menu PDF(s) found`)
     for (const pdf of pdfUrls.slice(0, 2)) {
       try {
-        const { text, base64 } = await fetchPdf(pdf)
+        const { text, base64, numPages } = await fetchPdf(pdf)
+        // Extracted text is free — keep it in the corpus (gate + design)
+        // regardless of page count.
         if (text) corpora.push(`# ${pdf} (PDF)\n${text.slice(0, 20000)}`)
+        if (numPages && numPages > MAX_PDF_PAGES) {
+          console.warn(`  ⤫ ${pdf}: ${numPages} pages > ${MAX_PDF_PAGES} — text kept, not sent for vision`)
+          continue
+        }
         pdfDocs.push({ url: pdf, base64, title: pdf.split('/').pop() })
-        console.log(`  ✓ ${pdf} (${text.length} chars text, ${(base64.length * 3 / 4 / 1024).toFixed(0)}KB pdf)`)
+        console.log(`  ✓ ${pdf} (${numPages || '?'}p, ${text.length} chars text, ${(base64.length * 3 / 4 / 1024).toFixed(0)}KB pdf)`)
       } catch (e) { console.warn(`  ! ${pdf}: ${e.message}`) }
     }
   }
