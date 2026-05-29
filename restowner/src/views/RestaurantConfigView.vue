@@ -418,15 +418,20 @@ function removeItem(list, i) { list.splice(i, 1) }
 .logo-actions { flex: 1; display: flex; flex-direction: column; gap: 8px; }
 
 .list-row {
-  display: grid;
-  grid-template-columns: auto 1fr 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
-.list-row .w-icon { width: 56px; text-align: center; }
+/* Each text field keeps a usable min width and wraps to the next line
+   instead of collapsing to a sliver (the old grid squished the 2nd/3rd
+   fields of the Horaires / Galerie rows on mobile). */
+.list-row input { flex: 1 1 140px; min-width: 0; }
+.list-row .w-icon { flex: 0 0 52px; width: 52px; text-align: center; }
 .rm {
-  width: 30px; height: 30px;
+  flex: 0 0 auto;
+  width: 36px; height: 36px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
