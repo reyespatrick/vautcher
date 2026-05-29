@@ -3,9 +3,11 @@ import { ref, watch, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
-import { listVouchers, voucherStats, updateVoucher } from '../lib/vouchers'
+import { useDialog } from '../composables/useDialog'
+import { listVouchers, voucherStats, updateVoucher, archiveVoucher } from '../lib/vouchers'
 
 const { activeRestaurantId } = useScope()
+const { confirm } = useDialog()
 const { t } = useI18n()
 const vouchers = ref([])
 const stats = ref(null)
@@ -50,6 +52,20 @@ const rate = computed(() =>
 function statFor(id) {
   const row = (stats.value?.per_voucher || []).find((v) => v.id === id)
   return row || { active: 0, stamps: 0, completed: 0, redeemed: 0 }
+}
+
+// Delete (archive) a loyalty card. Soft-delete keeps existing diner cards/
+// stamps intact (FK-safe); the card just stops appearing.
+async function removeVoucher(v) {
+  const ok = await confirm({
+    title: t('vouchers.deleteTitle'),
+    body: t('vouchers.deleteBody', { label: v.label }),
+    confirmLabel: t('vouchers.deleteConfirm'),
+    danger: true
+  })
+  if (!ok) return
+  const { error } = await archiveVoucher(v.id)
+  if (!error) load()
 }
 
 // Reorder = swap the sequence value with the adjacent vautcher.
@@ -117,6 +133,9 @@ async function move(index, dir) {
               <RouterLink :to="`/voucher/${v.id}`" class="btn btn--plain btn--sm">
                 {{ t('vouchers.edit') }}
               </RouterLink>
+              <button type="button" class="btn btn--plain btn--sm vrow-del" @click="removeVoucher(v)">
+                {{ t('vouchers.delete') }}
+              </button>
             </div>
           </div>
           <div class="vrow-move">

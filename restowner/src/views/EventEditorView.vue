@@ -6,7 +6,7 @@ import { useScope } from '../composables/useScope'
 import { useDialog } from '../composables/useDialog'
 import { supabase } from '../lib/supabase'
 import {
-  getEvent, createEvent, updateEvent, cancelEvent, IMAGE_OPTIONS,
+  getEvent, createEvent, updateEvent, cancelEvent, deleteEvent, IMAGE_OPTIONS,
   uploadEventImage, listUploadedImages, deleteEventImage,
   materializeSeries, pushEventNow, rephraseText
 } from '../lib/events'
@@ -480,6 +480,21 @@ async function onCancelEvent() {
   await cancelEvent(editingId.value)
   router.push({ name: 'dashboard' })
 }
+
+// Hard delete — removes the event (RSVPs cascade). Irreversible, so it's a
+// danger confirm. Distinct from cancel (which keeps the row, status=cancelled).
+async function onDeleteEvent() {
+  const ok = await confirm({
+    title: t('editor.confirmDeleteTitle'),
+    body: t('editor.confirmDelete'),
+    confirmLabel: t('editor.deleteBtn'),
+    danger: true
+  })
+  if (!ok) return
+  const { error: e } = await deleteEvent(editingId.value)
+  if (e) { error.value = e.message; return }
+  router.push({ name: 'dashboard' })
+}
 </script>
 
 <template>
@@ -813,6 +828,12 @@ async function onCancelEvent() {
           class="btn btn--danger btn--full"
           @click="onCancelEvent"
         >{{ t('editor.cancelEvent') }}</button>
+        <button
+          v-if="editingId"
+          type="button"
+          class="btn btn--plain btn--full editor-delete"
+          @click="onDeleteEvent"
+        >{{ t('editor.deleteBtn') }}</button>
       </div>
     </form>
   </div>
