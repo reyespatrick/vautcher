@@ -74,6 +74,17 @@ functions: `stripe-checkout`, `stripe-webhook`, `stripe-portal`. Those
 are tracked in tasks #43 (edge functions), #44 (UI + gating), #45
 (diner suspended dialog).
 
+## Gating behavior (what the apps do per status)
+
+| status                 | restowner (owner)                                            | diner (client)                                       |
+|------------------------|--------------------------------------------------------------|-------------------------------------------------------|
+| `none`, `active`, `trialing` | Full access.                                                 | Full access.                                          |
+| `past_due` (≤ 3 days)  | **Read-only** — view everything, edits/create disabled, banner explains the grace.       | Full access.                                          |
+| `past_due` (grace ran out) → flips to `suspended` by the daily worker. | — | — |
+| `suspended` / `canceled` | Full-screen dialog: *"L'abonnement de \<name\> a été suspendu."* + button **« Mettre à jour le mode de paiement »** → opens Stripe Customer Portal (or Checkout if no active sub) so the owner can pay and unblock. | Same message — informational only, **no action button** (clients cannot fix it). |
+
+The state machine is enforced by `vautcher_restaurant_active(p_restaurant_id)` (diner read path) and an analogous check in restowner; both read `vautcher_subscriptions.status` + `grace_until`.
+
 ## Going live later
 
 Flip the Stripe dashboard from **Test mode** to **Live mode** and repeat
