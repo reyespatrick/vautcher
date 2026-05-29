@@ -801,15 +801,16 @@ async function copyLink() {
                 <!-- Scaffold-provisioned: show the claim code, hide the
                      placeholder email, offer an inline rebind. -->
                 <template v-if="isPlaceholderEmail(o.email)">
-                  <span class="owner-email owner-email--pending">{{ t('admin.emailPending') }}</span>
+                  <!-- Code-login account: name (user) first, then the code. -->
+                  <span class="owner-email">{{ o.name || 'admin' }}</span>
                   <span v-if="o.claim_code" class="owner-claim">
                     {{ t('admin.codeLabel') }} <code>{{ o.claim_code }}</code>
                   </span>
                 </template>
                 <template v-else>
                   <span class="owner-email">{{ o.email }}</span>
+                  <span v-if="o.name" class="owner-name">{{ o.name }}</span>
                 </template>
-                <span v-if="o.name" class="owner-name">{{ o.name }}</span>
 
                 <!-- Inline rebind form, opened by the "Définir" button. -->
                 <form
@@ -1443,23 +1444,27 @@ async function copyLink() {
 .owner-id { min-width: 0; }
 .owner-email { display: block; font-size: 0.84rem; font-weight: 600; word-break: break-all; }
 .owner-name { font-size: 0.74rem; color: var(--mut); }
-.owner-flags { display: flex; gap: 6px; }
+.owner-flags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
 .owner-form { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .add-owner { margin-top: 10px; }
 
 /* Chips */
 .chip {
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 18px;
   background: var(--surface);
   color: var(--mut);
   font-family: inherit;
   font-weight: 700;
-  font-size: 0.68rem;
-  letter-spacing: 0.03em;
-  padding: 6px 12px;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  padding: 8px 13px;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
+.chip:hover:not(:disabled):not(.on) { border-color: var(--accent); color: var(--accent); }
 .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .chip--lock.on { background: var(--danger); border-color: var(--danger); }
 .chip:disabled { opacity: 0.5; cursor: not-allowed; }

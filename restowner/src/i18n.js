@@ -310,7 +310,7 @@ const fr = {
     scaffoldLogs: 'Voir les logs',
     scaffoldCodeLabel: 'Code propriétaire',
     scaffoldCodeHint: 'Donnez ce code au futur propriétaire. Il sera lié à son adresse e-mail dès qu’elle sera saisie ci-dessous.',
-    emailPending: 'E-mail à définir',
+    emailPending: 'Connexion par code',
     codeLabel: 'Code :',
     emailDefineBtn: 'Définir e-mail',
     emailSetBtn: 'Enregistrer',
