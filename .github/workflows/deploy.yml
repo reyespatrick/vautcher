@@ -152,7 +152,8 @@ jobs:
             restowner/supabase/admin-set-template.sql \
             restowner/supabase/menu-hidden-schema.sql \
             app/supabase/pass-schema.sql \
-            restowner/supabase/api-grants.sql; do
+            restowner/supabase/api-grants.sql \
+            restowner/supabase/cc-payments-schema.sql; do
             echo "→ applying $f"
             jq -Rs '{query: .}' "$f" \
               | curl -sS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
