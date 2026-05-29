@@ -347,6 +347,38 @@ function addressFromText(text) {
   return (withCity[0] || matches[0]) || null
 }
 
+// Normalise a phone: decode %-escapes (Duda emits tel:%C2%A0+41…), keep
+// only + and digits, then group Swiss-style (+41 22 798 96 05).
+function cleanPhone(raw) {
+  if (!raw) return null
+  let s = String(raw)
+  try { s = decodeURIComponent(s) } catch { /* keep raw */ }
+  s = s.replace(/[^\d+]/g, '')
+  if (s.length < 6) return null
+  if (s.startsWith('+41') && s.length === 12) {
+    const r = s.slice(3) // 9 digits → 22 798 96 05
+    return `+41 ${r.slice(0, 2)} ${r.slice(2, 5)} ${r.slice(5, 7)} ${r.slice(7, 9)}`
+  }
+  if (s.startsWith('0') && s.length === 10) {
+    return `${s.slice(0, 3)} ${s.slice(3, 6)} ${s.slice(6, 8)} ${s.slice(8, 10)}`
+  }
+  return s
+}
+
+// Clean an address that the source ran together with phone/email and lost
+// inter-element spaces (common on Duda/Wix where adjacent spans have no
+// whitespace): cut at the first contact keyword, then re-insert the spaces
+// that a digit↔letter / street-no↔postal-code boundary implies.
+function cleanAddress(raw) {
+  if (!raw) return null
+  let a = String(raw).replace(/\s+/g, ' ').trim()
+  a = a.split(/\s*(?:T[ée]l[ée]?(?:phone)?\b|Telefon|Phone|Fax|E-?mail\b|Mail\b|Courriel|Horaires?|Ouvert)/i)[0]
+  a = a.replace(/(\d)([A-Za-zÀ-ÿ])/g, '$1 $2').replace(/([A-Za-zÀ-ÿ])(\d)/g, '$1 $2')
+  a = a.replace(/\b(\d{1,3})(\d{4})\b/, '$1 $2') // "811216" → "81 1216"
+  a = a.replace(/\s+/g, ' ').replace(/[,\s]+$/, '').trim()
+  return a || null
+}
+
 function extractStructuredFromPage($, baseUrl) {
   const out = { name: null, description: null, address: null, phone: null, email: null, hours: [] }
   // 1) JSON-LD — the gold-standard source.
@@ -388,6 +420,10 @@ function extractStructuredFromPage($, baseUrl) {
   const bodyText = $('body').text().replace(/\s+/g, ' ')
   if (!out.address) out.address = addressFromText(bodyText)
   if (!out.hours.length) out.hours = hoursFromText(bodyText)
+  // Final scrub — applies whatever the source gave us (JSON-LD, tel: href
+  // or sniffed text) so a run-together blob or encoded phone never ships.
+  out.phone = cleanPhone(out.phone)
+  out.address = cleanAddress(out.address)
   return out
 }
 
