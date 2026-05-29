@@ -603,6 +603,9 @@ Look at the typography in the menu (PDF or rendered page) and pick fonts for you
   - Industrial / heavy condensed → use Oswald, Bebas Neue, Anton.
 Then carry that family into the menu section of your design. The page can have a different body font from the menu (e.g. menu = serif, body = sans) but the menu typography must echo the source PDF's menu typography. Two glances should tell the diner "this is the same restaurant".
 
+FONTS — OPEN-LICENSE ONLY (HARD RULE)
+Use ONLY fonts hosted on Google Fonts (open / SIL OFL licence). NEVER @font-face the original site's own font files, and NEVER name a proprietary/commercial font in your CSS (Helvetica Neue, Avenir, Gotham, Proxima Nova, DIN, Futura, Trade Gothic, Circular, Brandon Grotesque, etc.). When the original site uses such a font, pick the CLOSEST-looking Google Font using the mapping above. The result will differ slightly from the original — that is expected and required: licensed fonts cannot be embedded. Always emit the matching Google Fonts <link> for every family you use.
+
 HARD RULES (anti-hallucination — these get auto-checked)
 1. Restaurant name, address, phone number, email, opening hours, dish names, prices, allergen labels, supplier names: MUST appear VERBATIM somewhere in the source text below. Do not invent any factual claim. If a fact isn't in source, omit it.
 2. Times can be reformatted: "11:30" → "11h30 –" is fine; "WEEKDAYS" → "Lundi – Vendredi" is fine. The digits must match source.
@@ -701,7 +704,13 @@ async function askClaude(input, pdfDocs, attempt = 1) {
 }
 
 // ---------- fact gate ----------
-const norm = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
+// Normalise for verbatim matching: lowercase, strip accents, and unify
+// typographic apostrophes/quotes (curly ' vs straight ') so a dish like
+// "Souris d'agneau" isn't dropped just because the source uses a curly ’.
+const norm = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+  .replace(/[‘’ʼ`´]/g, "'")
+  .replace(/[“”«»]/g, '"')
+  .replace(/\s+/g, ' ').trim()
 
 function isDishyName(s) {
   const t = (s || '').trim()
@@ -721,15 +730,27 @@ function gateMenu(menu, sourceText) {
   const srcDigits = srcN.replace(/[^\d]/g, '')
   const digits = (s) => String(s || '').replace(/[^\d]/g, '')
 
+  // Punctuation-insensitive variant of the source — tolerate comma / dash /
+  // apostrophe / parenthesis differences between source and model output.
+  const stripPunct = (x) => norm(x).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()
+  const srcNP = stripPunct(sourceText)
+
+  const matchIn = (needle, hay) => {
+    if (!needle) return false
+    if (needle.length > 80) {
+      for (let i = 0; i + 40 <= needle.length; i += 20) if (hay.includes(needle.slice(i, i + 40))) return true
+      return false
+    }
+    return hay.includes(needle)
+  }
   const inSourceText = (s, minLen = 4) => {
     if (!s) return false
     const n = norm(s)
     if (n.length < minLen) return false
-    if (n.length > 80) {
-      for (let i = 0; i + 40 <= n.length; i += 20) if (srcN.includes(n.slice(i, i + 40))) return true
-      return false
-    }
-    return srcN.includes(n)
+    if (matchIn(n, srcN)) return true
+    // Fallback: ignore punctuation entirely (apostrophes, commas, dashes).
+    const np = stripPunct(s)
+    return np.length >= minLen && matchIn(np, srcNP)
   }
   const priceOk = (s) => { const d = digits(s); return d.length >= 1 && srcDigits.includes(d) }
 
