@@ -30,13 +30,23 @@ const brandSubtitle = computed(() => {
   if (!t || t.length > 60) return ''
   return t
 })
+
+// Only show a logo image when it's a real logo. Skip empty values and
+// favicons / .ico files — those are 16-32px and look blurry blown up to
+// header size, so the text wordmark reads better on its own.
+const showLogo = computed(() => {
+  const u = (site.logoUrl || '').trim()
+  if (!u) return false
+  if (/\.ico(\?|#|$)/i.test(u) || /favicon/i.test(u)) return false
+  return true
+})
 </script>
 
 <template>
   <header class="hdr">
     <div class="hdr-inner">
       <RouterLink to="/" class="brand">
-        <img :src="site.logoUrl" :alt="site.name" />
+        <img v-if="showLogo" :src="site.logoUrl" :alt="site.name" />
         <span class="brand-txt">
           <span class="brand-name">{{ brandName }}</span>
           <small v-if="brandSubtitle">{{ brandSubtitle }}</small>

@@ -33,7 +33,7 @@ const GENERIC_FALLBACK = {
   phoneHref: '',
   email: '',
   mapsHref: '',
-  logoUrl: '/assets/logo.jpg',
+  logoUrl: '',
   brandPrimary: '#9e053d',
   brandDark: '#6f032b',
   hours: [],

@@ -199,11 +199,45 @@ function realImgSrc($el) {
   return null
 }
 function findLogo($, baseUrl) {
-  const sel = 'img.logo, img.brand, img[class*="logo"], img[class*="brand"], .logo img, .brand img, .navbar-brand img, .site-logo img, .elementskit-nav-logo img, .header-logo img'
-  const explicit = $(sel).first()
-  if (explicit.length) { const s = realImgSrc(explicit); if (s) return cleanImageUrl(absUrl(s, baseUrl)) }
-  const inChrome = $('header img, nav img').first()
-  if (inChrome.length) { const s = realImgSrc(inChrome); if (s) return cleanImageUrl(absUrl(s, baseUrl)) }
+  // A favicon / sprite / data-URI / tracking pixel is NOT a usable logo —
+  // it's tiny and blurs when shown at header size. Skip those so we fall
+  // through to a real image instead of settling for the favicon.
+  const bad = (u) => !u || u.startsWith('data:') ||
+    /\.ico(\?|#|$)/i.test(u) || /favicon|sprite|spacer|1x1|pixel|blank\./i.test(u)
+  const take = (s) => (s && !bad(s)) ? cleanImageUrl(absUrl(s, baseUrl)) : null
+  let r
+
+  // 1. Explicit logo/brand markup (case-insensitive class match).
+  const sel = 'img.logo, img.brand, img[class*="logo" i], img[class*="brand" i], .logo img, .brand img, .navbar-brand img, .site-logo img, .elementskit-nav-logo img, .header-logo img'
+  if ((r = take(realImgSrc($(sel).first())))) return r
+
+  // 2. Any <img> that calls itself a logo via its src filename or alt text.
+  let viaName = null
+  $('img').each((_, el) => {
+    if (viaName) return
+    const $el = $(el)
+    const src = realImgSrc($el)
+    if (src && !bad(src) && (/logo/i.test(src) || /logo/i.test($el.attr('alt') || ''))) viaName = src
+  })
+  if ((r = take(viaName))) return r
+
+  // 3. First image inside a header / nav container — semantic OR named by
+  //    class/id (covers site-builders like Duda's "dmHeader", Wix, etc.).
+  if ((r = take(realImgSrc($('header img, nav img, [class*="header" i] img, [id*="header" i] img, [class*="navbar" i] img').first())))) return r
+
+  // 4. Last resort before favicons: the first real content image. On the
+  //    large majority of restaurant sites the logo is the very first <img>
+  //    (the hero is usually a CSS background). Skip obvious photos.
+  let firstImg = null
+  $('img').each((_, el) => {
+    if (firstImg) return
+    const src = realImgSrc($(el))
+    if (src && !bad(src) && !/hero|banner|slide|cover|background/i.test(src)) firstImg = src
+  })
+  if ((r = take(firstImg))) return r
+
+  // 5. Icons / og:image — may be a low-res favicon, but the diner header
+  //    skips those, so it's a harmless final fallback.
   const ati = $('link[rel="apple-touch-icon"]').attr('href')
   if (ati) return cleanImageUrl(absUrl(ati, baseUrl))
   const icons = $('link[rel*="icon"]').toArray()
@@ -792,7 +826,10 @@ function esc(s) {
 }
 
 function renderMenuHtml(menu) {
-  if (!menu.length) return '<section class="rw-menu rw-menu-empty"><div class="rw-menu-head"><h2>La carte</h2></div><p style="text-align:center;opacity:.6">Menu non publié sur le site source.</p></section>'
+  // No verifiable dishes → drop the menu section entirely (the @MENU
+  // marker becomes empty) rather than shipping an empty "La carte"
+  // placeholder.
+  if (!menu.length) return ''
   const cats = menu.map((cat) => {
     const items = cat.items.map((d) => {
       const variants = (d.variants || []).map((v) => `<li><span class="rw-v-label">${esc(v.label)}</span> <span class="rw-v-price">${esc(v.price)}</span></li>`).join('')
