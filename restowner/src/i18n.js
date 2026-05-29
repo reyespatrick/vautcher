@@ -5,8 +5,11 @@ const fr = {
   lang: { fr: 'Français', de: 'Deutsch', it: 'Italiano' },
   nav: { events: 'Événements', scan: 'Scanner', vouchers: 'Fidélité', history: 'Historique', share: 'Code QR', clients: 'Clients', approve: 'À approuver', admin: 'Admin', more: 'Plus' },
   share: {
-    title: 'Code QR de l’application',
-    subtitle: 'Affichez ou imprimez ce code. Vos clients le scannent pour ouvrir l’application La Gioconda dans leur navigateur.',
+    title: 'Installer les applications',
+    subtitle: 'Un QR pour l’app de vos clients, un autre pour installer la console restowner sur votre téléphone.',
+    clientTitle: 'App client — pour vos clients',
+    restownerTitle: 'Console restowner — pour vous',
+    restownerHint: 'Scannez pour ajouter la console restowner à l’écran d’accueil de votre téléphone.',
     caption: 'Nos événements & votre fidélité',
     scanLine: 'Scannez avec l’appareil photo',
     download: 'Télécharger le code QR',

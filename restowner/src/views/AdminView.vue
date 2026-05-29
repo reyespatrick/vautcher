@@ -2,13 +2,11 @@
 // Cross-restaurant overview — restaurants and their owners.
 // The clients view has moved to its own /clients tab using the shared
 // <ClientList /> component, so the segmented control here is gone.
-import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import QRCode from 'qrcode'
 import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
-import { usePushAdmin } from '../composables/usePushAdmin'
 import {
   adminRestaurants, createRestaurant, createOwnerCode, regenerateOwnerCode,
   setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, rescaffoldTenant, deleteTenant,
@@ -18,16 +16,6 @@ import {
 const { t } = useI18n()
 const { isModerator } = useAuth()
 const { confirm, alert } = useDialog()
-const { subscribed: pushSubscribed, enable: enablePush } = usePushAdmin()
-
-async function onEnablePush() {
-  const res = await enablePush()
-  if (!res.ok) {
-    await alert({ title: t('admin.notifTitle'), body: t('admin.notifFailed') })
-  } else {
-    await alert({ title: t('admin.notifTitle'), body: t('admin.notifOk') })
-  }
-}
 
 const restaurants = ref([])
 const loading = ref(true)
@@ -46,23 +34,8 @@ const codeResult = ref(null)          // { code, restaurant_id } — durable acc
 const codeCopied = ref(false)
 const activateUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/activer'
 
-// Install QR — points to the public /install landing page so a restaurateur
-// can scan and add the console to their phone's home screen.
-const installUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/install'
-const installQr = ref('')
-const copiedInstall = ref(false)
-onMounted(() => {
-  QRCode.toDataURL(installUrl, { width: 320, margin: 1, color: { dark: '#241b1d', light: '#ffffff' } })
-    .then((d) => { installQr.value = d })
-    .catch(() => {})
-})
-async function copyInstall() {
-  try {
-    await navigator.clipboard.writeText(installUrl)
-    copiedInstall.value = true
-    setTimeout(() => { copiedInstall.value = false }, 1500)
-  } catch (e) { /* ignore */ }
-}
+// The console install QR + the diner-app QR now live on the dedicated
+// "Installer les applications" page (ShareView, /share).
 
 // "From URL" scaffolder
 const scaffoldUrl = ref('')
@@ -526,26 +499,6 @@ async function copyLink() {
     </div>
 
     <template v-else>
-      <!-- Install the console — QR for a restaurateur to scan -->
-      <div class="card install-card">
-        <div class="install-info">
-          <h2 class="install-h">{{ t('admin.installTitle') }}</h2>
-          <p class="install-hint">{{ t('admin.installHint') }}</p>
-          <div class="install-link">
-            <code>{{ installUrl }}</code>
-            <button class="btn btn--sm" @click="copyInstall">
-              {{ copiedInstall ? t('admin.copied') : t('admin.copyLink') }}
-            </button>
-          </div>
-          <button type="button" class="btn btn--plain btn--sm install-notif" @click="onEnablePush">
-            {{ pushSubscribed ? t('admin.notifOn') : t('admin.notifEnable') }}
-          </button>
-        </div>
-        <a class="install-qr" :href="installUrl" target="_blank" rel="noopener">
-          <img v-if="installQr" :src="installQr" alt="QR — installer l'application" />
-        </a>
-      </div>
-
       <!-- New-owner result panel -->
       <div v-if="provisionResult" class="card prov">
         <strong>{{ t('admin.provisioned') }} — {{ provisionResult.email }}</strong>

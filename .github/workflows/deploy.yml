@@ -15,7 +15,21 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # Only run when something the pipeline actually deploys changed.
+    # Scaffolder scripts (scripts/**), docs and mockups never need a
+    # rebuild/migrate, so they no longer burn Actions minutes.
+    paths:
+      - 'restowner/**'
+      - 'app/**'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
+
+# A newer push to main supersedes an in-flight deploy — cancel the old
+# run instead of paying for both (migrations are idempotent, so the
+# latest run re-applies everything).
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
 
 jobs:
   # Hard rule (see ~/.claude memory no-native-dialogs): no native
