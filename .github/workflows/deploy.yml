@@ -131,6 +131,7 @@ jobs:
             restowner/supabase/owner-claim-schema.sql \
             restowner/supabase/owner-approval-schema.sql \
             restowner/supabase/admin-push-schema.sql \
+            restowner/supabase/owner-approve-notify.sql \
             restowner/supabase/default-event-seed.sql \
             restowner/supabase/scaffold-tier.sql \
             restowner/supabase/admin-restaurants-tier.sql \
@@ -225,5 +226,6 @@ jobs:
           supabase functions deploy rephrase-text --project-ref yfyfoqrautdogivalimb
           supabase functions deploy claim-owner --project-ref yfyfoqrautdogivalimb
           supabase functions deploy notify-scaffold --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy notify-owner-approved --project-ref yfyfoqrautdogivalimb
           supabase functions deploy scaffold-tenant --project-ref yfyfoqrautdogivalimb
           supabase functions deploy delete-tenant --project-ref yfyfoqrautdogivalimb

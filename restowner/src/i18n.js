@@ -87,7 +87,10 @@ const fr = {
     requesting: 'Envoi…',
     useAnother: 'Utiliser une autre adresse',
     pendingTitle: 'Demande en attente',
-    pendingBody: 'Votre demande a bien été envoyée. Un administrateur doit autoriser votre accès avant que vous puissiez continuer.'
+    pendingBody: 'Votre demande a bien été envoyée. Un administrateur doit autoriser votre accès avant que vous puissiez continuer.',
+    enableNotif: 'M’avertir dès l’autorisation',
+    notifOn: '✓ Vous serez notifié dès l’autorisation.',
+    notifDenied: 'Notifications refusées. Activez-les dans les réglages du navigateur.'
   },
   dashboard: {
     title: 'Événements/offres à venir', create: 'Créer un événement/offre',

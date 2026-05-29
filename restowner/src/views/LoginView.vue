@@ -3,11 +3,13 @@ import { ref, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
+import { usePushOwner } from '../composables/usePushOwner'
 
 const {
   session, owner, pendingOwner, isModerator,
   sendOtp, verifyOtp, rootLogin, requestAccess, refreshOwner, signOut
 } = useAuth()
+const { supported: pushSupported, subscribed: pushOn, enable: enablePush } = usePushOwner()
 const router = useRouter()
 const { t } = useI18n()
 const version = __APP_VERSION__
@@ -43,6 +45,12 @@ async function onRequestAccess() {
   } finally {
     busy.value = false
   }
+}
+
+async function onEnablePush() {
+  error.value = ''
+  const res = await enablePush()
+  if (!res.ok && res.reason === 'denied') error.value = t('login.notifDenied')
 }
 
 watch([session, owner, isModerator], () => {
@@ -135,6 +143,12 @@ async function onSignOut() {
           <h2 class="pending-title">{{ t('login.pendingTitle') }}</h2>
           <p>{{ t('login.pendingBody') }}</p>
           <span class="pending-dot" aria-hidden="true"></span>
+          <button
+            v-if="pushSupported && !pushOn"
+            class="btn full request-access"
+            @click="onEnablePush"
+          >{{ t('login.enableNotif') }}</button>
+          <p v-else-if="pushOn" class="notif-on">{{ t('login.notifOn') }}</p>
           <button class="btn btn--plain full" @click="onSignOut">{{ t('login.useAnother') }}</button>
         </template>
         <!-- Unknown email: offer to request owner access. -->
@@ -277,6 +291,7 @@ h2 { font-size: 1.4rem; margin-bottom: 4px; color: var(--ink); }
 .denied p { color: var(--mut); font-size: 0.88rem; margin: 10px 0 20px; }
 .denied h2.pending-title { color: var(--accent-dark); }
 .request-access { margin-bottom: 10px; }
+.notif-on { color: var(--accent-dark); font-size: 0.82rem; font-weight: 600; margin: 0 0 10px; }
 /* Pulsing dot while we poll for root's approval. */
 .pending-dot {
   display: block;

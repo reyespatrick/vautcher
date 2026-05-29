@@ -42,3 +42,8 @@ verify_jwt = false
 # live. Called by a DB trigger with the cron secret; no user JWT.
 [functions.notify-scaffold]
 verify_jwt = false
+
+# notify-owner-approved — pushes an owner when root approves their access.
+# Called by a DB trigger with the cron secret; no user JWT.
+[functions.notify-owner-approved]
+verify_jwt = false
