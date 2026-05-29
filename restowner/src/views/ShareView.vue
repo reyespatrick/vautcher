@@ -17,11 +17,14 @@ const QR_OPTS = { width: 720, margin: 1, errorCorrectionLevel: 'M', color: { dar
 // --- Section 1: the diner (client) app for the selected restaurant ---
 // Each tenant is deployed to <slug>.pages.dev. Fall back to the legacy
 // DINER_APP_URL constant only when the active restaurant has no slug.
-const dinerUrl = computed(() =>
-  activeRestaurant.value?.slug
+// Point the customer QR at the diner app's install-instructions page,
+// not the app root — so a first-time scan shows "add to home screen".
+const dinerUrl = computed(() => {
+  const base = activeRestaurant.value?.slug
     ? `https://${activeRestaurant.value.slug}.pages.dev`
     : DINER_APP_URL
-)
+  return base.replace(/\/$/, '') + '/install'
+})
 const qrUrl = ref('')
 const error = ref('')
 const dinerCopied = ref(false)

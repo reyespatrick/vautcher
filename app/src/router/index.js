@@ -8,9 +8,11 @@ import EventDetailView from '../views/EventDetailView.vue'
 import ReservationView from '../views/ReservationView.vue'
 import GalleryView from '../views/GalleryView.vue'
 import ContactView from '../views/ContactView.vue'
+import InstallView from '../views/InstallView.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeView, meta: { title: 'Accueil' } },
+  { path: '/install', name: 'install', component: InstallView, meta: { title: 'Installer l’application' } },
   { path: '/vautcher', name: 'voucher', component: VoucherView, meta: { title: 'Fidélité' } },
   { path: '/evenements', name: 'events', component: EventsView, meta: { title: 'Événements' } },
   { path: '/evenements/:id', name: 'event-detail', component: EventDetailView, meta: { title: 'Événement' } },
