@@ -37,3 +37,8 @@ verify_jwt = true
 # claim code is the secret.
 [functions.claim-owner]
 verify_jwt = false
+
+# notify-scaffold — pushes the admin who scaffolded a site when it goes
+# live. Called by a DB trigger with the cron secret; no user JWT.
+[functions.notify-scaffold]
+verify_jwt = false

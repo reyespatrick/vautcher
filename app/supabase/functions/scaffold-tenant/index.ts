@@ -50,19 +50,21 @@ function json(body: unknown, status = 200): Response {
 }
 
 // ---------- AUTH ----------
-async function callerIsModerator(req: Request): Promise<boolean> {
+// Returns the caller's email if they are a moderator, else null. We need
+// the email (not just a boolean) so we can record who scaffolded a site.
+async function callerModeratorEmail(req: Request): Promise<string | null> {
   const auth = req.headers.get('authorization') || ''
   const token = auth.replace(/^Bearer\s+/i, '')
-  if (!token) return false
+  if (!token) return null
   const userClient = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: `Bearer ${token}` } }
   })
   const { data: u } = await userClient.auth.getUser()
   const email = (u?.user?.email || '').toLowerCase()
-  if (!email) return false
+  if (!email) return null
   const { data } = await admin.from('vautcher_moderators')
     .select('email').eq('email', email).maybeSingle()
-  return !!data
+  return data ? email : null
 }
 
 // ---------- SLUG ----------
@@ -160,7 +162,8 @@ async function dispatchWorkflow(workflow: string, inputs: Record<string, string>
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS })
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
-  if (!(await callerIsModerator(req))) return json({ error: 'forbidden' }, 403)
+  const modEmail = await callerModeratorEmail(req)
+  if (!modEmail) return json({ error: 'forbidden' }, 403)
 
   let body: { url?: string; restaurant_id?: string; redeploy?: boolean }
   try { body = await req.json() } catch { return json({ error: 'bad json' }, 400) }
@@ -197,7 +200,8 @@ Deno.serve(async (req: Request) => {
     source_url: target,
     scaffolding: true,
     pwa_name: name,
-    pwa_short_name: name
+    pwa_short_name: name,
+    scaffolded_by: modEmail
   }
   const { data: inserted, error: insErr } = await admin.from('vautcher_restaurants').insert({
     name,

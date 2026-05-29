@@ -129,6 +129,7 @@ jobs:
             restowner/supabase/event-end-time.sql \
             restowner/supabase/event-push-now.sql \
             restowner/supabase/owner-claim-schema.sql \
+            restowner/supabase/admin-push-schema.sql \
             restowner/supabase/default-event-seed.sql \
             restowner/supabase/scaffold-tier.sql \
             restowner/supabase/admin-restaurants-tier.sql \
@@ -161,6 +162,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://yfyfoqrautdogivalimb.supabase.co
           VITE_SUPABASE_ANON_KEY: sb_publishable_CucZIIP9fzY-AN5ChPQGlQ_vWfmeTAR
+          VITE_VAPID_PUBLIC_KEY: BH2S3bUsxSCSP822MfhmI1QMty7XXcXxZ-JCsxC3ph1-45MSCJgdSSpv6i9XGQAjXCeao7gmCPRKsKBD_5aZCHw
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
@@ -221,5 +223,6 @@ jobs:
           supabase functions deploy event-notifier --project-ref yfyfoqrautdogivalimb
           supabase functions deploy rephrase-text --project-ref yfyfoqrautdogivalimb
           supabase functions deploy claim-owner --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy notify-scaffold --project-ref yfyfoqrautdogivalimb
           supabase functions deploy scaffold-tenant --project-ref yfyfoqrautdogivalimb
           supabase functions deploy delete-tenant --project-ref yfyfoqrautdogivalimb

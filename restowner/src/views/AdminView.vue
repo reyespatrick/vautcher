@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
+import { usePushAdmin } from '../composables/usePushAdmin'
 import {
   adminRestaurants, createRestaurant, createOwnerCode, regenerateOwnerCode,
   setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, deleteTenant
@@ -16,6 +17,16 @@ import {
 const { t } = useI18n()
 const { isModerator } = useAuth()
 const { confirm, alert } = useDialog()
+const { subscribed: pushSubscribed, enable: enablePush } = usePushAdmin()
+
+async function onEnablePush() {
+  const res = await enablePush()
+  if (!res.ok) {
+    await alert({ title: t('admin.notifTitle'), body: t('admin.notifFailed') })
+  } else {
+    await alert({ title: t('admin.notifTitle'), body: t('admin.notifOk') })
+  }
+}
 
 const restaurants = ref([])
 const loading = ref(true)
@@ -409,6 +420,9 @@ async function copyLink() {
               {{ copiedInstall ? t('admin.copied') : t('admin.copyLink') }}
             </button>
           </div>
+          <button type="button" class="btn btn--plain btn--sm install-notif" @click="onEnablePush">
+            {{ pushSubscribed ? t('admin.notifOn') : t('admin.notifEnable') }}
+          </button>
         </div>
         <a class="install-qr" :href="installUrl" target="_blank" rel="noopener">
           <img v-if="installQr" :src="installQr" alt="QR — installer l'application" />
