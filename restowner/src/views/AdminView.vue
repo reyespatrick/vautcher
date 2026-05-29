@@ -711,191 +711,24 @@ async function copyLink() {
       <p v-if="!restaurants.length" class="empty">{{ t('admin.empty') }}</p>
 
       <div v-else class="r-list">
-        <div v-for="r in restaurants" :key="r.id" class="card resto">
-          <!-- Identity row: name + slug + deploy-state badge. -->
-          <div class="resto-ident">
-            <strong>{{ r.name }}</strong>
-            <span class="resto-slug">{{ r.slug }}</span>
-            <span
-              v-if="r.deploy_status && r.deploy_status !== 'success'"
-              class="resto-state"
-              :class="`resto-state--${r.deploy_status}`"
-            >
-              {{ t('admin.deployState.' + r.deploy_status) }}
-            </span>
+        <RouterLink
+          v-for="r in restaurants"
+          :key="r.id"
+          :to="{ name: 'admin-restaurant', params: { id: r.id } }"
+          class="card resto-row"
+        >
+          <div class="resto-row-main">
+            <strong class="resto-row-name">{{ r.name }}</strong>
+            <span class="resto-row-slug">{{ r.slug }}</span>
           </div>
-
-          <!-- Skeleton: the DB row exists immediately, but the rest of the
-               card stays a placeholder until the site is live. -->
-          <template v-if="TRANSIENT_STATES.has(r.deploy_status)">
-            <div class="skel-block" aria-hidden="true">
-              <span class="skel-line"></span>
-              <span class="skel-line skel-line--short"></span>
-            </div>
-            <p class="skel-note">{{ t('admin.scaffoldRowPending') }}</p>
-            <!-- Recovery actions so a stuck / slow scaffold is never a dead
-                 end — Regenerer re-runs it, Supprimer removes it. -->
-            <div class="resto-actions resto-actions--skel">
-              <button
-                v-if="r.source_url"
-                type="button"
-                class="btn btn--ghost btn--sm"
-                :disabled="regenBusy || deleteBusy"
-                @click="startRegenerate(r)"
-              >{{ t('admin.regenerate') }}</button>
-              <button
-                type="button"
-                class="btn btn--danger btn--sm"
-                :disabled="deleteBusy"
-                @click="startDelete(r)"
-              >{{ t('admin.deleteBtn') }}</button>
-            </div>
-          </template>
-
-          <template v-else>
-          <!-- Tenant URLs: where it lives (pages.dev) + where it came
-               from (the scaffolded source website). -->
-          <div class="resto-urls">
-            <a
-              :href="`https://${r.slug}.pages.dev`"
-              target="_blank" rel="noopener"
-              class="resto-url resto-url--live"
-            >
-              <span class="ic">🌐</span>{{ r.slug }}.pages.dev
-            </a>
-            <a
-              v-if="r.source_url"
-              :href="r.source_url"
-              target="_blank" rel="noopener"
-              class="resto-url resto-url--src"
-            >
-              <span class="ic">🔗</span>{{ t('admin.sourceUrl') }}
-            </a>
-          </div>
-
-          <!-- Action row: full-width strip, Configurer left,
-               Supprimer pinned right. -->
-          <div class="resto-actions">
-            <RouterLink :to="{ name: 'restaurant-config', params: { id: r.id } }"
-                        class="btn btn--ghost btn--sm">
-              {{ t('config.edit') }}
-            </RouterLink>
-            <button
-              v-if="r.source_url"
-              type="button"
-              class="btn btn--ghost btn--sm"
-              :disabled="regenBusy || deleteBusy"
-              @click="startRegenerate(r)"
-            >{{ t('admin.regenerate') }}</button>
-            <button
-              type="button"
-              class="btn btn--ghost btn--sm"
-              :class="{ 'btn--on': r.menu_hidden }"
-              :disabled="menuBusy === r.id"
-              @click="onToggleMenuHidden(r)"
-            >{{ r.menu_hidden ? t('admin.menuShow') : t('admin.menuHide') }}</button>
-            <button
-              type="button"
-              class="btn btn--danger btn--sm"
-              :disabled="deleteBusy || TRANSIENT_STATES.has(r.deploy_status)"
-              :title="TRANSIENT_STATES.has(r.deploy_status) ? t('admin.deleteBlockedByScaffold') : ''"
-              @click="startDelete(r)"
-            >{{ t('admin.deleteBtn') }}</button>
-          </div>
-
-          <p v-if="!r.owners.length" class="owners-empty">{{ t('admin.noOwners') }}</p>
-          <ul v-else class="owners">
-            <li v-for="o in r.owners" :key="o.email" :class="{ locked: o.locked }">
-              <div class="owner-id">
-                <!-- Scaffold-provisioned: show the claim code, hide the
-                     placeholder email, offer an inline rebind. -->
-                <template v-if="isPlaceholderEmail(o.email)">
-                  <!-- Code-login account: name (user) first, then the code. -->
-                  <span class="owner-email">{{ o.name || 'admin' }}</span>
-                  <span v-if="o.claim_code" class="owner-claim">
-                    {{ t('admin.codeLabel') }} <code>{{ o.claim_code }}</code>
-                  </span>
-                </template>
-                <template v-else>
-                  <span class="owner-email">{{ o.email }}</span>
-                  <span v-if="o.name" class="owner-name">{{ o.name }}</span>
-                </template>
-
-                <!-- Inline rebind form, opened by the "Définir" button. -->
-                <form
-                  v-if="emailFormFor === o.email"
-                  class="owner-rebind"
-                  @submit.prevent="submitEmailRebind(o)"
-                >
-                  <input
-                    v-model="emailNew" type="email"
-                    :placeholder="t('admin.ownerEmail')"
-                    required autofocus
-                  />
-                  <button class="btn btn--sm" type="submit" :disabled="busy">
-                    {{ t('admin.emailSetBtn') }}
-                  </button>
-                  <button
-                    type="button" class="btn btn--plain btn--sm"
-                    @click="emailFormFor = null"
-                  >{{ t('admin.cancel') }}</button>
-                </form>
-              </div>
-              <div class="owner-flags">
-                <button
-                  v-if="isPlaceholderEmail(o.email) && emailFormFor !== o.email"
-                  class="chip"
-                  :disabled="busy"
-                  @click="openEmailForm(o)"
-                >{{ t('admin.emailDefineBtn') }}</button>
-                <button
-                  class="chip" :class="{ on: o.trusted }"
-                  :disabled="busy" @click="toggleTrusted(o)"
-                >{{ t('admin.trusted') }}</button>
-                <button
-                  class="chip chip--lock" :class="{ on: o.locked }"
-                  :disabled="busy" @click="toggleOwnerLock(o)"
-                >{{ o.locked ? t('admin.locked') : t('admin.lock') }}</button>
-                <button
-                  class="chip" :disabled="busy" @click="regenOwnerCode(o)"
-                >{{ t('admin.regenCode') }}</button>
-              </div>
-            </li>
-          </ul>
-
-          <form
-            v-if="ownerFormFor === r.id"
-            class="owner-form"
-            @submit.prevent="submitOwner(r.id)"
-          >
-            <input v-model="newO.name" type="text" :placeholder="t('admin.ownerName')" />
-            <button class="btn btn--sm full" type="button" :disabled="busy"
-              @click="genOwnerCode(r.id)">
-              {{ busy ? t('admin.creating') : t('admin.genCode') }}
-            </button>
-            <span class="owner-hint">{{ t('admin.genCodeHint') }}</span>
-
-            <details class="owner-adv">
-              <summary>{{ t('admin.orByEmail') }}</summary>
-              <input v-model="newO.email" type="email" :placeholder="t('admin.ownerEmail')" />
-              <button class="btn btn--plain btn--sm full" type="submit"
-                :disabled="busy || !newO.email.trim()">
-                {{ busy ? t('admin.creating') : t('admin.create') }}
-              </button>
-            </details>
-
-            <div class="form-actions">
-              <button class="btn btn--plain btn--sm" type="button"
-                @click="ownerFormFor = null">{{ t('admin.cancel') }}</button>
-            </div>
-          </form>
-          <button
-            v-else
-            class="btn btn--ghost btn--sm add-owner"
-            @click="openOwnerForm(r.id)"
-          >+ {{ t('admin.addOwner') }}</button>
-          </template>
-        </div>
+          <span
+            v-if="r.deploy_status && r.deploy_status !== 'success'"
+            class="resto-state"
+            :class="`resto-state--${r.deploy_status}`"
+          >{{ t('admin.deployState.' + r.deploy_status) }}</span>
+          <span class="resto-row-owners">{{ r.owners.length }}</span>
+          <svg class="resto-row-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        </RouterLink>
       </div>
     </template>
   </div>
@@ -905,6 +738,39 @@ async function copyLink() {
 .retry { display: block; margin: 14px auto 0; }
 .create-btn { margin-bottom: 18px; }
 .plus { font-size: 1.15rem; font-weight: 700; line-height: 0; }
+
+/* Compact restaurant row — taps through to the detail page. */
+.resto-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, transform 0.05s;
+}
+.resto-row:hover { border-color: var(--accent); }
+.resto-row:active { transform: scale(0.995); }
+.resto-row-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.resto-row-name {
+  font-family: 'Rufina', serif;
+  font-size: 1.05rem;
+  color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.resto-row-slug { font-size: 0.78rem; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.resto-row-owners {
+  flex: 0 0 auto;
+  font-size: 0.74rem; font-weight: 700;
+  color: var(--mut);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  min-width: 24px; text-align: center;
+  padding: 3px 9px;
+}
+.resto-row-chev { width: 18px; height: 18px; color: var(--mut); flex: 0 0 auto; }
 
 /* ===== Pending owner requests ===== */
 .pending-card {

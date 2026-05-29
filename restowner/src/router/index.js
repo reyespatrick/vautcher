@@ -13,6 +13,7 @@ import ApprovalQueueView from '../views/ApprovalQueueView.vue'
 import VouchersView from '../views/VouchersView.vue'
 import VoucherEditorView from '../views/VoucherEditorView.vue'
 import AdminView from '../views/AdminView.vue'
+import RestaurantDetailView from '../views/RestaurantDetailView.vue'
 import ClientsView from '../views/ClientsView.vue'
 import RestaurantConfigView from '../views/RestaurantConfigView.vue'
 import InstallView from '../views/InstallView.vue'
@@ -39,6 +40,7 @@ const routes = [
   { path: '/clients', name: 'clients', component: ClientsView },
   { path: '/approve', name: 'approve', component: ApprovalQueueView },
   { path: '/admin', name: 'admin', component: AdminView },
+  { path: '/admin/restaurant/:id', name: 'admin-restaurant', component: RestaurantDetailView },
   { path: '/restaurant/:id', name: 'restaurant-config', component: RestaurantConfigView },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
@@ -66,7 +68,7 @@ router.beforeEach(async (to) => {
   }
   if (!access) return { name: 'login' }
   // The approval queue, admin console and restaurant editor are moderator-only.
-  if (['approve', 'admin', 'restaurant-config'].includes(to.name) && !isModerator.value) {
+  if (['approve', 'admin', 'admin-restaurant', 'restaurant-config'].includes(to.name) && !isModerator.value) {
     return { name: 'dashboard' }
   }
   return true
