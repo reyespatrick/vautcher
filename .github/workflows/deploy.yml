@@ -187,8 +187,12 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy restowner/dist --project-name=restowner --branch=main --commit-dirty=true --commit-message=deploy-${{ github.sha }}
 
+  # Diner build smoke-test only. Per-tenant deploys (deploy-tenant.yml)
+  # build their own copy with the tenant's baked config, so the main
+  # pipeline doesn't push the diner to Cloudflare anymore. Keeping the
+  # build catches diner compile errors before they break a regenerate.
   diner-app:
-    name: Build & deploy diner app
+    name: Build diner app (smoke test)
     needs: migrate
     runs-on: ubuntu-latest
     steps:
@@ -200,26 +204,10 @@ jobs:
         working-directory: app
       - run: npm run build
         working-directory: app
-        # .env is gitignored, so Vite gets its public Supabase config here.
         env:
           VITE_SUPABASE_URL: https://yfyfoqrautdogivalimb.supabase.co
           VITE_SUPABASE_ANON_KEY: sb_publishable_CucZIIP9fzY-AN5ChPQGlQ_vWfmeTAR
-          # VAPID public key — pairs with VAPID_PRIVATE_KEY secret on the
-          # event-notifier edge function. Public by design (sent to the
-          # browser to identify this sender to the push service).
           VITE_VAPID_PUBLIC_KEY: BH2S3bUsxSCSP822MfhmI1QMty7XXcXxZ-JCsxC3ph1-45MSCJgdSSpv6i9XGQAjXCeao7gmCPRKsKBD_5aZCHw
-      - name: Deploy to Cloudflare Pages (la-gioconda)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy app/dist --project-name=la-gioconda --branch=main --commit-dirty=true --commit-message=deploy-${{ github.sha }}
-      - name: Deploy to Cloudflare Pages (la-gioconda-restaurant)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy app/dist --project-name=la-gioconda-restaurant --branch=main --commit-dirty=true --commit-message=deploy-${{ github.sha }}
 
   edge-function:
     name: Deploy vautcher-pass edge function
