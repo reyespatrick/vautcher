@@ -185,6 +185,12 @@ watch(() => site.homeHtml, hydrate)
 </template>
 
 <style>
+/* The diner app supplies its own header, so the scaffolded home must NOT
+   reserve space for the original site's fixed navbar — generators emit
+   e.g. `.hero { margin-top: 70px }`, which shows as an empty band at the
+   top. Zero the top margin of the home's first section. */
+.bespoke-home > :first-child { margin-top: 0 !important; }
+
 /* Auto-injected events teaser — Featured-hero layout (option ④):
    full-bleed image with bottom gradient, title overlaid, meta strip at
    the bottom, optional description footer below. Themes through
