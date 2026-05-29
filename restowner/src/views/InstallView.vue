@@ -1,21 +1,27 @@
 <script setup>
-// Public install landing — scanned from the QR. iOS sees a polished
-// add-to-home-screen walkthrough. Android scanners are forwarded straight
-// to the app root (Chrome offers its own install banner).
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+// Public install landing — scanned from the QR. iOS gets the polished
+// add-to-home-screen walkthrough; Android gets a one-tap install button
+// that triggers Chrome's native install dialog (beforeinstallprompt).
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePwaInstall } from '../composables/usePwaInstall'
 
-const router = useRouter()
 const { t } = useI18n()
-const { platform, standalone, installed } = usePwaInstall()
+const { install, platform, standalone, installed } = usePwaInstall()
 
-onMounted(() => {
-  if (!standalone && !installed.value && platform.android) {
-    router.replace('/')
+const busy = ref(false)
+const showFallback = ref(false)
+
+async function onInstall() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    const res = await install()
+    if (res.outcome === 'unavailable') showFallback.value = true
+  } finally {
+    busy.value = false
   }
-})
+}
 </script>
 
 <template>
@@ -56,9 +62,15 @@ onMounted(() => {
         </ol>
       </div>
 
-      <!-- Desktop fallback (Android scanners are auto-forwarded above) -->
-      <div v-else class="desktop">
-        <p class="fallback">{{ t('install.desktopHint') }}</p>
+      <!-- Android / others — one tap fires Chrome's native install dialog. -->
+      <div v-else class="android">
+        <button class="btn-main" :disabled="busy" @click="onInstall">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+          {{ t('install.androidBtn') }}
+        </button>
+        <p v-if="showFallback || platform.desktop" class="fallback">
+          {{ platform.desktop ? t('install.desktopHint') : t('install.androidFallback') }}
+        </p>
       </div>
 
       <p class="foot">{{ t('install.foot') }}</p>

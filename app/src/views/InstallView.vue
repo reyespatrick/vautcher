@@ -1,26 +1,30 @@
 <script setup>
 // Customer-facing install landing — the target of the "App client" QR in
 // restowner. iOS sees French add-to-home-screen instructions. Android
-// goes straight to the app (Chrome shows its own install banner when the
-// PWA is installable). Branded with the tenant's identity.
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+// sees a one-tap install button that triggers Chrome's native install
+// dialog (beforeinstallprompt). Branded with the tenant's identity.
+import { ref, computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { site } from '../data/site'
 import { usePwaInstall } from '../composables/usePwaInstall'
 
-const router = useRouter()
-const { platform, standalone, installed } = usePwaInstall()
-
-// Android scanners land in the app directly — Chrome offers its own
-// install affordance when the criteria are met, no walkthrough needed.
-onMounted(() => {
-  if (!standalone && !installed.value && platform.android) {
-    router.replace({ name: 'home' })
-  }
-})
+const { install, platform, standalone, installed } = usePwaInstall()
+const busy = ref(false)
+const showFallback = ref(false)
 
 const name = computed(() => site.name || 'notre application')
 const initial = computed(() => (site.name || '?').trim().charAt(0).toUpperCase())
+
+async function onInstall() {
+  if (busy.value) return
+  busy.value = true
+  try {
+    const res = await install()
+    if (res.outcome === 'unavailable') showFallback.value = true
+  } finally {
+    busy.value = false
+  }
+}
 </script>
 
 <template>
@@ -72,9 +76,17 @@ const initial = computed(() => (site.name || '?').trim().charAt(0).toUpperCase()
         </ol>
       </div>
 
-      <!-- Desktop fallback (Android scanners are auto-redirected above) -->
-      <div v-else class="desktop">
-        <p class="fallback">Pour ajouter l’application, utilisez le menu de votre navigateur puis <b>« Installer l’application »</b> ou <b>« Ajouter à l’écran d’accueil »</b>.</p>
+      <!-- Android / others — one tap fires Chrome's native install dialog. -->
+      <div v-else class="android">
+        <button class="btn-main" :disabled="busy" @click="onInstall">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Installer l’application
+        </button>
+        <p v-if="showFallback || platform.desktop" class="fallback">
+          {{ platform.desktop
+            ? 'Sur ordinateur, utilisez le menu de votre navigateur puis « Installer l’application ».'
+            : 'Si rien ne se passe, ouvrez le menu de votre navigateur puis « Ajouter à l’écran d’accueil ».' }}
+        </p>
       </div>
 
       <RouterLink class="skip" :to="{ name: 'home' }">Continuer sans installer →</RouterLink>
