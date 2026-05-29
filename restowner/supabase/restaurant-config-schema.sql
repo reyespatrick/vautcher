@@ -22,6 +22,7 @@ alter table public.vautcher_restaurants
 -- restowner edits will eventually authoring this directly.
 update public.vautcher_restaurants
    set config = '{
+     "source_url": "https://www.restaurant-pizzeria-la-gioconda.ch/",
      "tagline": "Votre restaurant napolitain à Cointrin",
      "address": "Avenue Louis-Casaï 81, 1216 Cointrin",
      "phone": "+41 22 798 96 05",
