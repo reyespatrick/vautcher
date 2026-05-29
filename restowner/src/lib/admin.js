@@ -86,6 +86,21 @@ export async function scaffoldTenant(url) {
   return { data }
 }
 
+// Re-run the bespoke scaffold for an EXISTING tenant from its stored
+// source_url. Re-crawls + regenerates the home, then redeploys to
+// <slug>.pages.dev — patching the same row (no new restaurant). The row
+// goes back to deploy_status='scaffolding' until CI finishes.
+export async function rescaffoldTenant(restaurantId) {
+  const sessErr = await requireSession()
+  if (sessErr) return { error: sessErr }
+  const { data, error } = await supabase.functions.invoke('scaffold-tenant', {
+    body: { restaurant_id: restaurantId, rescaffold: true }
+  })
+  if (error) return { error: await unwrapFunctionError(error) }
+  if (data && data.error) return { error: { message: data.error } }
+  return { data }
+}
+
 /**
  * Switch a tenant's home template ('classic' | 'modern'). Two-step:
  *   1. RPC writes config.template (moderator-gated, atomic).

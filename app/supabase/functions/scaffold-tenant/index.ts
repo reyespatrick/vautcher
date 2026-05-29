@@ -165,8 +165,32 @@ Deno.serve(async (req: Request) => {
   const modEmail = await callerModeratorEmail(req)
   if (!modEmail) return json({ error: 'forbidden' }, 403)
 
-  let body: { url?: string; restaurant_id?: string; redeploy?: boolean }
+  let body: { url?: string; restaurant_id?: string; redeploy?: boolean; rescaffold?: boolean }
   try { body = await req.json() } catch { return json({ error: 'bad json' }, 400) }
+
+  // ---- Mode 3: re-scaffold an existing tenant from its source_url ----
+  if (body?.restaurant_id && body?.rescaffold === true) {
+    const { data: row, error } = await admin.from('vautcher_restaurants')
+      .select('id, slug, name, config').eq('id', body.restaurant_id).single()
+    if (error || !row) return json({ error: 'restaurant not found' }, 404)
+    const sourceUrl = String((row.config as any)?.source_url ?? '').trim()
+    if (!sourceUrl) return json({ error: 'no source_url on this restaurant' }, 400)
+    const workflowUrl = await dispatchWorkflow('scaffold-tenant.yml', {
+      url: sourceUrl, slug: row.slug, restaurant_id: row.id
+    })
+    if (workflowUrl) {
+      await admin.from('vautcher_restaurants')
+        .update({ deploy_status: 'scaffolding', deploy_log_url: workflowUrl })
+        .eq('id', row.id)
+    }
+    return json({
+      id: row.id, slug: row.slug, name: row.name,
+      scaffold: workflowUrl ? 'dispatched' : 'manual',
+      deploy: workflowUrl ? 'dispatched' : 'manual',
+      deploy_log_url: workflowUrl,
+      pages_url: `https://${row.slug}.pages.dev`
+    })
+  }
 
   // ---- Mode 2: redeploy only (no re-scaffold) ----
   if (body?.restaurant_id && body?.redeploy === true) {

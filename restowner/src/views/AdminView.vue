@@ -11,7 +11,7 @@ import { useDialog } from '../composables/useDialog'
 import { usePushAdmin } from '../composables/usePushAdmin'
 import {
   adminRestaurants, createRestaurant, createOwnerCode, regenerateOwnerCode,
-  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, deleteTenant
+  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, rescaffoldTenant, deleteTenant
 } from '../lib/admin'
 
 const { t } = useI18n()
@@ -35,6 +35,7 @@ const busy = ref(false)
 
 // Inline forms
 const showNewRestaurant = ref(false)
+const showManual = ref(false)
 const newR = ref({ name: '', slug: '' })
 const ownerFormFor = ref(null)        // restaurant id with its add-owner form open
 const newO = ref({ email: '', name: '' })
@@ -115,6 +116,7 @@ async function submitScaffold() {
     }
     scaffoldResult.value = data
     scaffoldUrl.value = ''
+    showNewRestaurant.value = false
     await load()
   } catch (e) {
     scaffoldError.value = (e && e.message) || String(e)
@@ -182,6 +184,10 @@ function stopPoll() {
 watch(hasTransientRow, (v) => { if (v) startPoll(); else stopPoll() })
 onBeforeUnmount(stopPoll)
 
+// Lock background scroll while the new-restaurant dialog is open.
+watch(showNewRestaurant, (v) => { document.body.style.overflow = v ? 'hidden' : '' })
+onBeforeUnmount(() => { document.body.style.overflow = '' })
+
 async function submitRestaurant() {
   if (busy.value || !newR.value.name.trim() || !newR.value.slug.trim()) return
   busy.value = true
@@ -197,6 +203,18 @@ async function submitRestaurant() {
   } finally {
     busy.value = false
   }
+}
+
+function openNewDialog() {
+  scaffoldUrl.value = ''
+  scaffoldError.value = ''
+  newR.value = { name: '', slug: '' }
+  showManual.value = false
+  showNewRestaurant.value = true
+}
+function closeNewDialog() {
+  if (scaffoldBusy.value) return
+  showNewRestaurant.value = false
 }
 
 function openOwnerForm(restaurantId) {
@@ -323,6 +341,32 @@ function isPlaceholderEmail(email) {
 // re-validates the slug server-side anyway.
 const deleteBusy = ref(false)
 const deleteDebug = ref('')   // shown only on caught errors
+const regenBusy = ref(false)
+
+async function startRegenerate(r) {
+  if (regenBusy.value) return
+  if (!r.source_url) {
+    await alert({ title: t('admin.regenerate'), body: t('admin.regenerateNoSource') })
+    return
+  }
+  const ok = await confirm({
+    title: t('admin.regenerateTitle', { name: r.name }),
+    body: t('admin.regenerateBody'),
+    confirmLabel: t('admin.regenerateConfirm')
+  })
+  if (!ok) return
+  regenBusy.value = true
+  try {
+    const { error } = await rescaffoldTenant(r.id)
+    if (error) {
+      await alert({ title: t('admin.error'), body: error.message || '' })
+      return
+    }
+    await load()
+  } finally {
+    regenBusy.value = false
+  }
+}
 
 async function startDelete(r) {
   try {
@@ -459,53 +503,14 @@ async function copyLink() {
         <button class="prov-x" @click="codeResult = null">✕</button>
       </div>
 
-      <!-- ============ Scaffold from URL ============ -->
-      <form
-        v-if="!scaffoldResult"
-        class="card scaffold"
-        @submit.prevent="submitScaffold"
-      >
-        <strong class="scaffold-title">{{ t('admin.scaffoldTitle') }}</strong>
-        <p class="scaffold-hint">{{ t('admin.scaffoldHint') }}</p>
-        <div class="scaffold-row">
-          <input
-            v-model="scaffoldUrl"
-            type="text"
-            inputmode="url"
-            autocomplete="off"
-            autocorrect="off"
-            autocapitalize="none"
-            spellcheck="false"
-            class="scaffold-input"
-            :placeholder="t('admin.scaffoldPlaceholder')"
-            :disabled="scaffoldBusy"
-            required
-          />
-          <button
-            class="btn btn--sm scaffold-btn"
-            :class="{ 'scaffold-btn--busy': scaffoldBusy }"
-            type="submit"
-            :disabled="scaffoldBusy || !scaffoldUrl.trim()"
-          >
-            <span v-if="scaffoldBusy" class="spinner" aria-hidden="true"></span>
-            <span class="scaffold-btn-label">
-              {{ scaffoldBusy ? t('admin.scaffoldRunning') : t('admin.scaffoldBtn') }}
-            </span>
-          </button>
-        </div>
-        <!-- Live status while the edge function + GitHub workflow run.
-             scaffoldStatus is the human-readable step we're currently on
-             (extraction, DB insert, deploy dispatch, …). The shimmer bar
-             below gives the user something to watch instead of a frozen
-             button. -->
-        <div v-if="scaffoldBusy" class="scaffold-progress" role="status" aria-live="polite">
-          <div class="scaffold-progress-bar"><span></span></div>
-          <p class="scaffold-progress-step">{{ scaffoldStatus }}</p>
-        </div>
-        <p v-if="scaffoldError" class="scaffold-err">{{ scaffoldError }}</p>
-      </form>
+      <!-- Trigger — opens the "new restaurant" dialog. -->
+      <button
+        class="btn btn--ghost btn--full create-btn"
+        @click="openNewDialog"
+      ><span class="plus">+</span> {{ t('admin.newRestaurant') }}</button>
 
-      <div v-else class="card scaffold scaffold--done">
+      <!-- Scaffold result — stays inline once a scaffold is dispatched. -->
+      <div v-if="scaffoldResult" class="card scaffold scaffold--done">
         <strong>{{ t('admin.scaffoldDone') }} — {{ scaffoldResult.name }}</strong>
         <p class="scaffold-result-meta">{{ t('admin.scaffoldAsyncHint') }}</p>
         <code class="prov-link">{{ scaffoldResult.pages_url }}</code>
@@ -546,29 +551,94 @@ async function copyLink() {
         <button class="prov-x" @click="scaffoldResult = null">✕</button>
       </div>
 
-      <button
-        v-if="!showNewRestaurant"
-        class="btn btn--ghost btn--full create-btn"
-        @click="showNewRestaurant = true"
-      ><span class="plus">+</span> {{ t('admin.newRestaurant') }}</button>
+      <!-- ============ New-restaurant dialog ============ -->
+      <Teleport to="body">
+        <transition name="dlg">
+          <div
+            v-if="showNewRestaurant"
+            class="new-backdrop"
+            @click.self="closeNewDialog"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div class="new-modal">
+              <button
+                class="new-x" type="button"
+                @click="closeNewDialog" :disabled="scaffoldBusy"
+                :aria-label="t('admin.cancel')"
+              >✕</button>
+              <h3 class="new-modal-title">{{ t('admin.newRestaurant') }}</h3>
 
-      <form v-else class="card form-card" @submit.prevent="submitRestaurant">
-        <div class="field">
-          <label>{{ t('admin.restaurantName') }}</label>
-          <input v-model="newR.name" type="text" required />
-        </div>
-        <div class="field">
-          <label>{{ t('admin.restaurantSlug') }}</label>
-          <input v-model="newR.slug" type="text" required />
-        </div>
-        <div class="form-actions">
-          <button class="btn btn--sm" type="submit" :disabled="busy">
-            {{ t('admin.createRestaurant') }}
-          </button>
-          <button class="btn btn--plain btn--sm" type="button"
-            @click="showNewRestaurant = false">{{ t('admin.cancel') }}</button>
-        </div>
-      </form>
+              <!-- Primary path: scaffold a tenant from its website URL. -->
+              <form class="scaffold-form" @submit.prevent="submitScaffold">
+                <strong class="scaffold-title">{{ t('admin.scaffoldTitle') }}</strong>
+                <p class="scaffold-hint">{{ t('admin.scaffoldHint') }}</p>
+                <div class="scaffold-row">
+                  <input
+                    v-model="scaffoldUrl"
+                    type="text"
+                    inputmode="url"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    class="scaffold-input"
+                    :placeholder="t('admin.scaffoldPlaceholder')"
+                    :disabled="scaffoldBusy"
+                    required
+                  />
+                  <button
+                    class="btn btn--sm scaffold-btn"
+                    :class="{ 'scaffold-btn--busy': scaffoldBusy }"
+                    type="submit"
+                    :disabled="scaffoldBusy || !scaffoldUrl.trim()"
+                  >
+                    <span v-if="scaffoldBusy" class="spinner" aria-hidden="true"></span>
+                    <span class="scaffold-btn-label">
+                      {{ scaffoldBusy ? t('admin.scaffoldRunning') : t('admin.scaffoldBtn') }}
+                    </span>
+                  </button>
+                </div>
+                <!-- Live status while the edge function + GitHub workflow run. -->
+                <div v-if="scaffoldBusy" class="scaffold-progress" role="status" aria-live="polite">
+                  <div class="scaffold-progress-bar"><span></span></div>
+                  <p class="scaffold-progress-step">{{ scaffoldStatus }}</p>
+                </div>
+                <p v-if="scaffoldError" class="scaffold-err">{{ scaffoldError }}</p>
+              </form>
+
+              <!-- Secondary path: create a blank restaurant manually. -->
+              <div class="new-manual">
+                <button
+                  v-if="!showManual"
+                  type="button"
+                  class="new-manual-toggle"
+                  :disabled="scaffoldBusy"
+                  @click="showManual = true"
+                >{{ t('admin.manualCreate') }}</button>
+
+                <form v-else class="manual-form" @submit.prevent="submitRestaurant">
+                  <div class="field">
+                    <label>{{ t('admin.restaurantName') }}</label>
+                    <input v-model="newR.name" type="text" required />
+                  </div>
+                  <div class="field">
+                    <label>{{ t('admin.restaurantSlug') }}</label>
+                    <input v-model="newR.slug" type="text" required />
+                  </div>
+                  <div class="form-actions">
+                    <button class="btn btn--sm" type="submit" :disabled="busy">
+                      {{ t('admin.createRestaurant') }}
+                    </button>
+                    <button class="btn btn--plain btn--sm" type="button"
+                      @click="showManual = false">{{ t('admin.cancel') }}</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </Teleport>
 
       <p v-if="!restaurants.length" class="empty">{{ t('admin.empty') }}</p>
 
@@ -587,6 +657,17 @@ async function copyLink() {
             </span>
           </div>
 
+          <!-- Skeleton: the DB row exists immediately, but the rest of the
+               card stays a placeholder until the site is live. -->
+          <template v-if="TRANSIENT_STATES.has(r.deploy_status)">
+            <div class="skel-block" aria-hidden="true">
+              <span class="skel-line"></span>
+              <span class="skel-line skel-line--short"></span>
+            </div>
+            <p class="skel-note">{{ t('admin.scaffoldRowPending') }}</p>
+          </template>
+
+          <template v-else>
           <!-- Tenant URLs: where it lives (pages.dev) + where it came
                from (the scaffolded source website). -->
           <div class="resto-urls">
@@ -614,6 +695,13 @@ async function copyLink() {
                         class="btn btn--ghost btn--sm">
               {{ t('config.edit') }}
             </RouterLink>
+            <button
+              v-if="r.source_url"
+              type="button"
+              class="btn btn--ghost btn--sm"
+              :disabled="regenBusy || deleteBusy"
+              @click="startRegenerate(r)"
+            >{{ t('admin.regenerate') }}</button>
             <button
               type="button"
               class="btn btn--danger btn--sm"
@@ -713,6 +801,7 @@ async function copyLink() {
             class="btn btn--ghost btn--sm add-owner"
             @click="openOwnerForm(r.id)"
           >+ {{ t('admin.addOwner') }}</button>
+          </template>
         </div>
       </div>
     </template>
@@ -723,6 +812,101 @@ async function copyLink() {
 .retry { display: block; margin: 14px auto 0; }
 .create-btn { margin-bottom: 18px; }
 .plus { font-size: 1.15rem; font-weight: 700; line-height: 0; }
+
+/* ===== New-restaurant dialog ===== */
+.new-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(20, 12, 14, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.new-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 22px 20px 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+  border-top: 4px solid var(--accent);
+}
+.new-modal-title {
+  font-family: 'Rufina', serif;
+  font-size: 1.15rem;
+  color: var(--ink);
+  margin: 0 0 14px;
+}
+.new-x {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: 0;
+  background: none;
+  color: var(--mut);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+}
+.new-x:disabled { opacity: 0.4; cursor: not-allowed; }
+.scaffold-form { display: block; }
+.new-manual {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.new-manual-toggle {
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.new-manual-toggle:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Dialog fade/scale transition (mirrors AppDialog's). */
+.dlg-enter-active, .dlg-leave-active { transition: opacity 0.18s; }
+.dlg-enter-from, .dlg-leave-to { opacity: 0; }
+.dlg-enter-active .new-modal, .dlg-leave-active .new-modal {
+  transition: transform 0.22s cubic-bezier(0.18, 1.2, 0.4, 1);
+}
+.dlg-enter-from .new-modal { transform: translateY(14px) scale(0.97); }
+.dlg-leave-to .new-modal { transform: translateY(8px); }
+
+/* ===== Scaffolding skeleton (transient restaurant rows) ===== */
+.skel-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 8px;
+}
+.skel-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f0e7ea 25%, #faf4ea 37%, #f0e7ea 63%);
+  background-size: 400% 100%;
+  animation: skelShimmer 1.4s ease-in-out infinite;
+}
+.skel-line--short { width: 55%; }
+.skel-note {
+  font-size: 0.8rem;
+  color: var(--mut);
+  margin: 0;
+}
+@keyframes skelShimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
 
 /* Provisioned-owner result */
 .prov {
