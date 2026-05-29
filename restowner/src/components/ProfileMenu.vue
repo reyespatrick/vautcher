@@ -81,20 +81,11 @@ function openClient() {
           <span class="pm-scale">{{ Math.round(fontScale * 100) }}%</span>
         </div>
 
-        <div class="pm-section">
+        <div class="pm-section pm-section--row">
           <span class="pm-label">{{ t('profile.language') }}</span>
-          <div class="pm-langs">
-            <button
-              v-for="l in SUPPORTED_LOCALES"
-              :key="l"
-              type="button"
-              :class="{ on: locale === l }"
-              @click="setLocale(l)"
-            >
-              <span>{{ t('lang.' + l) }}</span>
-              <span v-if="locale === l" class="pm-check" aria-hidden="true">✓</span>
-            </button>
-          </div>
+          <select class="pm-select" :value="locale" @change="setLocale($event.target.value)">
+            <option v-for="l in SUPPORTED_LOCALES" :key="l" :value="l">{{ t('lang.' + l) }}</option>
+          </select>
         </div>
 
         <!-- Push notifications (scaffold ready / failed). Registers THIS
@@ -198,25 +189,22 @@ function openClient() {
   color: var(--mut);
   margin-top: 8px;
 }
-.pm-langs { display: flex; flex-direction: column; }
-.pm-langs button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 2px;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  background: none;
-  color: var(--ink);
+/* Compact one-line language picker (native dropdown — mobile friendly). */
+.pm-section--row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pm-section--row .pm-label { margin-bottom: 0; }
+.pm-select {
+  flex: 0 0 auto;
+  max-width: 62%;
   font-family: inherit;
-  font-weight: 600;
   font-size: 0.9rem;
-  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 10px;
   cursor: pointer;
 }
-.pm-langs button:last-child { border-bottom: 0; }
-.pm-langs button.on { color: var(--accent); font-weight: 700; }
-.pm-check { color: var(--accent); font-weight: 700; font-size: 0.95rem; }
 .pm-toggle {
   display: flex;
   align-items: center;

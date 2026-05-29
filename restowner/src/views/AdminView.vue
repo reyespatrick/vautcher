@@ -8,9 +8,8 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import {
-  adminRestaurants, createRestaurant, createOwnerCode, regenerateOwnerCode,
-  setOwnerFlags, setOwnerEmail, provisionOwner, scaffoldTenant, rescaffoldTenant, deleteTenant,
-  pendingOwners, approveOwner, rejectOwner, setMenuHidden
+  adminRestaurants, createRestaurant, scaffoldTenant,
+  pendingOwners, approveOwner, rejectOwner
 } from '../lib/admin'
 
 const { t } = useI18n()
@@ -26,15 +25,9 @@ const busy = ref(false)
 const showNewRestaurant = ref(false)
 const showManual = ref(false)
 const newR = ref({ name: '', slug: '' })
-const ownerFormFor = ref(null)        // restaurant id with its add-owner form open
-const newO = ref({ email: '', name: '' })
-const provisionResult = ref(null)     // { email, action_link, code }
-const copied = ref(false)
-const codeResult = ref(null)          // { code, restaurant_id } — durable access code
-const codeCopied = ref(false)
-const activateUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/activer'
 
-// The console install QR + the diner-app QR now live on the dedicated
+// Per-restaurant + owner management lives in RestaurantDetailView
+// (/admin/restaurant/:id). The console + diner-app install QRs live on the
 // "Installer les applications" page (ShareView, /share).
 
 // "From URL" scaffolder
@@ -259,237 +252,8 @@ function closeNewDialog() {
   showNewRestaurant.value = false
 }
 
-function openOwnerForm(restaurantId) {
-  ownerFormFor.value = restaurantId
-  newO.value = { email: '', name: '' }
-  provisionResult.value = null
-}
-
-async function submitOwner(restaurantId) {
-  if (busy.value || !newO.value.email.trim()) return
-  busy.value = true
-  try {
-    const { data, error } = await provisionOwner(
-      newO.value.email.trim(), newO.value.name.trim(), restaurantId
-    )
-    if (error) {
-      await alert({ title: t('admin.error'), body: error.message || '' })
-      return
-    }
-    provisionResult.value = data
-    ownerFormFor.value = null
-    await load()
-  } finally {
-    busy.value = false
-  }
-}
-
-// Durable access code: the restaurateur registers their own e-mail later
-// on /activer using this code. No e-mail needed up front.
-async function genOwnerCode(restaurantId) {
-  if (busy.value) return
-  busy.value = true
-  try {
-    const { data, error } = await createOwnerCode(restaurantId, newO.value.name.trim())
-    if (error) {
-      await alert({ title: t('admin.error'), body: error.message || '' })
-      return
-    }
-    codeResult.value = data
-    ownerFormFor.value = null
-    await load()
-  } finally {
-    busy.value = false
-  }
-}
-
-async function copyCode() {
-  try {
-    await navigator.clipboard.writeText(codeResult.value.code)
-    codeCopied.value = true
-    setTimeout(() => { codeCopied.value = false }, 1500)
-  } catch (e) { /* ignore */ }
-}
-
-// Root: (re)issue an owner's access code. The old one stops working.
-async function regenOwnerCode(owner) {
-  if (busy.value) return
-  const ok = await confirm({
-    title: t('admin.regenCode'),
-    body: t('admin.regenCodeConfirm'),
-    confirmLabel: t('admin.regenCode'),
-    cancelLabel: t('admin.cancel')
-  })
-  if (!ok) return
-  busy.value = true
-  try {
-    const { data, error } = await regenerateOwnerCode(owner.email)
-    if (error) {
-      await alert({ title: t('admin.error'), body: error.message || '' })
-      return
-    }
-    codeResult.value = data
-    await load()
-  } finally {
-    busy.value = false
-  }
-}
-
-async function toggleTrusted(owner) {
-  if (busy.value) return
-  busy.value = true
-  try {
-    const next = !owner.trusted
-    const { error } = await setOwnerFlags(owner.email, next, owner.locked)
-    if (!error) owner.trusted = next
-  } finally {
-    busy.value = false
-  }
-}
-
-// Inline email rebind for scaffold-provisioned owners (placeholder
-// email starts with "pending+"). One field, one Save button.
-const emailFormFor = ref(null)
-const emailNew = ref('')
-function openEmailForm(owner) {
-  emailFormFor.value = owner.email
-  emailNew.value = ''
-}
-async function submitEmailRebind(owner) {
-  const next = emailNew.value.trim().toLowerCase()
-  if (busy.value || !next) return
-  busy.value = true
-  try {
-    const { error } = await setOwnerEmail(owner.email, next)
-    if (error) {
-      await alert({ title: t('admin.error'), body: error.message || '' })
-      return
-    }
-    emailFormFor.value = null
-    emailNew.value = ''
-    await load()
-  } finally {
-    busy.value = false
-  }
-}
-// Internal, non-deliverable accounts: the scaffolded admin@<slug> code
-// account and legacy pending+ placeholders. We hide the address and show
-// the access code instead.
-function isPlaceholderEmail(email) {
-  return typeof email === 'string' &&
-    (email.startsWith('pending+') || email.endsWith('.vautcher.local'))
-}
-
-// ---- DELETE TENANT ----
-// One dialog, two confirmations: the moderator has to type "effacer"
-// AND tap the danger button. The slug is no longer requested in the
-// UI because the user shouldn't have to look it up; the edge function
-// re-validates the slug server-side anyway.
-const deleteBusy = ref(false)
-const deleteDebug = ref('')   // shown only on caught errors
-const regenBusy = ref(false)
-const menuBusy = ref('')
-
-async function onToggleMenuHidden(r) {
-  if (menuBusy.value) return
-  menuBusy.value = r.id
-  try {
-    const { error } = await setMenuHidden(r.id, !r.menu_hidden)
-    if (error) {
-      await alert({ title: t('admin.error'), body: error.message || '' })
-      return
-    }
-    await load()
-  } finally {
-    menuBusy.value = ''
-  }
-}
-
-async function startRegenerate(r) {
-  if (regenBusy.value) return
-  if (!r.source_url) {
-    await alert({ title: t('admin.regenerate'), body: t('admin.regenerateNoSource') })
-    return
-  }
-  const ok = await confirm({
-    title: t('admin.regenerateTitle', { name: r.name }),
-    body: t('admin.regenerateBody'),
-    confirmLabel: t('admin.regenerateConfirm')
-  })
-  if (!ok) return
-  regenBusy.value = true
-  try {
-    const { error } = await rescaffoldTenant(r.id)
-    if (error) {
-      await alert({ title: t('admin.error'), body: error.message || '' })
-      return
-    }
-    await load()
-  } finally {
-    regenBusy.value = false
-  }
-}
-
-async function startDelete(r) {
-  try {
-    const counts = (r.owners?.length || 0) + ' propriétaire(s)'
-    const ok = await confirm({
-      title: t('admin.deleteStep1Title', { name: r.name }),
-      body: t('admin.deleteStep1Body', { name: r.name, counts }),
-      confirmLabel: t('admin.deleteFinalConfirm'),
-      cancelLabel: t('common.keep'),
-      danger: true,
-      requireText: 'effacer',
-      inputLabel: t('admin.deleteTypeToConfirm'),
-      inputPlaceholder: 'effacer'
-    })
-    if (!ok) return
-
-    deleteBusy.value = true
-    try {
-      const { data, error } = await deleteTenant(r.id, r.slug)
-      if (error) {
-        await alert({ title: t('admin.error'), body: error.message || '' })
-        return
-      }
-      await load()
-      await alert({
-        title: t('admin.deleteDoneTitle'),
-        body: t('admin.deleteDoneBody', {
-          name: data?.name || '',
-          events: data?.deleted?.events ?? 0,
-          owners: data?.deleted?.owners ?? 0,
-          vouchers: data?.deleted?.vouchers ?? 0
-        })
-      })
-    } finally {
-      deleteBusy.value = false
-    }
-  } catch (e) {
-    deleteDebug.value = '❌ erreur startDelete: ' + (e && e.message ? e.message : String(e))
-    console.error('startDelete threw', e)
-  }
-}
-
-async function toggleOwnerLock(owner) {
-  if (busy.value) return
-  busy.value = true
-  try {
-    const next = !owner.locked
-    const { error } = await setOwnerFlags(owner.email, owner.trusted, next)
-    if (!error) owner.locked = next
-  } finally {
-    busy.value = false
-  }
-}
-
-async function copyLink() {
-  try {
-    await navigator.clipboard.writeText(provisionResult.value.action_link)
-    copied.value = true
-    setTimeout(() => { copied.value = false }, 2000)
-  } catch { /* clipboard unavailable */ }
-}
+// Per-restaurant + owner management now lives in RestaurantDetailView
+// (/admin/restaurant/:id). The Admin list only links to it.
 </script>
 
 <template>
@@ -497,14 +261,6 @@ async function copyLink() {
     <div class="page-head">
       <h1>{{ t('admin.title') }}</h1>
       <p>{{ t('admin.subtitle') }}</p>
-    </div>
-
-    <!-- Temporary diagnostic banner for the "Supprimer does nothing" report.
-         Shows whatever startDelete sets — so the user can see whether the
-         click handler fired at all and what state confirm() resolved to. -->
-    <div v-if="deleteDebug" class="del-debug" role="status">
-      <span>🐞 {{ deleteDebug }}</span>
-      <button class="del-debug-x" @click="deleteDebug = ''" aria-label="Fermer">×</button>
     </div>
 
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
@@ -515,36 +271,6 @@ async function copyLink() {
     </div>
 
     <template v-else>
-      <!-- New-owner result panel -->
-      <div v-if="provisionResult" class="card prov">
-        <strong>{{ t('admin.provisioned') }} — {{ provisionResult.email }}</strong>
-        <p>{{ t('admin.provisionedHint') }}</p>
-        <code class="prov-link">{{ provisionResult.action_link }}</code>
-        <div class="prov-actions">
-          <button class="btn btn--sm" @click="copyLink">
-            {{ copied ? t('admin.copied') : t('admin.copyLink') }}
-          </button>
-          <span v-if="provisionResult.code" class="prov-code">
-            {{ t('admin.code') }}: <b>{{ provisionResult.code }}</b>
-          </span>
-        </div>
-        <button class="prov-x" @click="provisionResult = null">✕</button>
-      </div>
-
-      <!-- Durable access-code result -->
-      <div v-if="codeResult" class="card prov">
-        <strong>{{ t('admin.codeCreated') }}</strong>
-        <p>{{ t('admin.codeCreatedHint') }}</p>
-        <div class="code-big">{{ codeResult.code }}</div>
-        <div class="prov-actions">
-          <button class="btn btn--sm" @click="copyCode">
-            {{ codeCopied ? t('admin.copied') : t('admin.copyCode') }}
-          </button>
-        </div>
-        <p class="code-url">{{ t('admin.codeActivateAt') }} <code>{{ activateUrl }}</code></p>
-        <button class="prov-x" @click="codeResult = null">✕</button>
-      </div>
-
       <!-- ============ Pending owner requests ============ -->
       <section v-if="pendingList.length" class="pending-card card">
         <strong class="pending-h">{{ t('admin.pendingTitle') }}</strong>

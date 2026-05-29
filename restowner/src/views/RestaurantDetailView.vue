@@ -10,7 +10,7 @@ import { useDialog } from '../composables/useDialog'
 import BackBar from '../components/BackBar.vue'
 import {
   adminRestaurants, rescaffoldTenant, deleteTenant, setMenuHidden,
-  setOwnerFlags, setOwnerEmail, createOwnerCode, regenerateOwnerCode, provisionOwner
+  setOwnerFlags, createOwnerCode, regenerateOwnerCode, provisionOwner
 } from '../lib/admin'
 
 const route = useRoute()
@@ -169,22 +169,6 @@ async function regenOwnerCode(o) {
   } finally { busy.value = false }
 }
 
-// Inline e-mail rebind for code-login accounts.
-const emailFormFor = ref(null)
-const emailNew = ref('')
-function openEmailForm(o) { emailFormFor.value = o.email; emailNew.value = '' }
-async function submitEmailRebind(o) {
-  const next = emailNew.value.trim().toLowerCase()
-  if (busy.value || !next) return
-  busy.value = true
-  try {
-    const { error } = await setOwnerEmail(o.email, next)
-    if (error) { await alert({ title: t('admin.error'), body: error.message || '' }); return }
-    emailFormFor.value = null; emailNew.value = ''
-    await load()
-  } finally { busy.value = false }
-}
-
 // Add owner.
 const showAddOwner = ref(false)
 const newO = ref({ email: '', name: '' })
@@ -242,21 +226,30 @@ async function submitOwner() {
           </a>
         </div>
 
-        <p v-if="isTransient" class="skel-note">{{ t('admin.scaffoldRowPending') }}</p>
+        <!-- While the site is generating: skeleton + only Regenerer stays
+             usable (so a stuck run can be re-triggered). -->
+        <template v-if="isTransient">
+          <div class="skel-block" aria-hidden="true">
+            <span class="skel-line"></span>
+            <span class="skel-line skel-line--short"></span>
+          </div>
+          <p class="skel-note">{{ t('admin.scaffoldRowPending') }}</p>
+        </template>
 
         <div class="resto-actions">
-          <RouterLink :to="{ name: 'restaurant-config', params: { id: r.id } }" class="btn btn--ghost btn--sm">
+          <RouterLink v-if="!isTransient" :to="{ name: 'restaurant-config', params: { id: r.id } }" class="btn btn--ghost btn--sm">
             {{ t('config.edit') }}
           </RouterLink>
+          <button v-else type="button" class="btn btn--ghost btn--sm" disabled>{{ t('config.edit') }}</button>
           <button v-if="r.source_url" type="button" class="btn btn--ghost btn--sm"
             :disabled="regenBusy || deleteBusy" @click="startRegenerate">
             {{ t('admin.regenerate') }}
           </button>
           <button type="button" class="btn btn--ghost btn--sm" :class="{ 'btn--on': r.menu_hidden }"
-            :disabled="menuBusy" @click="onToggleMenuHidden">
+            :disabled="menuBusy || isTransient" @click="onToggleMenuHidden">
             {{ r.menu_hidden ? t('admin.menuShow') : t('admin.menuHide') }}
           </button>
-          <button type="button" class="btn btn--danger btn--sm" :disabled="deleteBusy" @click="startDelete">
+          <button type="button" class="btn btn--danger btn--sm" :disabled="deleteBusy || isTransient" @click="startDelete">
             {{ t('admin.deleteBtn') }}
           </button>
         </div>
@@ -288,16 +281,8 @@ async function submitOwner() {
               <span class="owner-email">{{ o.email }}</span>
               <span v-if="o.name" class="owner-name">{{ o.name }}</span>
             </template>
-            <form v-if="emailFormFor === o.email" class="owner-rebind" @submit.prevent="submitEmailRebind(o)">
-              <input v-model="emailNew" type="email" :placeholder="t('admin.ownerEmail')" required autofocus />
-              <button class="btn btn--sm" type="submit" :disabled="busy">{{ t('admin.emailSetBtn') }}</button>
-              <button type="button" class="btn btn--plain btn--sm" @click="emailFormFor = null">{{ t('admin.cancel') }}</button>
-            </form>
           </div>
           <div class="owner-flags">
-            <button v-if="isPlaceholderEmail(o.email) && emailFormFor !== o.email" class="chip" :disabled="busy" @click="openEmailForm(o)">
-              {{ t('admin.emailDefineBtn') }}
-            </button>
             <button class="chip" :class="{ on: o.trusted }" :disabled="busy" @click="toggleTrusted(o)">{{ t('admin.trusted') }}</button>
             <button class="chip chip--lock" :class="{ on: o.locked }" :disabled="busy" @click="toggleOwnerLock(o)">
               {{ o.locked ? t('admin.locked') : t('admin.lock') }}
@@ -353,7 +338,16 @@ async function submitOwner() {
 .resto-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
 .resto-actions .btn--danger { margin-left: auto; }
 .btn--on { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }
-.skel-note { font-size: 0.8rem; color: var(--mut); margin: 10px 0 0; }
+.skel-note { font-size: 0.8rem; color: var(--mut); margin: 8px 0 0; }
+.skel-block { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 0; }
+.skel-line {
+  height: 12px; border-radius: 6px;
+  background: linear-gradient(90deg, #f0e7ea 25%, #faf4ea 37%, #f0e7ea 63%);
+  background-size: 400% 100%;
+  animation: skelShimmer 1.4s ease-in-out infinite;
+}
+.skel-line--short { width: 55%; }
+@keyframes skelShimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 
 .owners-h { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mut); margin: 18px 0 8px; }
 .owners-empty { color: var(--mut); font-size: 0.88rem; margin: 4px 0 12px; }
