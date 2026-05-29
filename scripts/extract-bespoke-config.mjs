@@ -63,6 +63,14 @@ $('nav, header.top, .top-nav, .site-nav, .sticky-nav, .navbar').remove()
 // to home_css separately) and the noscript shims.
 $('script, noscript').remove()
 $('style').remove()
+// Lazy-load every image Claude baked into the design so the diner only
+// fetches what's actually on-screen as the user scrolls. Async decoding
+// keeps the main thread free.
+$('img').each((_, el) => {
+  const $img = $(el)
+  if (!$img.attr('loading')) $img.attr('loading', 'lazy')
+  if (!$img.attr('decoding')) $img.attr('decoding', 'async')
+})
 const bodyInner = $('body').html() || ''
 
 // 5) Theme tokens (best-effort regex sniff of CSS custom-properties) -------

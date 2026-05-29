@@ -42,7 +42,15 @@ const rebateText = computed(() => {
   >
     <article class="event featured" :class="{ joined: event.joined }">
       <!-- Hero image with overlaid title + bottom info strip. -->
-      <div class="ev-hero" :style="event.image_url ? { backgroundImage: `url(${event.image_url})` } : null">
+      <div class="ev-hero">
+        <img
+          v-if="event.image_url"
+          :src="event.image_url"
+          :alt="event.title"
+          loading="lazy"
+          decoding="async"
+          class="ev-hero-img"
+        />
         <div class="ev-hero-date">
           <strong>{{ day }}</strong>
           <small>{{ monthShort }}</small>
@@ -119,9 +127,14 @@ const rebateText = computed(() => {
 .ev-hero {
   position: relative;
   aspect-ratio: 5 / 3;
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
   background-color: color-mix(in srgb, var(--burgundy) 12%, #eee);
+}
+.ev-hero-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
 }
 .ev-hero::after {
   content: '';
@@ -129,7 +142,10 @@ const rebateText = computed(() => {
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.78) 100%);
   pointer-events: none;
+  z-index: 1;
 }
+/* Overlay items (date, title, strip…) need to sit above the image. */
+.ev-hero > :not(.ev-hero-img) { position: relative; z-index: 2; }
 
 .ev-hero-date {
   position: absolute;

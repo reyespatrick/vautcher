@@ -180,7 +180,14 @@ async function addToCalendar() {
     </div>
 
     <article v-else-if="event" class="ed">
-      <div class="ed-hero" :style="{ backgroundImage: `url(${event.image_url})` }">
+      <div class="ed-hero">
+        <img
+          v-if="event.image_url"
+          :src="event.image_url"
+          :alt="event.title"
+          decoding="async"
+          class="ed-hero-img"
+        />
         <div v-if="event.joined" class="ed-stamp" aria-label="Inscrit·e">
           <span>Inscrit·e</span>
         </div>
@@ -278,8 +285,16 @@ async function addToCalendar() {
 .ed-hero {
   position: relative;
   height: 260px;
-  background: #e9e3d4 center/cover no-repeat;
+  background: #e9e3d4;
+  overflow: hidden;
 }
+.ed-hero-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+.ed-hero > :not(.ed-hero-img) { position: absolute; z-index: 2; }
 .ed-flag {
   position: absolute;
   bottom: 14px;

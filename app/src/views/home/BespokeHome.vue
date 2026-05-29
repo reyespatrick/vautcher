@@ -50,7 +50,8 @@ function renderEventsHtml(list) {
     })()
     return `
     <a class="rw-event${ev.joined ? ' is-joined' : ''}${full ? ' is-full' : ''}" href="/evenements/${esc(ev.id)}">
-      <div class="rw-event-hero"${ev.image_url ? ` style="background-image:url('${esc(ev.image_url)}')"` : ''}>
+      <div class="rw-event-hero">
+        ${ev.image_url ? `<img class="rw-event-hero-img" src="${esc(ev.image_url)}" alt="${esc(ev.title || '')}" loading="lazy" decoding="async" />` : ''}
         <div class="rw-event-date">${esc(fmtDate(ev.event_date))}</div>
         ${ev.joined ? '<div class="rw-event-badge rw-event-badge--joined">Inscrit</div>' : ''}
         ${full ? '<div class="rw-event-badge rw-event-badge--full">Complet</div>' : ''}
@@ -222,20 +223,29 @@ watch(() => site.homeHtml, hydrate)
   box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.28);
 }
 
-/* Hero — full-bleed image with bottom darkening gradient. */
+/* Hero — full-bleed image with bottom darkening gradient. The <img> is
+   absolutely positioned so it can lazy-load while the overlay items
+   (date, title, badges, meta) sit above it. */
 .bespoke-home .rw-event-hero {
   position: relative;
   aspect-ratio: 5 / 3;
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
   background-color: color-mix(in srgb, var(--primary, var(--burgundy, #9e053d)) 14%, #eee);
 }
+.bespoke-home .rw-event-hero-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+.bespoke-home .rw-event-hero > :not(.rw-event-hero-img) { position: relative; z-index: 2; }
 .bespoke-home .rw-event-hero::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.78) 100%);
   pointer-events: none;
+  z-index: 1;
 }
 
 .bespoke-home .rw-event-date {
