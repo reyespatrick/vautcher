@@ -284,6 +284,8 @@ const fr = {
       idle: 'Non publié'
     },
     scaffoldManual: 'Déploiement manuel requis',
+    scaffoldOnline: 'Site en ligne',
+    scaffoldFailedBadge: 'Échec du déploiement',
     scaffoldLogs: 'Voir les logs',
     scaffoldCodeLabel: 'Code propriétaire',
     scaffoldCodeHint: 'Donnez ce code au futur propriétaire. Il sera lié à son adresse e-mail dès qu’elle sera saisie ci-dessous.',

@@ -140,6 +140,23 @@ const TRANSIENT_STATES = new Set(['scaffolding', 'pending'])
 const hasTransientRow = computed(() =>
   restaurants.value.some((r) => TRANSIENT_STATES.has(r.deploy_status))
 )
+// Live deploy_status of the just-scaffolded row (from the polled list) so
+// the result card stops animating once CI finishes — instead of relying on
+// the stale `scaffoldResult.scaffold === 'dispatched'` set at trigger time.
+const scaffoldRowStatus = computed(() => {
+  const id = scaffoldResult.value?.id
+  if (!id) return null
+  const row = restaurants.value.find((r) => r.id === id)
+  return row ? row.deploy_status : null
+})
+const scaffoldInProgress = computed(() => {
+  if (!scaffoldResult.value) return false
+  const dispatched = scaffoldResult.value.scaffold === 'dispatched' ||
+    scaffoldResult.value.deploy === 'dispatched'
+  if (!dispatched) return false
+  const st = scaffoldRowStatus.value
+  return st === null ? true : TRANSIENT_STATES.has(st)
+})
 let pollHandle = null
 function startPoll() {
   if (pollHandle) return
@@ -487,11 +504,15 @@ async function copyLink() {
         </div>
 
         <div class="prov-actions">
-          <span v-if="scaffoldResult.scaffold === 'dispatched' || scaffoldResult.deploy === 'dispatched'"
-                class="badge badge--pending badge--pulse">
+          <span v-if="scaffoldInProgress" class="badge badge--pending badge--pulse">
             <span class="badge-dot" aria-hidden="true"></span>
             {{ t('admin.scaffoldDeploying') }}
           </span>
+          <span v-else-if="scaffoldRowStatus === 'success'" class="badge badge--ok">
+            ✓ {{ t('admin.scaffoldOnline') }}
+          </span>
+          <span v-else-if="scaffoldRowStatus === 'scaffold_failed' || scaffoldRowStatus === 'failed'"
+                class="badge badge--cancel">{{ t('admin.scaffoldFailedBadge') }}</span>
           <span v-else class="badge badge--off">{{ t('admin.scaffoldManual') }}</span>
           <a
             v-if="scaffoldResult.deploy_log_url"
@@ -500,10 +521,9 @@ async function copyLink() {
             class="prov-code"
           >{{ t('admin.scaffoldLogs') }} ↗</a>
         </div>
-        <!-- Indeterminate progress bar — gives the moderator a constant
-             signal that work is happening in CI for the next ~3-5 min. -->
+        <!-- Indeterminate progress bar — only while CI is actually running. -->
         <div
-          v-if="scaffoldResult.scaffold === 'dispatched' || scaffoldResult.deploy === 'dispatched'"
+          v-if="scaffoldInProgress"
           class="scaffold-progress"
           role="status" aria-live="polite"
         >

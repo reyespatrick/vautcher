@@ -139,15 +139,27 @@ label {
 input {
   display: block;
   width: 100%;
+  box-sizing: border-box;
   margin-top: 6px;
   padding: 11px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   outline: none;
   font-weight: 400;
+  font-size: 1rem;
   text-transform: none;
 }
 input:focus { border-color: var(--burgundy); }
+/* iOS renders type=date as a grey, centred, oversized native control that
+   ignores width:100% — normalise it to match the text inputs. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #fff;
+  text-align: left;
+  min-width: 0;
+  min-height: 44px;
+}
 
 .btn { width: 100%; margin-top: 4px; }
 .note {
