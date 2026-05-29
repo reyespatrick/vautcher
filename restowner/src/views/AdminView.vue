@@ -733,6 +733,23 @@ async function copyLink() {
               <span class="skel-line skel-line--short"></span>
             </div>
             <p class="skel-note">{{ t('admin.scaffoldRowPending') }}</p>
+            <!-- Recovery actions so a stuck / slow scaffold is never a dead
+                 end — Regenerer re-runs it, Supprimer removes it. -->
+            <div class="resto-actions resto-actions--skel">
+              <button
+                v-if="r.source_url"
+                type="button"
+                class="btn btn--ghost btn--sm"
+                :disabled="regenBusy || deleteBusy"
+                @click="startRegenerate(r)"
+              >{{ t('admin.regenerate') }}</button>
+              <button
+                type="button"
+                class="btn btn--danger btn--sm"
+                :disabled="deleteBusy"
+                @click="startDelete(r)"
+              >{{ t('admin.deleteBtn') }}</button>
+            </div>
           </template>
 
           <template v-else>

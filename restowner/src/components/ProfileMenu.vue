@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiPrefs } from '../composables/usePrefs'
 import { useViewAs } from '../composables/useViewAs'
+import { usePushAdmin } from '../composables/usePushAdmin'
 import { DINER_APP_URL } from '../lib/config'
 import { SUPPORTED_LOCALES } from '../i18n'
 
@@ -15,7 +16,20 @@ const emit = defineEmits(['signout'])
 const { t } = useI18n()
 const { fontScale, locale, larger, smaller, resetSize, setLocale } = useUiPrefs()
 const { asOwner } = useViewAs()
+const { supported: pushSupported, subscribed: pushSubscribed, enable: enablePush, disable: disablePush } = usePushAdmin()
 const open = ref(false)
+const pushBusy = ref(false)
+
+async function toggleNotif() {
+  if (pushBusy.value) return
+  pushBusy.value = true
+  try {
+    if (pushSubscribed.value) await disablePush()
+    else await enablePush()
+  } finally {
+    pushBusy.value = false
+  }
+}
 const version = __APP_VERSION__ // from package.json — bump it on every release
 
 // "View as client" — open the customer-facing diner app in a new tab.
@@ -81,6 +95,22 @@ function openClient() {
               <span v-if="locale === l" class="pm-check" aria-hidden="true">✓</span>
             </button>
           </div>
+        </div>
+
+        <!-- Push notifications (scaffold ready / failed). Registers THIS
+             device so the alerts can actually reach it. -->
+        <div v-if="isModerator && pushSupported" class="pm-section">
+          <span class="pm-label">{{ t('profile.notifications') }}</span>
+          <button
+            type="button"
+            class="pm-toggle"
+            :class="{ on: pushSubscribed }"
+            :disabled="pushBusy"
+            @click="toggleNotif"
+          >
+            <span>{{ t('profile.notifPush') }}</span>
+            <span class="pm-switch" :class="{ on: pushSubscribed }"><span class="pm-knob"></span></span>
+          </button>
         </div>
 
         <button class="pm-signout" type="button" @click="open = false; emit('signout')">
@@ -187,6 +217,45 @@ function openClient() {
 .pm-langs button:last-child { border-bottom: 0; }
 .pm-langs button.on { color: var(--accent); font-weight: 700; }
 .pm-check { color: var(--accent); font-weight: 700; font-size: 0.95rem; }
+.pm-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.pm-toggle:disabled { opacity: 0.55; cursor: progress; }
+.pm-switch {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--line);
+  position: relative;
+  transition: background 0.18s;
+}
+.pm-switch.on { background: var(--accent); }
+.pm-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.18s;
+}
+.pm-switch.on .pm-knob { transform: translateX(18px); }
 .pm-seg {
   display: flex;
   border: 1px solid var(--line);

@@ -69,5 +69,17 @@ export function usePushAdmin() {
     }
   }
 
-  return { supported, permission, subscribed, enable }
+  // Turn push off on THIS device. We unsubscribe locally; the stale DB row
+  // is harmless and gets pruned the next time a push to it returns 410.
+  async function disable() {
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      if (sub) await sub.unsubscribe()
+    } catch { /* ignore */ }
+    subscribed.value = false
+    return { ok: true }
+  }
+
+  return { supported, permission, subscribed, enable, disable }
 }

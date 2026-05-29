@@ -72,7 +72,9 @@ const fr = {
   },
   profile: {
     title: 'Profil', textSize: 'Taille du texte', language: 'Langue',
-    smaller: 'Réduire', reset: 'Normal', larger: 'Agrandir'
+    smaller: 'Réduire', reset: 'Normal', larger: 'Agrandir',
+    notifications: 'Notifications',
+    notifPush: 'M’alerter (site prêt, échec)'
   },
   login: {
     title: 'Connexion', subtitle: 'Recevez un code à usage unique par e-mail.',

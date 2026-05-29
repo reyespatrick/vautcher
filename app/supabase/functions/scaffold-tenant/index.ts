@@ -179,8 +179,11 @@ Deno.serve(async (req: Request) => {
       url: sourceUrl, slug: row.slug, restaurant_id: row.id
     })
     if (workflowUrl) {
+      // Record the regenerator as the push recipient so the "site en ligne"
+      // / failure notification reaches whoever triggered THIS run.
+      const cfg = { ...((row.config as Record<string, unknown>) || {}), scaffolded_by: modEmail }
       await admin.from('vautcher_restaurants')
-        .update({ deploy_status: 'scaffolding', deploy_log_url: workflowUrl })
+        .update({ deploy_status: 'scaffolding', deploy_log_url: workflowUrl, config: cfg })
         .eq('id', row.id)
     }
     return json({
