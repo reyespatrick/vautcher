@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useProfile } from '../composables/useProfile'
 import { fetchEvent, joinEvent, leaveEvent } from '../lib/api'
+import { formatPrice } from '../lib/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -195,7 +196,7 @@ async function addToCalendar() {
             <span class="ic">🕖</span>{{ event.event_time }}<template v-if="event.event_end_time"> – {{ event.event_end_time }}</template>
           </li>
           <li v-if="event.location"><span class="ic">📍</span>{{ event.location }}</li>
-          <li v-if="event.price"><span class="ic">🎟️</span>{{ event.price }}</li>
+          <li v-if="event.price"><span class="ic">🪙</span>{{ formatPrice(event.price) }}</li>
         </ul>
 
         <p v-if="rebateText" class="ed-rebate">🎁 {{ rebateText }}</p>

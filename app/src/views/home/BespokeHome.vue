@@ -14,6 +14,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { site } from '../../data/site'
 import { fetchEvents } from '../../lib/api'
+import { formatPrice } from '../../lib/format'
 
 const rootRef = ref(null)
 const events = ref([])
@@ -37,7 +38,7 @@ function renderEventsHtml(list) {
     const stripItems = [
       timeStr ? `🕖 ${esc(timeStr)}` : '',
       ev.location ? `📍 ${esc(ev.location)}` : '',
-      ev.price ? `🎟️ ${esc(ev.price)}` : ''
+      ev.price ? `🪙 ${esc(formatPrice(ev.price))}` : ''
     ].filter(Boolean).map((s) => `<li>${s}</li>`).join('')
     const rebate = (() => {
       const v = ev.rebate_value

@@ -8,6 +8,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getEvent, listEventStats, cancelEvent } from '../lib/events'
+import { formatPrice } from '../lib/format'
 import { useDialog } from '../composables/useDialog'
 import BackBar from '../components/BackBar.vue'
 
@@ -154,7 +155,7 @@ async function onCancel() {
               <span class="ic">🕖</span>{{ event.event_time }}<template v-if="event.event_end_time"> – {{ event.event_end_time }}</template>
             </li>
             <li v-if="event.location"><span class="ic">📍</span>{{ event.location }}</li>
-            <li v-if="event.price"><span class="ic">🎟️</span>{{ event.price }}</li>
+            <li v-if="event.price"><span class="ic">🪙</span>{{ formatPrice(event.price) }}</li>
             <li v-if="recurLabel"><span class="ic">🔁</span>{{ recurLabel }}</li>
           </ul>
 

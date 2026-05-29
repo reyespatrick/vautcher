@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { formatPrice } from '../lib/format'
 
 const props = defineProps({
   event: { type: Object, required: true },
@@ -57,7 +58,7 @@ const rebateText = computed(() => {
           <ul class="ev-meta">
             <li v-if="event.event_time">🕖 {{ event.event_time }}<template v-if="event.event_end_time">–{{ event.event_end_time }}</template></li>
             <li v-if="event.location">📍 {{ event.location }}</li>
-            <li v-if="event.price">🎟️ {{ event.price }}</li>
+            <li v-if="event.price">🪙 {{ formatPrice(event.price) }}</li>
           </ul>
           <button
             v-if="event.joined"
