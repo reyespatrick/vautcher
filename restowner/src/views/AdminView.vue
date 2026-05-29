@@ -1343,14 +1343,17 @@ async function copyLink() {
 
 .resto-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
 .resto-actions .btn { flex: 0 0 auto; }
+/* Danger action drifts to the end of the row, wrapping below when the
+   four buttons no longer fit one line (narrow phones). */
+.resto-actions .btn--danger { margin-left: auto; }
 
 /* URL chips under the restaurant title — pages.dev (always) +
    scaffolded source URL (only when present). */
