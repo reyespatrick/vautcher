@@ -132,7 +132,8 @@ jobs:
             restowner/supabase/scaffold-tier.sql \
             restowner/supabase/admin-restaurants-tier.sql \
             restowner/supabase/admin-set-template.sql \
-            app/supabase/pass-schema.sql; do
+            app/supabase/pass-schema.sql \
+            restowner/supabase/api-grants.sql; do
             echo "→ applying $f"
             jq -Rs '{query: .}' "$f" \
               | curl -sS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
