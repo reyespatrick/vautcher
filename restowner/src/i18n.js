@@ -228,7 +228,14 @@ const fr = {
     stampAdded: 'Tampon ajouté pour {name}.', stampTotal: '{n} tampon(s) au total',
     notFound: 'Client introuvable.', cameraError: 'Caméra inaccessible : {msg}',
     cardComplete: 'Carte de fidélité complétée ! 🎉', lifetime: '{n} visites',
-    redeemed: 'Carte de fidélité utilisée pour {name}.', redeemedTotal: '{n} cartes utilisées'
+    redeemed: 'Carte de fidélité utilisée pour {name}.', redeemedTotal: '{n} cartes utilisées',
+    deniedTitle: 'Accès caméra refusé',
+    deniedIntro: 'Pour scanner les codes QR, autorisez l’accès à la caméra :',
+    deniedSafariLead: 'Dans Safari : ',
+    deniedSafariStep: 'touchez « aA » dans la barre d’adresse → Réglages du site web → Caméra → Autoriser.',
+    deniedPwaLead: 'Sur l’app installée : ',
+    deniedPwaStep: 'ouvrez Réglages iOS → restowner → Caméra et activez l’accès.',
+    deniedFoot: 'Rechargez ensuite la page et touchez « Démarrer le scan ».'
   },
   vouchers: {
     title: 'Cartes de fidélité',
@@ -584,6 +591,13 @@ const de = {
     start: 'Scan starten', startAgain: 'Weiteren Code scannen', stop: 'Stoppen',
     stampAdded: 'Stempel hinzugefügt für {name}.', stampTotal: 'Insgesamt {n} Stempel',
     notFound: 'Kunde nicht gefunden.', cameraError: 'Kamera nicht verfügbar: {msg}',
+    deniedTitle: 'Kamera-Zugriff verweigert',
+    deniedIntro: 'Um QR-Codes zu scannen, erlauben Sie den Kamera-Zugriff:',
+    deniedSafariLead: 'In Safari: ',
+    deniedSafariStep: 'Tippen Sie auf „aA“ in der Adressleiste → Website-Einstellungen → Kamera → Erlauben.',
+    deniedPwaLead: 'In der installierten App: ',
+    deniedPwaStep: 'Öffnen Sie iOS-Einstellungen → restowner → Kamera und aktivieren Sie den Zugriff.',
+    deniedFoot: 'Laden Sie danach die Seite neu und tippen Sie auf „Scannen starten“.',
     cardComplete: 'Treuekarte vollständig! 🎉', lifetime: '{n} Besuche',
     redeemed: 'Treuekarte eingelöst für {name}.', redeemedTotal: '{n} eingelöste Treuekarten'
   },
@@ -813,6 +827,13 @@ const it = {
     start: 'Avvia la scansione', startAgain: 'Scansiona un altro codice', stop: 'Ferma',
     stampAdded: 'Timbro aggiunto per {name}.', stampTotal: '{n} timbri in totale',
     notFound: 'Cliente non trovato.', cameraError: 'Fotocamera non disponibile: {msg}',
+    deniedTitle: 'Accesso alla fotocamera rifiutato',
+    deniedIntro: 'Per scansionare i codici QR, autorizza l’accesso alla fotocamera:',
+    deniedSafariLead: 'In Safari: ',
+    deniedSafariStep: 'tocca «aA» nella barra degli indirizzi → Impostazioni del sito → Fotocamera → Consenti.',
+    deniedPwaLead: 'Nell’app installata: ',
+    deniedPwaStep: 'apri Impostazioni iOS → restowner → Fotocamera e attiva l’accesso.',
+    deniedFoot: 'Ricarica poi la pagina e tocca «Avvia la scansione».',
     cardComplete: 'Carta fedeltà completata! 🎉', lifetime: '{n} visite',
     redeemed: 'Carta fedeltà utilizzata per {name}.', redeemedTotal: '{n} carte utilizzate'
   },

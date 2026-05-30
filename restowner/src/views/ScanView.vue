@@ -114,8 +114,18 @@ async function start() {
     )
   } catch (e) {
     scanning.value = false
+    const name = (e && e.name) || ''
     const msg = (e && (e.message || e.name)) || String(e)
-    result.value = { ok: false, error: t('scan.cameraError', { msg }) }
+    // The classic iOS case: user (or someone before them) tapped "Don't
+    // allow" and Safari remembers. The browser throws NotAllowedError
+    // without re-prompting, so a generic "camera error" dump is useless.
+    // Render an actionable how-to-re-enable panel instead.
+    const denied =
+      name === 'NotAllowedError' ||
+      /permission|denied|notallowed/i.test(msg)
+    result.value = denied
+      ? { ok: false, kind: 'denied' }
+      : { ok: false, error: t('scan.cameraError', { msg }) }
   }
 }
 
@@ -142,7 +152,27 @@ onBeforeUnmount(stopScanner)
         </div>
       </div>
 
-      <div v-if="result" class="result" :class="result.ok ? 'good' : 'bad'">
+      <!-- Dedicated panel for the camera-permission-denied case: actionable
+           how-to-re-enable steps (Safari tab vs installed PWA), instead of
+           the raw NotAllowedError dump. -->
+      <div v-if="result && result.kind === 'denied'" class="result bad denied">
+        <div class="big">🎥</div>
+        <strong class="denied-title">{{ t('scan.deniedTitle') }}</strong>
+        <p class="denied-intro">{{ t('scan.deniedIntro') }}</p>
+        <ol class="denied-steps">
+          <li>
+            <strong>{{ t('scan.deniedSafariLead') }}</strong>
+            {{ t('scan.deniedSafariStep') }}
+          </li>
+          <li>
+            <strong>{{ t('scan.deniedPwaLead') }}</strong>
+            {{ t('scan.deniedPwaStep') }}
+          </li>
+        </ol>
+        <p class="denied-foot">{{ t('scan.deniedFoot') }}</p>
+      </div>
+
+      <div v-else-if="result" class="result" :class="result.ok ? 'good' : 'bad'">
         <div class="big">{{ result.ok ? '✓' : '✕' }}</div>
 
         <template v-if="result.ok && result.mode === 'stamp'">
@@ -219,6 +249,21 @@ onBeforeUnmount(stopScanner)
 .result.good { background: rgba(31, 157, 85, 0.12); color: var(--ok); }
 .result.bad { background: rgba(192, 57, 43, 0.1); color: var(--danger); }
 .result strong { color: var(--ink); }
+
+/* Camera-permission-denied panel. Keeps the .result.bad red wash but
+   reflows for ordered, readable instructions. */
+.result.denied { text-align: left; }
+.result.denied .big { text-align: center; }
+.denied-title {
+  display: block; text-align: center;
+  font-family: 'Rufina', serif; font-size: 1.05rem;
+  color: var(--ink); margin: 4px 0 8px;
+}
+.denied-intro { margin: 0 0 10px; color: var(--ink); font-size: 0.88rem; }
+.denied-steps { margin: 0 0 8px 18px; padding: 0; color: var(--ink); font-size: 0.86rem; }
+.denied-steps li { margin-bottom: 8px; line-height: 1.45; }
+.denied-steps strong { color: var(--accent-dark); }
+.denied-foot { margin: 6px 0 0; color: var(--mut); font-size: 0.8rem; font-style: italic; }
 .result .done-line {
   font-family: 'Rufina', serif;
   font-size: 1.05rem;
