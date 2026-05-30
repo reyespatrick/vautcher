@@ -321,12 +321,18 @@ onMounted(() => {
 .cand-web input:focus { outline: none; border-color: var(--accent); }
 .cand-web-status { font-size: 0.8rem; color: var(--mut); font-style: italic; }
 
+/* Sticks to the bottom of the scrolling viewport, sitting flush against
+   the top of the bottom tabbar. The previous offset matched the tabbar
+   height which left the bar floating mid-viewport. */
 .enqueue-bar {
-  position: sticky; bottom: calc(env(safe-area-inset-bottom) + 60px);
-  background: var(--bg);
-  padding: 10px 0;
-  display: flex; flex-direction: column; gap: 6px; align-items: stretch;
+  position: sticky; bottom: 0;
+  margin: 8px -16px 0;
+  padding: 10px 16px;
+  background: var(--surface);
   border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 22px rgba(0, 0, 0, 0.05);
+  display: flex; flex-direction: column; gap: 6px; align-items: stretch;
+  z-index: 5;
 }
 .btn--full { width: 100%; }
 
