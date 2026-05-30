@@ -1,0 +1,43 @@
+name: Queue reconcile
+
+# One-shot reconciliation for queue rows that ended in "failed" even
+# though their CI pipeline actually deployed successfully. Caused by
+# the writeback race in scaffold-queue-advance that was fixed in
+# commit 24108da -- this workflow cleans the rows that were stranded
+# before that fix landed.
+#
+# Matches by config.source_url on the restaurant against website_url
+# on the queue row; only updates queue rows whose paired restaurant
+# really has deploy_status = 'success'.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update mismarked queue rows
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          REF=yfyfoqrautdogivalimb
+          SQL="with updated as (
+                  update public.vautcher_scaffold_queue q
+                     set status      = 'done',
+                         finished_at = coalesce(q.finished_at, now()),
+                         error       = null,
+                         restaurant_id = r.id
+                    from public.vautcher_restaurants r
+                   where q.status = 'failed'
+                     and r.deploy_status = 'success'
+                     and lower(trim(both '/' from coalesce(r.config->>'source_url', ''))) =
+                         lower(trim(both '/' from coalesce(q.website_url, '')))
+                   returning q.id, q.name, r.slug
+                )
+                select id, name, slug from updated order by name;"
+          jq -Rs '{query: .}' <<<"$SQL" \
+            | curl -sS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
+                -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+                -H "Content-Type: application/json" --data @-
