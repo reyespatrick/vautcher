@@ -1,11 +1,12 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterView, RouterLink, useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from './composables/useAuth'
 import { fontScale, useUiPrefs } from './composables/usePrefs'
 import { useViewAs } from './composables/useViewAs'
 import { useScope } from './composables/useScope'
+import { useVersionToast } from './composables/useVersionToast'
 import ProfileMenu from './components/ProfileMenu.vue'
 import RestaurantPicker from './components/RestaurantPicker.vue'
 import AppDialog from './components/AppDialog.vue'
@@ -17,6 +18,8 @@ const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const { hydrateFromOwner } = useUiPrefs()
+const { currentVersion, visible: updateVisible, init: initVersionToast, dismiss: dismissVersionToast } = useVersionToast()
+onMounted(initVersionToast)
 
 // Shell (header + tab bar) shows everywhere except the login screen and
 // always-open public pages like the install landing.
@@ -55,6 +58,25 @@ async function doSignOut() {
 
 <template>
   <div class="app-root">
+    <!-- One-shot "you are on a fresh build" banner. Shown only the first
+         time the app boots after a new version has been installed; the
+         comparison lives in useVersionToast. Auto-dismisses after 5s. -->
+    <transition name="vbanner">
+      <button
+        v-if="updateVisible"
+        type="button"
+        class="version-toast"
+        :title="t('versionToast.dismiss')"
+        @click="dismissVersionToast"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        </svg>
+        <span>{{ t('versionToast.updated', { v: currentVersion }) }}</span>
+      </button>
+    </transition>
+
     <template v-if="showShell">
       <header class="app-header">
         <RouterLink :to="{ name: 'dashboard' }" class="brand">
@@ -201,6 +223,35 @@ async function doSignOut() {
 </template>
 
 <style scoped>
+/* "New build is running" banner — fixed at the top, drops out after
+   5 seconds. Discreet success-green so it can't be confused with an
+   error toast. */
+.version-toast {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 130;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 99px;
+  background: #1f7a3a;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 22px rgba(31, 122, 58, 0.35);
+  cursor: pointer;
+}
+.version-toast svg { width: 16px; height: 16px; flex: 0 0 auto; }
+.vbanner-enter-active, .vbanner-leave-active { transition: all 0.28s ease; }
+.vbanner-enter-from { opacity: 0; transform: translate(-50%, -16px); }
+.vbanner-leave-to { opacity: 0; transform: translate(-50%, -16px); }
+
 /* "Plus" tab — matches the .tabbar a styling from main.css. */
 .more-tab {
   flex: 1;

@@ -23,6 +23,10 @@ const fr = {
     client: 'Client (app diner)'
   },
   app: { tagline: 'Console restaurateur' },
+  versionToast: {
+    updated: 'Mise à jour installée — v{v}',
+    dismiss: 'Masquer'
+  },
   common: {
     loading: 'Chargement…', save: 'Enregistrer', cancel: 'Annuler',
     retry: 'Réessayer', loadError: 'Impossible de charger les événements.',
@@ -434,6 +438,10 @@ const de = {
     client: 'Kunde (Gäste-App)'
   },
   app: { tagline: 'Gastronomen-Konsole' },
+  versionToast: {
+    updated: 'Update installiert — v{v}',
+    dismiss: 'Ausblenden'
+  },
   common: {
     loading: 'Wird geladen…', save: 'Speichern', cancel: 'Abbrechen',
     retry: 'Erneut versuchen', loadError: 'Veranstaltungen konnten nicht geladen werden.',
@@ -601,6 +609,10 @@ const it = {
     client: 'Cliente (app)'
   },
   app: { tagline: 'Console ristoratore' },
+  versionToast: {
+    updated: 'Aggiornamento installato — v{v}',
+    dismiss: 'Nascondi'
+  },
   common: {
     loading: 'Caricamento…', save: 'Salva', cancel: 'Annulla',
     retry: 'Riprova', loadError: 'Impossibile caricare gli eventi.',
