@@ -232,7 +232,6 @@ async function remove(row) {
 
 .q-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .q-row { display: flex; gap: 10px; padding: 12px 14px; align-items: flex-start; }
-.q-row--fail { border-color: #f3c5c5; background: #fff9f9; }
 .q-row--done { opacity: 0.85; }
 .q-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .q-main strong { font-family: 'Rufina', serif; font-size: 1.02rem; color: var(--ink); }
@@ -244,6 +243,22 @@ async function remove(row) {
   white-space: pre-wrap; word-break: break-word;
 }
 .q-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; flex: 0 0 auto; }
+
+/* Failed rows: the error log is long and stacks the right-side action
+   column into a tall empty gutter. Switch to a column layout with a
+   button bar across the bottom instead. */
+.q-row--fail {
+  border-color: #f3c5c5; background: #fff9f9;
+  flex-direction: column;
+  gap: 8px;
+}
+.q-row--fail .q-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+.q-row--fail .q-actions > * { flex: 1 1 96px; text-align: center; }
 
 .back { margin-top: 16px; text-align: center; }
 </style>
