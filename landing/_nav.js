@@ -1,15 +1,16 @@
-// Floating mockup selector. Loaded from every variant so the user can
-// flip between them without going back to /mockups/. Picks the current
-// mockup number out of the URL path; default landing (/) is mockup 1.
+// Floating mockup selector. Cycles through the four kept directions.
 (function () {
+  var KEPT = [1, 4, 6, 7]
+  var NAMES = { 1: 'Revue éditoriale', 4: 'Gazette', 6: 'Noir &amp; or', 7: 'Manifeste' }
+
   var path = location.pathname.replace(/^\/|\/$/g, '')
   var m = path.match(/^(\d+)$/)
   var current = m ? parseInt(m[1], 10) : 1
-  var total = 10
-  var prev = current > 1 ? current - 1 : total
-  var next = current < total ? current + 1 : 1
-  var prevHref = prev === 1 ? '/' : '/' + prev + '/'
-  var nextHref = next === 1 ? '/' : '/' + next + '/'
+  if (KEPT.indexOf(current) === -1) current = 1
+  var idx = KEPT.indexOf(current)
+  var prev = KEPT[(idx - 1 + KEPT.length) % KEPT.length]
+  var next = KEPT[(idx + 1) % KEPT.length]
+  var hrefFor = function (n) { return n === 1 ? '/' : '/' + n + '/' }
 
   var css = ''
     + '.mk-bar{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:2147483600;'
@@ -23,9 +24,9 @@
     + 'padding:8px 12px;}'
     + '.mk-bar a:active{transform:scale(0.96);}'
     + '.mk-arr{font-size:18px;line-height:1;padding:8px 14px;font-weight:400;}'
-    + '.mk-lbl{padding:8px 4px;color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:0.1em;'
-    + 'text-transform:uppercase;}'
-    + '.mk-cur{padding:8px 4px;font-variant-numeric:tabular-nums;}'
+    + '.mk-name{padding:8px 6px;font-variant:small-caps;letter-spacing:0.04em;'
+    + 'color:rgba(255,255,255,0.92);}'
+    + '.mk-cur{padding:8px 4px;color:rgba(255,255,255,0.45);font-variant-numeric:tabular-nums;}'
     + '.mk-list{border-left:1px solid rgba(255,255,255,0.08);font-size:11px;}'
     + '.mk-list:hover{background:rgba(255,255,255,0.06);}'
     + '@media print{.mk-bar{display:none!important;}}'
@@ -39,10 +40,10 @@
     bar.className = 'mk-bar'
     bar.setAttribute('aria-label', 'Mockup selector')
     bar.innerHTML =
-      '<a class="mk-arr" href="' + prevHref + '" aria-label="Précédente">‹</a>'
-      + '<span class="mk-lbl">Maquette</span>'
-      + '<span class="mk-cur">' + current + ' / ' + total + '</span>'
-      + '<a class="mk-arr" href="' + nextHref + '" aria-label="Suivante">›</a>'
+      '<a class="mk-arr" href="' + hrefFor(prev) + '" aria-label="Précédente">‹</a>'
+      + '<span class="mk-name">' + NAMES[current] + '</span>'
+      + '<span class="mk-cur">' + (idx + 1) + ' / ' + KEPT.length + '</span>'
+      + '<a class="mk-arr" href="' + hrefFor(next) + '" aria-label="Suivante">›</a>'
       + '<a class="mk-list" href="/mockups/">Liste</a>'
     document.body.appendChild(bar)
   }

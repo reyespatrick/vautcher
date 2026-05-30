@@ -31,7 +31,7 @@
         line-height: 1.55;
         -webkit-font-smoothing: antialiased;
       }
-      .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+      .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
       h1, h2, h3 { font-family: 'Rufina', Georgia, serif; font-weight: 700; line-height: 1.12; letter-spacing: -0.005em; }
       a { color: var(--accent); text-decoration: none; }
       a:hover { color: var(--accent-dark); }
@@ -39,8 +39,8 @@
       /* ---- Top bar ---- */
       .topbar {
         display: flex; align-items: center; justify-content: space-between;
-        padding: 22px 24px;
-        max-width: 880px; margin: 0 auto;
+        padding: 22px 28px;
+        max-width: 1080px; margin: 0 auto;
       }
       .brand {
         font-family: 'Rufina', serif; font-size: 1.25rem; color: var(--ink);
@@ -54,84 +54,104 @@
       .nav-cta:hover { background: var(--ink); color: var(--paper); }
 
       /* ---- Hero ---- */
-      .hero { padding: 64px 0 80px; }
+      .hero { padding: 56px 0 88px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+      @media (max-width: 820px) { .hero { grid-template-columns: 1fr; gap: 36px; padding: 36px 0 56px; } }
+      .hero-text { max-width: 36ch; }
       .eyebrow {
-        font-size: 0.78rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
-        color: var(--accent); margin-bottom: 24px;
+        font-size: 0.74rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+        color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
       }
-      .hero h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); margin: 0 0 18px; max-width: 18ch; }
+      .eyebrow::before, .eyebrow::after { content: ""; flex: 0 0 22px; height: 1px; background: var(--accent); opacity: 0.6; }
+      .eyebrow::after { display: none; }
+      .hero h1 { font-size: clamp(2.4rem, 5.5vw, 3.6rem); margin: 0 0 18px; line-height: 1.05; letter-spacing: -0.005em; }
       .hero .lede {
-        font-size: clamp(1.05rem, 1.8vw, 1.25rem);
-        color: var(--soft); max-width: 36ch; margin: 0 0 32px;
+        font-size: clamp(1.05rem, 1.6vw, 1.2rem);
+        color: var(--soft); margin: 0 0 28px; line-height: 1.55;
       }
       .hero-cta {
         display: inline-block;
         background: var(--accent); color: #fff;
-        padding: 14px 26px; border-radius: 99px;
-        font-weight: 700; font-size: 1rem;
-        box-shadow: 0 10px 28px rgba(158, 5, 61, 0.28);
+        padding: 14px 28px; border-radius: 99px;
+        font-weight: 700; font-size: 0.98rem;
+        box-shadow: 0 12px 28px rgba(158, 5, 61, 0.28);
+        transition: transform 0.12s, box-shadow 0.12s;
       }
-      .hero-cta:hover { background: var(--accent-dark); color: #fff; }
+      .hero-cta:hover { background: var(--accent-dark); color: #fff; transform: translateY(-1px); box-shadow: 0 14px 32px rgba(158, 5, 61, 0.32); }
       .hero-foot {
-        margin-top: 18px; font-size: 0.85rem; color: var(--mut);
+        margin-top: 16px; font-size: 0.85rem; color: var(--mut);
       }
-      /* Hero photo: full-width strip just below the lede. Gradient
-         overlay ties it to the brand burgundy + cream background. */
+      /* Hero photo: square-ish portrait, paired with the text. Brand-tinted overlay + soft inner rule. */
       .hero-photo {
-        margin: 48px 0 0;
-        height: clamp(220px, 38vw, 380px);
+        aspect-ratio: 4 / 5; max-height: 520px;
         border-radius: 18px;
-        background: linear-gradient(135deg, rgba(158,5,61,0.18), rgba(28,17,23,0.45)),
-                    url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&q=78&auto=format&fit=crop') center/cover;
+        background: linear-gradient(165deg, rgba(158,5,61,0.18), rgba(28,17,23,0.5)),
+                    url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80&auto=format&fit=crop') center/cover;
         position: relative; overflow: hidden;
+        box-shadow: 0 24px 60px rgba(28,17,23,0.16);
       }
+      .hero-photo::after { content: ""; position: absolute; inset: 12px; border: 1px solid rgba(255,255,255,0.16); border-radius: 12px; pointer-events: none; }
       .hero-photo .credit {
-        position: absolute; bottom: 14px; right: 16px;
+        position: absolute; bottom: 20px; left: 24px; right: 24px;
         font-family: 'Rufina', serif; font-style: italic;
-        color: rgba(255,255,255,0.78); font-size: 0.8rem; letter-spacing: 0.05em;
+        color: rgba(255,255,255,0.86); font-size: 0.9rem; letter-spacing: 0.04em;
       }
+
+      /* Reusable section eyebrow */
+      .seyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--mut); margin-bottom: 14px; }
+      .seyebrow b { color: var(--accent); }
 
       /* ---- Concept ---- */
-      .concept { padding: 32px 0 64px; border-top: 1px solid var(--line); }
-      .concept h2 { font-size: 1.8rem; margin: 0 0 18px; max-width: 22ch; }
-      .concept p { color: var(--soft); max-width: 56ch; }
+      .concept { padding: 56px 0 72px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 2fr; gap: 56px; }
+      @media (max-width: 820px) { .concept { grid-template-columns: 1fr; gap: 18px; padding: 36px 0 48px; } }
+      .concept h2 { font-size: clamp(1.6rem, 2.8vw, 2.2rem); margin: 0; line-height: 1.12; max-width: 16ch; }
+      .concept p { color: var(--soft); font-size: 1.05rem; line-height: 1.65; max-width: 58ch; }
 
       /* ---- Pillars (benefits) ---- */
-      .pillars { padding: 56px 0 64px; border-top: 1px solid var(--line); }
-      .pillars h2 { font-size: 1.6rem; margin: 0 0 32px; }
+      .pillars { padding: 72px 0 80px; border-top: 1px solid var(--line); }
+      .pillars-head { display: grid; grid-template-columns: 1fr auto; align-items: end; margin-bottom: 40px; gap: 24px; }
+      @media (max-width: 600px) { .pillars-head { grid-template-columns: 1fr; } }
+      .pillars h2 { font-size: clamp(1.6rem, 2.8vw, 2rem); margin: 0; max-width: 16ch; }
+      .pillars-cap { font-size: 0.86rem; color: var(--mut); font-style: italic; }
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 28px 32px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 36px 40px;
       }
-      .pillar { }
+      @media (max-width: 760px) { .grid { grid-template-columns: 1fr 1fr; gap: 28px 24px; } }
+      @media (max-width: 460px) { .grid { grid-template-columns: 1fr; } }
+      .pillar { padding-top: 14px; border-top: 2px solid var(--ink); }
       .pillar .num {
-        display: inline-block;
+        display: block;
         font-family: 'Rufina', serif; font-style: italic;
-        color: var(--accent); font-size: 1.1rem;
-        margin-bottom: 6px;
+        color: var(--accent); font-size: 0.95rem;
+        margin-bottom: 4px;
       }
-      .pillar h3 { font-size: 1.05rem; margin: 0 0 8px; }
-      .pillar p { margin: 0; color: var(--soft); font-size: 0.95rem; }
+      .pillar h3 { font-size: 1.08rem; margin: 0 0 8px; line-height: 1.2; }
+      .pillar p { margin: 0; color: var(--soft); font-size: 0.94rem; line-height: 1.55; }
 
       /* ---- Pull-quote ---- */
-      .quote { padding: 72px 0; border-top: 1px solid var(--line); }
+      .quote { padding: 88px 0; border-top: 1px solid var(--line); text-align: center; position: relative; }
+      .quote::before { content: "«"; position: absolute; top: 56px; left: 50%; transform: translateX(-50%); font-family: 'Rufina', serif; font-size: 5rem; line-height: 0.6; color: var(--accent); opacity: 0.18; }
       .quote blockquote {
-        font-family: 'Rufina', serif; font-size: clamp(1.4rem, 3vw, 2rem);
-        line-height: 1.25; color: var(--ink);
-        margin: 0; max-width: 30ch;
+        font-family: 'Rufina', serif; font-size: clamp(1.5rem, 3.2vw, 2.3rem);
+        line-height: 1.22; color: var(--ink);
+        margin: 0 auto; max-width: 28ch;
+        font-style: italic;
       }
-      .quote cite { display: block; margin-top: 18px; font-style: normal; font-size: 0.9rem; color: var(--mut); }
+      .quote cite { display: block; margin-top: 22px; font-style: normal; font-size: 0.78rem; color: var(--mut); text-transform: uppercase; letter-spacing: 0.18em; }
 
       /* ---- Closing ---- */
-      .close { padding: 64px 0 96px; border-top: 1px solid var(--line); }
-      .close h2 { font-size: 2rem; margin: 0 0 18px; max-width: 22ch; }
-      .close p { color: var(--soft); margin: 0 0 28px; max-width: 48ch; }
+      .close { padding: 72px 0 96px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: center; }
+      @media (max-width: 760px) { .close { grid-template-columns: 1fr; gap: 24px; padding: 56px 0 72px; } }
+      .close h2 { font-size: clamp(1.8rem, 3.4vw, 2.4rem); margin: 0 0 18px; max-width: 18ch; line-height: 1.12; }
+      .close p { color: var(--soft); margin: 0 0 28px; max-width: 38ch; line-height: 1.6; }
       .close-cta {
-        display: inline-block; padding: 14px 26px; border-radius: 99px;
-        background: var(--ink); color: var(--paper); font-weight: 700;
+        display: inline-block; padding: 16px 32px; border-radius: 99px;
+        background: var(--ink); color: var(--paper); font-weight: 700; font-size: 1rem;
+        transition: transform 0.12s, background 0.12s;
       }
-      .close-cta:hover { background: var(--accent); color: #fff; }
+      .close-cta:hover { background: var(--accent); color: #fff; transform: translateY(-1px); }
+      .close aside { font-family: 'Rufina', serif; font-style: italic; color: var(--mut); font-size: 1.02rem; line-height: 1.55; border-left: 2px solid var(--accent); padding-left: 22px; }
 
       /* ---- Footer ---- */
       footer {
@@ -152,14 +172,16 @@
 
       <!-- Hero -->
       <section class="hero">
-        <div class="eyebrow">Pour les restaurateurs indépendants</div>
-        <h1>Votre restaurant. Votre clientèle. Votre marque.</h1>
-        <p class="lede">L’outil discret qui transforme vos clients de passage en habitués fidèles.</p>
-        <a class="hero-cta" href="mailto:hello@vautcher.ch?subject=restowner%20%E2%80%94%20discutons">
-          Discutons de votre établissement →
-        </a>
-        <div class="hero-foot">Conçu en Suisse romande · Genève &amp; Vaud</div>
-        <div class="hero-photo" aria-hidden="true"><span class="credit">— Une salle, un instant.</span></div>
+        <div class="hero-text">
+          <div class="eyebrow">Pour les restaurateurs indépendants</div>
+          <h1>Votre restaurant. Votre clientèle. Votre marque.</h1>
+          <p class="lede">L’outil discret qui transforme vos clients de passage en habitués fidèles.</p>
+          <a class="hero-cta" href="mailto:hello@vautcher.ch?subject=restowner%20%E2%80%94%20discutons">
+            Discutons de votre établissement →
+          </a>
+          <div class="hero-foot">Conçu en Suisse romande · Genève &amp; Vaud</div>
+        </div>
+        <div class="hero-photo" aria-hidden="true"><span class="credit">— Une salle. Un service. Un soir comme un autre.</span></div>
       </section>
 
       <!-- The concept (vague on purpose) -->
@@ -175,7 +197,10 @@
 
       <!-- Pillars / benefits -->
       <section class="pillars">
-        <h2>Ce que vous y gagnez.</h2>
+        <div class="pillars-head">
+          <h2>Ce que vous y gagnez.</h2>
+          <span class="pillars-cap">six promesses, en six lignes.</span>
+        </div>
         <div class="grid">
 
           <div class="pillar">
@@ -220,22 +245,26 @@
       <!-- Pull-quote -->
       <section class="quote">
         <blockquote>
-          «&nbsp;Un restaurant, c’est d’abord une relation. restowner nous permet de la cultiver
-          sans qu’elle nous quitte jamais.&nbsp;»
-          <cite>— En cours de tournage avec nos premiers restaurateurs partenaires.</cite>
+          Un restaurant, c’est d’abord une relation. restowner nous permet de la cultiver — sans qu’elle nous quitte jamais.
         </blockquote>
+        <cite>— Restaurateurs partenaires · Genève</cite>
       </section>
 
       <!-- Closing -->
       <section class="close">
-        <h2>Et si on en parlait autour d’un café&nbsp;?</h2>
-        <p>
-          Nous rencontrons en ce moment quelques établissements pour démarrer l’aventure
-          ensemble. Si vous tenez à votre clientèle et à votre indépendance, écrivez-nous.
-        </p>
-        <a class="close-cta" href="mailto:hello@vautcher.ch?subject=restowner%20%E2%80%94%20rencontre">
-          Prendre rendez-vous
-        </a>
+        <div>
+          <h2>Et si on en parlait autour d’un café&nbsp;?</h2>
+          <p>
+            Nous rencontrons en ce moment quelques établissements pour démarrer l’aventure
+            ensemble. Si vous tenez à votre clientèle et à votre indépendance, écrivez-nous.
+          </p>
+          <a class="close-cta" href="mailto:hello@vautcher.ch?subject=restowner%20%E2%80%94%20rencontre">
+            Prendre rendez-vous →
+          </a>
+        </div>
+        <aside>
+          «&nbsp;On parle d’abord, on goûte le café, on signe rien. Les bons restaurants ne se choisissent pas autrement.&nbsp;»
+        </aside>
       </section>
 
     </main>
