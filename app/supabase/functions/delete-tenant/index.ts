@@ -61,9 +61,13 @@ async function userClientIfModerator(req: Request): Promise<{
   return { client: userClient, email }
 }
 
-async function dispatchCleanup(slug: string): Promise<string | null> {
+async function dispatchCleanup(slug: string, projectName: string | null): Promise<string | null> {
   if (!GITHUB_TOKEN) return null
   const url = `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/delete-tenant.yml/dispatches`
+  // Pass project_name when we know it (e.g. inglewood -> inglewood-353);
+  // the workflow falls back to slug when project_name is empty.
+  const inputs: Record<string, string> = { slug }
+  if (projectName && projectName !== slug) inputs.project_name = projectName
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -72,7 +76,7 @@ async function dispatchCleanup(slug: string): Promise<string | null> {
       'X-GitHub-Api-Version': '2022-11-28',
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ ref: 'main', inputs: { slug } })
+    body: JSON.stringify({ ref: 'main', inputs })
   })
   if (!res.ok) {
     console.error('cleanup dispatch failed', res.status, await res.text())
@@ -100,7 +104,17 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'restaurant_id and confirm_slug required' }, 400)
   }
 
-  // 1. DB-side delete (RPC re-checks moderator + slug match). MUST be
+  // 1. Read the row BEFORE deleting so we know which Cloudflare Pages
+  //    project to clean up. When wrangler had to suffix the project
+  //    (e.g. inglewood -> inglewood-353 because the plain subdomain was
+  //    globally taken), deleting by slug alone would 404 and leave the
+  //    real project behind. The actual project name is recorded in
+  //    config.cf_pages_project by the deploy-tenant workflow.
+  const { data: row } = await admin.from('vautcher_restaurants')
+    .select('config').eq('id', restaurantId).maybeSingle()
+  const projectName = String(((row?.config as any)?.cf_pages_project) ?? '').trim() || null
+
+  // 2. DB-side delete (RPC re-checks moderator + slug match). MUST be
   //    called with the caller's JWT so vautcher_is_moderator() — which
   //    reads auth.jwt() ->> 'email' — sees the right email. Calling it
   //    via the service-role admin client makes auth.jwt() empty and the
@@ -111,8 +125,8 @@ Deno.serve(async (req: Request) => {
   })
   if (error) return json({ error: error.message }, 422)
 
-  // 2. Dispatch the Cloudflare Pages cleanup.
-  const cleanupUrl = await dispatchCleanup(confirmSlug)
+  // 3. Dispatch the Cloudflare Pages cleanup with the real project name.
+  const cleanupUrl = await dispatchCleanup(confirmSlug, projectName)
 
   return json({
     ...(data as Record<string, unknown>),

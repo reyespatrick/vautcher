@@ -90,14 +90,36 @@ echo "→ deploying app/dist → $SLUG.pages.dev"
 # (em-dash etc.) with "Invalid commit message [code: 8000111]". Force
 # an ASCII commit-message override so the API never sees the real one.
 SHA=$(git -C "$HERE" rev-parse HEAD 2>/dev/null || echo "manual")
-( cd "$HERE" && \
+# Capture wrangler's output so we can extract the actual deployed
+# subdomain. When the desired SLUG's *.pages.dev domain is already
+# owned by another Cloudflare customer (CF Pages subdomains are
+# globally unique), wrangler silently creates "<slug>-NNN" instead and
+# deploys there. The "Take a peek over at https://<hash>.<project>.pages.dev"
+# line is the only reliable place to read the real project name; it
+# becomes config.pages_url so the UI links somewhere the user can
+# actually reach.
+DEPLOY_OUT=$( cd "$HERE" && \
   npx --yes wrangler pages deploy app/dist \
     --project-name="$SLUG" \
     --branch=main \
     --commit-dirty=true \
-    --commit-message="deploy-${SHA}" )
+    --commit-message="deploy-${SHA}" 2>&1 | tee /dev/stderr )
 
-echo "  ✓ https://$SLUG.pages.dev"
+DEPLOY_PROJECT=$(printf '%s\n' "$DEPLOY_OUT" \
+  | grep -oE 'https://[a-f0-9]+\.[a-z0-9-]+\.pages\.dev' \
+  | head -1 \
+  | sed -E 's|https://[a-f0-9]+\.([a-z0-9-]+)\.pages\.dev|\1|')
+[ -z "$DEPLOY_PROJECT" ] && DEPLOY_PROJECT="$SLUG"
+DEPLOY_URL="https://${DEPLOY_PROJECT}.pages.dev"
+
+# Hand the resolved URL + project name back to the workflow so it can
+# write them to vautcher_restaurants.config.
+mkdir -p /tmp/vautcher && {
+  echo "url=${DEPLOY_URL}"
+  echo "project=${DEPLOY_PROJECT}"
+} > /tmp/vautcher/deploy-tenant-url
+
+echo "  ✓ ${DEPLOY_URL}"
 
 # Restore the local working tree — don't leave the tenant-specific
 # baked config or logo lying around in the working copy.

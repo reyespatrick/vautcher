@@ -15,14 +15,19 @@ const { t } = useI18n()
 const QR_OPTS = { width: 720, margin: 1, errorCorrectionLevel: 'M', color: { dark: '#6f032b', light: '#ffffff' } }
 
 // --- Section 1: the diner (client) app for the selected restaurant ---
-// Each tenant is deployed to <slug>.pages.dev. Fall back to the legacy
-// DINER_APP_URL constant only when the active restaurant has no slug.
-// Point the customer QR at the diner app's install-instructions page,
-// not the app root — so a first-time scan shows "add to home screen".
+// Prefer the deploy-recorded pages_url over the derived <slug>.pages.dev.
+// When the plain subdomain is globally taken on Cloudflare Pages
+// (e.g. inglewood.pages.dev belongs to another customer), wrangler
+// suffixes the project (inglewood -> inglewood-353) and a QR encoded
+// from the slug would point at someone else's site entirely.
+// Point the customer QR at /install so a first-time scan shows the
+// add-to-home-screen instructions.
 const dinerUrl = computed(() => {
-  const base = activeRestaurant.value?.slug
-    ? `https://${activeRestaurant.value.slug}.pages.dev`
-    : DINER_APP_URL
+  const base = activeRestaurant.value?.pages_url
+    ? activeRestaurant.value.pages_url
+    : activeRestaurant.value?.slug
+      ? `https://${activeRestaurant.value.slug}.pages.dev`
+      : DINER_APP_URL
   return base.replace(/\/$/, '') + '/install'
 })
 const qrUrl = ref('')

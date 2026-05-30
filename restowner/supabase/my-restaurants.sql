@@ -9,8 +9,12 @@
 --  Re-runnable (idempotent).
 -- ============================================================
 
+-- Drop the prior signature so we can add the pages_url column without
+-- a "cannot change return type" error.
+drop function if exists public.vautcher_my_restaurants();
+
 create or replace function public.vautcher_my_restaurants()
-returns table(id uuid, name text, slug text)
+returns table(id uuid, name text, slug text, pages_url text)
 language plpgsql
 stable
 security definer
@@ -21,12 +25,12 @@ declare
 begin
   if public.vautcher_is_moderator() then
     return query
-      select r.id, r.name, r.slug
+      select r.id, r.name, r.slug, r.config->>'pages_url'
         from public.vautcher_restaurants r
        order by r.name;
   else
     return query
-      select distinct r.id, r.name, r.slug
+      select distinct r.id, r.name, r.slug, r.config->>'pages_url'
         from public.vautcher_restaurants r
         join public.vautcher_owners o on o.restaurant_id = r.id
        where lower(o.email) = v_email

@@ -7,8 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       slug:
-        description: 'Tenant slug to remove from Cloudflare Pages'
+        description: 'Tenant slug (kept for backwards compatibility / reserved-name guard)'
         required: true
+        type: string
+      project_name:
+        description: 'Actual Cloudflare Pages project to delete. Optional; falls back to slug when omitted. Use this when the deployed project name differs from the slug (e.g. inglewood -> inglewood-353).'
+        required: false
         type: string
 
 jobs:
@@ -22,6 +26,8 @@ jobs:
         run: |
           set -euo pipefail
           SLUG='${{ inputs.slug }}'
+          PROJECT='${{ inputs.project_name }}'
+          [ -z "$PROJECT" ] && PROJECT="$SLUG"
           # Reserved tenants we never want a script to nuke by accident.
           case "$SLUG" in
             la-gioconda|la-gioconda-restaurant|restowner)
@@ -29,7 +35,8 @@ jobs:
               exit 1
               ;;
           esac
-          URL="https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${SLUG}"
+          echo "→ deleting Cloudflare Pages project: $PROJECT (slug=$SLUG)"
+          URL="https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${PROJECT}"
           RES=$(curl -sS -X DELETE "$URL" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
             -H "Content-Type: application/json")

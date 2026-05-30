@@ -53,6 +53,11 @@ begin
     select jsonb_agg(jsonb_build_object(
       'id', r.id, 'name', r.name, 'slug', r.slug,
       'source_url', r.config ->> 'source_url',
+      -- Real deployed URL recorded by deploy-tenant.sh after wrangler
+      -- reports it. Falls back to <slug>.pages.dev in the UI when null
+      -- (rows that pre-date the capture).
+      'pages_url', r.config ->> 'pages_url',
+      'cf_pages_project', r.config ->> 'cf_pages_project',
       'deploy_status', r.deploy_status,
       'menu_hidden', coalesce((r.config ->> 'hide_menu')::boolean, false),
       'template', coalesce(r.config ->> 'template', 'classic'),

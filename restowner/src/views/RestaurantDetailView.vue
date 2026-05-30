@@ -263,8 +263,13 @@ async function submitOwner() {
         </div>
 
         <div class="resto-urls">
-          <a :href="`https://${r.slug}.pages.dev`" target="_blank" rel="noopener" class="resto-url resto-url--live">
-            <span class="ic">🌐</span>{{ r.slug }}.pages.dev
+          <!-- Prefer the deploy-recorded URL (config.pages_url) over the
+               derived <slug>.pages.dev — when the plain subdomain is
+               globally taken on Cloudflare Pages, wrangler suffixes the
+               project (e.g. inglewood -> inglewood-353), and the
+               derived URL points to someone else's site. -->
+          <a :href="r.pages_url || `https://${r.slug}.pages.dev`" target="_blank" rel="noopener" class="resto-url resto-url--live">
+            <span class="ic">🌐</span>{{ (r.pages_url || `https://${r.slug}.pages.dev`).replace(/^https?:\/\//, '') }}
           </a>
           <template v-if="!editingSource">
             <a v-if="r.source_url" :href="r.source_url" target="_blank" rel="noopener" class="resto-url resto-url--src">

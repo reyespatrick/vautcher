@@ -31,7 +31,11 @@ jobs:
           set -o pipefail
           bash deploy-tenant.sh "${{ inputs.slug }}" 2>&1 | tee -a /tmp/deploy.log
 
-      # Update the row so restowner's UI can stop polling.
+      # Update the row so restowner's UI can stop polling. Also record
+      # the actual Cloudflare Pages URL and project name -- when the
+      # plain <slug>.pages.dev subdomain is taken globally, wrangler
+      # silently deploys to <slug>-NNN.pages.dev, and the UI needs to
+      # link to whatever wrangler actually used.
       - name: Mark restaurant row as deployed
         if: success()
         env:
@@ -41,9 +45,18 @@ jobs:
           REF=yfyfoqrautdogivalimb
           SLUG='${{ inputs.slug }}'
           ESC_SLUG="${SLUG//\'/\'\'}"
+          DEPLOY_URL=$(awk -F= '/^url=/{print $2}' /tmp/vautcher/deploy-tenant-url 2>/dev/null || echo "")
+          DEPLOY_PROJECT=$(awk -F= '/^project=/{print $2}' /tmp/vautcher/deploy-tenant-url 2>/dev/null || echo "")
+          [ -z "$DEPLOY_URL" ] && DEPLOY_URL="https://${SLUG}.pages.dev"
+          [ -z "$DEPLOY_PROJECT" ] && DEPLOY_PROJECT="$SLUG"
+          ESC_URL="${DEPLOY_URL//\'/\'\'}"
+          ESC_PROJECT="${DEPLOY_PROJECT//\'/\'\'}"
           SQL="update public.vautcher_restaurants
                   set deploy_status = 'success',
-                      deployed_at = now()
+                      deployed_at = now(),
+                      config = coalesce(config, '{}'::jsonb)
+                            || jsonb_build_object('pages_url', '${ESC_URL}',
+                                                  'cf_pages_project', '${ESC_PROJECT}')
                 where slug = '${ESC_SLUG}';"
           jq -Rs '{query: .}' <<<"$SQL" \
             | curl -sS -X POST "https://api.supabase.com/v1/projects/$REF/database/query" \
