@@ -64,6 +64,40 @@ function toggleInspect() {
   inspectMode.value = !inspectMode.value
 }
 
+// Walk every SVG on the page, ignore icons that are clearly part of
+// chrome (header / tabbar / event row chevrons) by checking the
+// bounding rect. Anything else gets logged with its position so we
+// can spot the mystery icon.
+function listSvgs() {
+  const svgs = document.querySelectorAll('svg')
+  const list = []
+  svgs.forEach((svg) => {
+    const r = svg.getBoundingClientRect()
+    if (r.width === 0 || r.height === 0) return
+    const path = []
+    let n = svg
+    while (n && n !== document.body && path.length < 4) {
+      const tag = n.tagName.toLowerCase()
+      const cls = (typeof n.className === 'string' ? n.className : (n.className && n.className.baseVal) || '')
+      path.unshift(tag + (cls ? '.' + String(cls).trim().split(/\s+/).slice(0,2).join('.') : ''))
+      n = n.parentElement
+    }
+    list.push({
+      where: `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)}`,
+      parents: path.join(' > ')
+    })
+  })
+  ;(window).__ptrLog = (window).__ptrLog || []
+  ;(window).__ptrLog.push({
+    t: new Date().toISOString().slice(11, 23),
+    label: 'svg-list',
+    count: svgs.length,
+    items: list.slice(0, 15)
+  })
+  if ((window).__ptrLog.length > 12) (window).__ptrLog.shift()
+  window.dispatchEvent(new CustomEvent('ptr-log'))
+}
+
 onMounted(() => {
   if (!enabled) return
   pull()
@@ -85,6 +119,7 @@ onBeforeUnmount(() => {
       <button type="button" class="ptrd-act" :class="{ on: inspectMode }" @click.stop="toggleInspect">
         {{ inspectMode ? 'tap an element' : 'inspect' }}
       </button>
+      <button type="button" class="ptrd-act" @click.stop="listSvgs">svgs</button>
       <button type="button" class="ptrd-off" @click.stop="disable">×</button>
     </div>
     <pre v-if="log.length"><span v-for="(l, i) in log" :key="i">{{ l.t }} {{ l.label }} {{ JSON.stringify({ ...l, t: undefined, label: undefined }) }}
