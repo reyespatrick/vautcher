@@ -9,7 +9,6 @@ import { useI18n } from 'vue-i18n'
 import { useDialog } from '../composables/useDialog'
 import { supabase } from '../lib/supabase'
 import BackBar from '../components/BackBar.vue'
-import PullToRefresh from '../components/PullToRefresh.vue'
 import {
   adminRestaurants, rescaffoldTenant, deleteTenant, setMenuHidden,
   setOwnerFlags, createOwnerCode, regenerateOwnerCode, provisionOwner
@@ -244,7 +243,6 @@ async function submitOwner() {
 
 <template>
   <div class="page">
-    <PullToRefresh :busy="loading" @refresh="load" />
     <BackBar :to="{ name: 'admin' }" :label="r ? r.name : t('admin.tabRestaurants')" />
 
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>

@@ -6,7 +6,6 @@ import { useScope } from '../composables/useScope'
 import { listEvents, listEventStats } from '../lib/events'
 import { today } from '../lib/format'
 import EventRow from '../components/EventRow.vue'
-import PullToRefresh from '../components/PullToRefresh.vue'
 
 const { activeRestaurantId, activeRestaurant } = useScope()
 const { t } = useI18n()
@@ -54,7 +53,6 @@ const upcoming = computed(() =>
 
 <template>
   <div class="page">
-    <PullToRefresh :busy="loading" @refresh="load" />
     <div class="page-head">
       <h1>{{ t('dashboard.title') }}</h1>
       <p>{{ activeRestaurant ? activeRestaurant.name : '' }}</p>

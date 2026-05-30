@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
 import { useDialog } from '../composables/useDialog'
 import { listVouchers, voucherStats, updateVoucher, archiveVoucher } from '../lib/vouchers'
-import PullToRefresh from '../components/PullToRefresh.vue'
 
 const { activeRestaurantId } = useScope()
 const { confirm } = useDialog()
@@ -84,7 +83,6 @@ async function move(index, dir) {
 
 <template>
   <div class="page">
-    <PullToRefresh :busy="loading" @refresh="load" />
     <div class="page-head">
       <h1>{{ t('vouchers.title') }}</h1>
       <p>{{ t('vouchers.subtitle') }}</p>

@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import { useScope } from '../composables/useScope'
 import { listPendingEvents, approveEvent, refuseEvent } from '../lib/events'
-import PullToRefresh from '../components/PullToRefresh.vue'
 
 const { isModerator } = useAuth()
 const { scopeRestaurantId } = useScope()
@@ -85,7 +84,6 @@ async function confirmRefuse() {
 
 <template>
   <div class="page">
-    <PullToRefresh :busy="loading" @refresh="load" />
     <div class="page-head">
       <h1>{{ t('approve.title') }}</h1>
     </div>

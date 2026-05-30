@@ -5,7 +5,6 @@ import { useScope } from '../composables/useScope'
 import { listEvents } from '../lib/events'
 import { today } from '../lib/format'
 import EventRow from '../components/EventRow.vue'
-import PullToRefresh from '../components/PullToRefresh.vue'
 
 const { activeRestaurantId } = useScope()
 const { t } = useI18n()
@@ -48,7 +47,6 @@ const past = computed(() =>
 
 <template>
   <div class="page">
-    <PullToRefresh :busy="loading" @refresh="load" />
     <div class="page-head">
       <h1>{{ t('history.title') }}</h1>
       <p>{{ t('history.subtitle') }}</p>
