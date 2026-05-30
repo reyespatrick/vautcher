@@ -750,7 +750,10 @@ async function askClaude(input, pdfDocs, attempt = 1) {
     headers: { 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({
       model: ANTHROPIC_MODEL,
-      max_tokens: 16000,
+      // 32k output -- previously 16k truncated rich sites like Beirut
+      // Bistrot (6 sub-pages, ~24 kB source) at ~17 kB of generated html.
+      // Sonnet 4.6 supports up to 64k output tokens.
+      max_tokens: 32000,
       tools: [TOOL],
       tool_choice: { type: 'tool', name: 'build_site' },
       messages: [{ role: 'user', content }]
@@ -769,7 +772,7 @@ async function askClaude(input, pdfDocs, attempt = 1) {
   const menu = Array.isArray(tool.input?.menu) ? tool.input.menu : []
   const stop = data.stop_reason
   if (!html) throw new Error(`empty html in tool_use (stop_reason=${stop})`)
-  if (stop === 'max_tokens') throw new Error(`response truncated at max_tokens (16000) — html ${html.length} chars`)
+  if (stop === 'max_tokens') throw new Error(`response truncated at max_tokens (32000) — html ${html.length} chars`)
   if (!/<\/html>\s*$/i.test(html)) throw new Error(`html doesn't end with </html> — likely truncated (length ${html.length}, stop=${stop})`)
   return { html, menu, notes: tool.input.design_notes || '', usage: data.usage || {} }
 }

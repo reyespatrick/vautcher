@@ -62,34 +62,55 @@ Deno.serve(async (req) => {
   }
 
   // Step 1 — reconcile any in-flight rows.
+  // Watchdog: if a row has been scaffolding for more than 15 minutes,
+  // assume the workflow died without flipping deploy_status (e.g. the
+  // GH runner timed out, the Anthropic call hung). Mark it failed and
+  // unblock the queue lane so the next pending row can start.
+  const TIMEOUT_MS = 15 * 60 * 1000
   const { data: scaffolding } = await admin
     .from('vautcher_scaffold_queue')
-    .select('id, restaurant_id')
+    .select('id, restaurant_id, started_at')
     .eq('status', 'scaffolding')
 
   if (scaffolding?.length) {
-    for (const row of scaffolding as Array<{ id: string; restaurant_id: string | null }>) {
-      if (!row.restaurant_id) continue
-      const { data: r } = await admin
-        .from('vautcher_restaurants')
-        .select('deploy_status, config')
-        .eq('id', row.restaurant_id)
-        .maybeSingle()
-      const ds = r?.deploy_status ?? null
-      if (ds === 'success') {
-        await admin.from('vautcher_scaffold_queue').update({
-          status: 'done',
-          finished_at: new Date().toISOString(),
-          error: null
-        }).eq('id', row.id)
-      } else if (ds === 'failed' || ds === 'scaffold_failed') {
+    for (const row of scaffolding as Array<{ id: string; restaurant_id: string | null; started_at: string | null }>) {
+      // No restaurant_id yet -> scaffold-tenant hasn't returned. Still
+      // covered by the timeout below.
+      let resolved = false
+      if (row.restaurant_id) {
+        const { data: r } = await admin
+          .from('vautcher_restaurants')
+          .select('deploy_status, config')
+          .eq('id', row.restaurant_id)
+          .maybeSingle()
+        const ds = r?.deploy_status ?? null
+        if (ds === 'success') {
+          await admin.from('vautcher_scaffold_queue').update({
+            status: 'done',
+            finished_at: new Date().toISOString(),
+            error: null
+          }).eq('id', row.id)
+          resolved = true
+        } else if (ds === 'failed' || ds === 'scaffold_failed') {
+          await admin.from('vautcher_scaffold_queue').update({
+            status: 'failed',
+            finished_at: new Date().toISOString(),
+            error: String((r?.config as any)?.deploy_error ?? ds)
+          }).eq('id', row.id)
+          resolved = true
+        }
+      }
+      if (resolved) continue
+
+      // Still scaffolding -> check the watchdog.
+      const startedAt = row.started_at ? Date.parse(row.started_at) : null
+      if (startedAt && (Date.now() - startedAt) > TIMEOUT_MS) {
         await admin.from('vautcher_scaffold_queue').update({
           status: 'failed',
           finished_at: new Date().toISOString(),
-          error: String((r?.config as any)?.deploy_error ?? ds)
+          error: 'timeout: queue row spent more than 15 minutes in scaffolding without a deploy_status update (workflow likely died)'
         }).eq('id', row.id)
       }
-      // Otherwise still scaffolding — leave it.
     }
   }
 
