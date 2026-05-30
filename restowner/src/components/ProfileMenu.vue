@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiPrefs } from '../composables/usePrefs'
 import { useViewAs } from '../composables/useViewAs'
+import { useTheme } from '../composables/useTheme'
 import { usePushAdmin } from '../composables/usePushAdmin'
 import { DINER_APP_URL } from '../lib/config'
 import { SUPPORTED_LOCALES } from '../i18n'
@@ -16,6 +17,7 @@ const emit = defineEmits(['signout'])
 const { t } = useI18n()
 const { fontScale, locale, larger, smaller, resetSize, setLocale } = useUiPrefs()
 const { asOwner } = useViewAs()
+const { mode: themeMode, setMode: setTheme } = useTheme()
 const { supported: pushSupported, subscribed: pushSubscribed, enable: enablePush, disable: disablePush } = usePushAdmin()
 const open = ref(false)
 const pushBusy = ref(false)
@@ -86,6 +88,18 @@ function openClient() {
           <select class="pm-select" :value="locale" @change="setLocale($event.target.value)">
             <option v-for="l in SUPPORTED_LOCALES" :key="l" :value="l">{{ t('lang.' + l) }}</option>
           </select>
+        </div>
+
+        <div class="pm-section pm-section--row">
+          <span class="pm-label">{{ t('profile.theme') }}</span>
+          <div class="pm-seg" role="group" :aria-label="t('profile.theme')">
+            <button type="button" :class="{ on: themeMode === 'light' }"
+              @click="setTheme('light')">{{ t('profile.themeLight') }}</button>
+            <button type="button" :class="{ on: themeMode === 'dark' }"
+              @click="setTheme('dark')">{{ t('profile.themeDark') }}</button>
+            <button type="button" :class="{ on: themeMode === 'auto' }"
+              @click="setTheme('auto')">{{ t('profile.themeAuto') }}</button>
+          </div>
         </div>
 
         <!-- Push notifications (scaffold ready / failed). Registers THIS
@@ -204,6 +218,32 @@ function openClient() {
   border-radius: 9px;
   padding: 8px 10px;
   cursor: pointer;
+}
+/* Three-state theme segmented control (light / dark / auto). */
+.pm-seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.pm-seg button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--mut);
+  padding: 7px 12px;
+  cursor: pointer;
+  border-right: 1px solid var(--line);
+  letter-spacing: 0.01em;
+}
+.pm-seg button:last-child { border-right: 0; }
+.pm-seg button.on {
+  background: var(--accent);
+  color: #fff;
 }
 .pm-toggle {
   display: flex;

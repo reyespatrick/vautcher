@@ -79,7 +79,8 @@ const fr = {
     title: 'Profil', textSize: 'Taille du texte', language: 'Langue',
     smaller: 'Réduire', reset: 'Normal', larger: 'Agrandir',
     notifications: 'Notifications',
-    notifPush: 'M’alerter (site prêt, échec)'
+    notifPush: 'M’alerter (site prêt, échec)',
+    theme: 'Thème', themeLight: 'Clair', themeDark: 'Sombre', themeAuto: 'Auto'
   },
   login: {
     title: 'Connexion', subtitle: 'Recevez un code à usage unique par e-mail.',
@@ -530,7 +531,8 @@ const de = {
   },
   profile: {
     title: 'Profil', textSize: 'Textgröße', language: 'Sprache',
-    smaller: 'Verkleinern', reset: 'Normal', larger: 'Vergrößern'
+    smaller: 'Verkleinern', reset: 'Normal', larger: 'Vergrößern',
+    theme: 'Thema', themeLight: 'Hell', themeDark: 'Dunkel', themeAuto: 'Auto'
   },
   login: {
     title: 'Anmeldung', subtitle: 'Erhalten Sie einen Einmalcode per E-Mail.',
@@ -775,7 +777,8 @@ const it = {
   },
   profile: {
     title: 'Profilo', textSize: 'Dimensione del testo', language: 'Lingua',
-    smaller: 'Riduci', reset: 'Normale', larger: 'Ingrandisci'
+    smaller: 'Riduci', reset: 'Normale', larger: 'Ingrandisci',
+    theme: 'Tema', themeLight: 'Chiaro', themeDark: 'Scuro', themeAuto: 'Auto'
   },
   login: {
     title: 'Accesso', subtitle: 'Ricevi un codice monouso via e-mail.',

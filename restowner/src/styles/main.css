@@ -3,6 +3,7 @@
 :root {
   --bg: #f4ede1;          /* warm cream canvas */
   --surface: #ffffff;     /* cards / inputs */
+  --surface-2: #fbf4e8;   /* alt surface (subtle panels) */
   --ink: #241b1d;         /* warm near-black text */
   --mut: #8c7f78;         /* muted taupe */
   --line: #e7ddcd;        /* warm hairline */
@@ -14,7 +15,33 @@
   --radius: 14px;
   --shadow: 0 10px 28px rgba(60, 20, 30, 0.13);
   --shadow-sm: 0 2px 10px rgba(60, 20, 30, 0.07);
+  /* Desktop "behind-the-phone" surround. Adjusts in dark mode so the
+     viewport edge doesn't look harsh against a dark phone frame. */
+  --frame-bg: #2a2024;
 }
+
+/* Dark theme. Hand-tuned -- not a blanket invert. Warm aubergine
+   ground keeps the burgundy brand feeling instead of going cold;
+   accent lifts to a lighter burgundy for readable contrast; lines
+   and surfaces stay in the same warm family. */
+html[data-theme="dark"] {
+  --bg: #1a1015;
+  --surface: #241823;
+  --surface-2: #1e1419;
+  --ink: #f3e8db;
+  --mut: #a09188;
+  --line: #3a2832;
+  --accent: #db7a98;
+  --accent-dark: #f2a4bd;
+  --gold: #d9b25a;
+  --ok: #4ec07a;
+  --danger: #e57167;
+  --shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --frame-bg: #0c0608;
+  color-scheme: dark;
+}
+html { color-scheme: light dark; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -28,10 +55,14 @@ html, body {
 }
 body {
   font-family: 'Montserrat', system-ui, sans-serif;
-  background: #2a2024;          /* surround behind the phone frame on desktop */
+  background: var(--frame-bg);
   color: var(--ink);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.app-root, .tabbar, .app-header, .more-sheet {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 h1, h2, h3 { font-family: 'Rufina', Georgia, serif; line-height: 1.18; font-weight: 700; }
