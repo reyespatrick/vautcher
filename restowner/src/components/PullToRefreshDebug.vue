@@ -10,6 +10,7 @@ import { PTR_DEBUG_ENABLED } from '../composables/usePullToRefresh'
 
 const enabled = PTR_DEBUG_ENABLED
 const log = ref([])
+const inspectMode = ref(false)
 let pressTimer = null
 
 function pull() {
@@ -30,14 +31,49 @@ function disable() {
 function onPressStart() { pressTimer = setTimeout(clear, 600) }
 function onPressEnd() { if (pressTimer) clearTimeout(pressTimer); pressTimer = null }
 
+// Inspect mode: next tap anywhere dumps a stack of elements at that
+// point. Useful when a mystery icon is visible -- tap it and the log
+// tells us which Vue component / SVG is rendering it.
+function onInspectTap(e) {
+  if (!inspectMode.value) return
+  if (e.target && e.target.closest && e.target.closest('.ptrd')) return  // ignore taps on the debug widget itself
+  const x = e.touches ? e.touches[0].clientX : e.clientX
+  const y = e.touches ? e.touches[0].clientY : e.clientY
+  const stack = document.elementsFromPoint(x, y)
+  const summary = stack.slice(0, 5).map((el) => {
+    const tag = el.tagName.toLowerCase()
+    const cls = el.className && el.className.baseVal !== undefined
+      ? el.className.baseVal           // SVG
+      : (typeof el.className === 'string' ? el.className : '')
+    const id = el.id ? '#' + el.id : ''
+    return tag + id + (cls ? '.' + String(cls).trim().split(/\s+/).join('.') : '')
+  })
+  ;(window).__ptrLog = (window).__ptrLog || []
+  ;(window).__ptrLog.push({
+    t: new Date().toISOString().slice(11, 23),
+    label: 'inspect',
+    x: Math.round(x),
+    y: Math.round(y),
+    stack: summary
+  })
+  if ((window).__ptrLog.length > 12) (window).__ptrLog.shift()
+  window.dispatchEvent(new CustomEvent('ptr-log'))
+  inspectMode.value = false
+}
+function toggleInspect() {
+  inspectMode.value = !inspectMode.value
+}
+
 onMounted(() => {
   if (!enabled) return
   pull()
   window.addEventListener('ptr-log', pull)
+  document.addEventListener('touchstart', onInspectTap, { capture: true, passive: true })
 })
 onBeforeUnmount(() => {
   if (!enabled) return
   window.removeEventListener('ptr-log', pull)
+  document.removeEventListener('touchstart', onInspectTap, { capture: true })
 })
 </script>
 
@@ -46,6 +82,9 @@ onBeforeUnmount(() => {
     @touchstart="onPressStart" @touchend="onPressEnd" @touchcancel="onPressEnd">
     <div class="ptrd-hdr">
       <span>PTR debug</span>
+      <button type="button" class="ptrd-act" :class="{ on: inspectMode }" @click.stop="toggleInspect">
+        {{ inspectMode ? 'tap an element' : 'inspect' }}
+      </button>
       <button type="button" class="ptrd-off" @click.stop="disable">×</button>
     </div>
     <pre v-if="log.length"><span v-for="(l, i) in log" :key="i">{{ l.t }} {{ l.label }} {{ JSON.stringify({ ...l, t: undefined, label: undefined }) }}
@@ -84,6 +123,13 @@ onBeforeUnmount(() => {
   border: 0; background: transparent; color: inherit;
   font-size: 16px; padding: 0 4px; cursor: pointer;
 }
+.ptrd-act {
+  margin-left: auto; margin-right: 8px;
+  border: 1px solid rgba(255,255,255,0.25); background: transparent;
+  color: inherit; font: inherit; font-size: 10.5px; font-weight: 700;
+  padding: 2px 8px; border-radius: 99px; cursor: pointer;
+}
+.ptrd-act.on { background: #ffba2c; color: #1b1014; border-color: #ffba2c; }
 .ptrd pre {
   margin: 0; padding: 8px 10px; overflow: auto; flex: 1;
   white-space: pre-wrap; word-break: break-word;
