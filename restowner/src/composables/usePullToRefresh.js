@@ -22,12 +22,21 @@ const DEFAULT_SCROLL_SELECTOR = '.viewport'
 // PullToRefreshDebug widget rendered in App.vue reads its state from
 // a window-level publishing channel below.
 let DEBUG = false
+// Kill-switch -- when enabled the composable becomes a no-op: no
+// listeners attached, no state ever flips. Diagnostic: if a mystery
+// spinner is still visible with this on, it is NOT coming from the
+// pull-to-refresh path. Toggle with ?ptr_off=1 / localStorage 'ptr_off'.
+let DISABLED = false
 try {
   const url = new URL(window.location.href)
   if (url.searchParams.get('ptr_debug') === '1') {
     localStorage.setItem('ptr_debug', '1')
   }
+  if (url.searchParams.get('ptr_off') === '1') {
+    localStorage.setItem('ptr_off', '1')
+  }
   DEBUG = localStorage.getItem('ptr_debug') === '1'
+  DISABLED = localStorage.getItem('ptr_off') === '1'
 } catch { /* no localStorage in some embedded contexts */ }
 
 function dbg(label, payload) {
@@ -149,6 +158,12 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
   }
 
   onMounted(() => {
+    if (DISABLED) {
+      // Stay in ready=false too so the indicator template's v-if
+      // shortcircuits even if someone else mutates the refs.
+      dbg('disabled', { reason: 'ptr_off flag set' })
+      return
+    }
     target = typeof scrollSelector === 'string'
       ? document.querySelector(scrollSelector)
       : scrollSelector
