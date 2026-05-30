@@ -494,15 +494,21 @@ onBeforeUnmount(stopQueuePoll)
       <p v-if="!restaurants.length" class="empty">{{ t('admin.empty') }}</p>
 
       <template v-else>
-        <!-- Scaffold queue status — only visible while a batch is non-terminal. -->
-        <section
+        <!-- Scaffold queue status — tap through to /admin/queue for the
+             per-row detail (errors on failed rows, retry, delete). -->
+        <RouterLink
           v-if="queueSummary.pending || queueSummary.scaffolding || queueSummary.done || queueSummary.failed"
+          :to="{ name: 'admin-queue' }"
           class="queue-card card"
           :class="{ 'queue-card--active': queueActive }"
         >
           <div class="queue-head">
             <strong>{{ t('admin.queueTitle') }}</strong>
             <span v-if="queueActive" class="queue-dot" aria-hidden="true"></span>
+            <svg class="queue-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 6l6 6-6 6"/>
+            </svg>
           </div>
           <div class="queue-counts">
             <span class="qc qc--pending">{{ t('admin.queuePending', { n: queueSummary.pending }) }}</span>
@@ -515,7 +521,7 @@ onBeforeUnmount(stopQueuePoll)
           <div v-if="queueSummary.current" class="queue-current">
             {{ t('admin.queueCurrent', { name: queueSummary.current }) }}
           </div>
-        </section>
+        </RouterLink>
 
         <div class="r-filter">
           <input
@@ -573,10 +579,13 @@ onBeforeUnmount(stopQueuePoll)
   padding: 12px 14px;
   margin-bottom: 12px;
   display: flex; flex-direction: column; gap: 8px;
+  text-decoration: none; color: inherit;
 }
+.queue-card:active { transform: scale(0.995); }
 .queue-card--active { border-color: var(--accent); }
 .queue-head { display: flex; align-items: center; gap: 8px; }
-.queue-head strong { font-size: 0.92rem; }
+.queue-head strong { font-size: 0.92rem; flex: 1 1 auto; }
+.queue-chev { width: 16px; height: 16px; color: var(--mut); flex: 0 0 auto; }
 .queue-dot {
   width: 9px; height: 9px; border-radius: 99px;
   background: var(--accent);

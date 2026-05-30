@@ -15,6 +15,7 @@ import VoucherEditorView from '../views/VoucherEditorView.vue'
 import AdminView from '../views/AdminView.vue'
 import RestaurantDetailView from '../views/RestaurantDetailView.vue'
 import DiscoverView from '../views/DiscoverView.vue'
+import QueueView from '../views/QueueView.vue'
 import ClientsView from '../views/ClientsView.vue'
 import RestaurantConfigView from '../views/RestaurantConfigView.vue'
 import InstallView from '../views/InstallView.vue'
@@ -42,6 +43,7 @@ const routes = [
   { path: '/approve', name: 'approve', component: ApprovalQueueView },
   { path: '/admin', name: 'admin', component: AdminView },
   { path: '/admin/discover', name: 'admin-discover', component: DiscoverView },
+  { path: '/admin/queue', name: 'admin-queue', component: QueueView },
   { path: '/admin/restaurant/:id', name: 'admin-restaurant', component: RestaurantDetailView },
   { path: '/restaurant/:id', name: 'restaurant-config', component: RestaurantConfigView },
   { path: '/:pathMatch(.*)*', redirect: '/' }
@@ -75,7 +77,7 @@ router.beforeEach(async (to) => {
   }
   // The Découvrir page (nearby-restaurant discovery + scaffold queue) is
   // root-only, matching the Admin tab gate in App.vue.
-  if (to.name === 'admin-discover' && !isRoot.value) {
+  if ((to.name === 'admin-discover' || to.name === 'admin-queue') && !isRoot.value) {
     return { name: 'dashboard' }
   }
   return true

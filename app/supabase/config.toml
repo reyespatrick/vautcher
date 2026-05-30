@@ -15,11 +15,15 @@ verify_jwt = true
 [functions.event-notifier]
 verify_jwt = false
 
-# scaffold-tenant is called from restowner's admin UI by a signed-in
-# moderator. JWT is required; the function additionally re-checks the
-# caller is in vautcher_moderators server-side before inserting.
+# scaffold-tenant accepts two callers: a signed-in moderator from
+# restowner's admin UI (JWT) AND scaffold-queue-advance (X-Cron-Secret
+# only — no JWT, because pg_cron / inter-function calls have nowhere
+# to get one). The function does its own auth (moderator JWT OR cron
+# secret), so the gateway gate is OFF — without this, the X-Cron-Secret
+# bypass in the handler was never reached and every queued scaffold
+# 401'd at the gateway.
 [functions.scaffold-tenant]
-verify_jwt = true
+verify_jwt = false
 
 # delete-tenant — same gating model as scaffold-tenant. The DB RPC
 # also requires the moderator to pass the slug back as confirmation.
@@ -47,3 +51,15 @@ verify_jwt = false
 # Called by a DB trigger with the cron secret; no user JWT.
 [functions.notify-owner-approved]
 verify_jwt = false
+
+# scaffold-queue-advance — called by pg_cron (no JWT) once a minute and
+# by root from the Discover page (root JWT) after enqueueing a batch.
+# The function does its own auth (cron secret OR root JWT), so the
+# gateway gate must be OFF for the pg_cron path to reach the handler.
+[functions.scaffold-queue-advance]
+verify_jwt = false
+
+# osm-website-search — called only from the browser (Découvrir page) by
+# a signed-in root user. JWT required.
+[functions.osm-website-search]
+verify_jwt = true
