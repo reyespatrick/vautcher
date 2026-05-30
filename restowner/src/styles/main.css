@@ -119,8 +119,11 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 .tabbar a svg { width: 23px; height: 23px; }
 .tabbar a.on { color: var(--accent); }
 
-/* ---- Page ---- */
-.page { padding: 22px 16px 30px; }
+/* ---- Page ----
+   position: relative so absolutely-positioned children (notably the
+   PullToRefreshIndicator that floats above the page-head gap during
+   a pull gesture) anchor against the page wrapper. */
+.page { position: relative; padding: 22px 16px 30px; }
 .page-head { margin-bottom: 18px; }
 .page-head h1 { font-size: 1.5rem; color: var(--accent-dark); }
 .page-head p { color: var(--mut); font-size: 0.85rem; margin-top: 3px; }

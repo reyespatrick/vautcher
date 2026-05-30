@@ -3,22 +3,29 @@
 // pull-to-refresh gesture is in flight. Props mirror the shape that
 // usePullToRefresh returns so the call site is just:
 //   <PullToRefreshIndicator v-bind="ptr" />
+//
+// Two reasons it's absolutely positioned:
+//   1. Layout never shifts when the indicator appears, so even a brief
+//      stray render (iOS load-time overscroll twitch) cannot visibly
+//      push the page-head down.
+//   2. The host page does not have to reserve vertical space for an
+//      element that is only meaningful while pulling.
 defineProps({
   pullDistance: { type: Number, default: 0 },
   refreshing: { type: Boolean, default: false },
+  ready: { type: Boolean, default: false },
   threshold: { type: Number, default: 70 }
 })
 </script>
 
 <template>
-  <!-- Only mount the indicator while a pull is actually in flight (or a
-       refresh is running). Without this guard the empty 0-height flex
-       host can still flash on iOS during page-mount overscroll. -->
+  <!-- ready gate: never paint on the very first frame, so even a stray
+       touchmove during route transition can't light the spinner up. -->
   <div
-    v-if="pullDistance > 0 || refreshing"
+    v-if="ready && (pullDistance > 0 || refreshing)"
     class="ptr"
     :style="{
-      height: pullDistance + 'px',
+      transform: 'translateY(' + (pullDistance - 56) + 'px)',
       opacity: Math.min(1, pullDistance / threshold)
     }"
     aria-hidden="true"
@@ -28,7 +35,7 @@ defineProps({
       :class="{ ready: pullDistance >= threshold, spinning: refreshing }"
       :style="{ transform: refreshing
         ? null
-        : `rotate(${Math.min(1, pullDistance / threshold) * 360}deg)` }"
+        : 'rotate(' + (Math.min(1, pullDistance / threshold) * 360) + 'deg)' }"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -40,18 +47,24 @@ defineProps({
 </template>
 
 <style scoped>
+/* position: absolute relative to the .page wrapper means the indicator
+   floats above the page-head gap without consuming any layout height. */
 .ptr {
+  position: absolute;
+  top: 0;
+  left: 0; right: 0;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   pointer-events: none;
-  transition: height 0.18s ease-out, opacity 0.18s ease-out;
+  z-index: 5;
+  will-change: transform, opacity;
 }
 .ptr-spin {
   width: 30px; height: 30px;
   color: var(--accent);
-  transition: color 0.15s, transform 0.05s linear;
+  transition: color 0.15s;
 }
 .ptr-spin svg { width: 100%; height: 100%; }
 .ptr-spin.ready { color: var(--accent-dark); }

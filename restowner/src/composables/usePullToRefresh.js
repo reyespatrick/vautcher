@@ -24,6 +24,11 @@ const MIN_MOVE = 18         // px of finger travel before we start showing the i
 export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELECTOR) {
   const pullDistance = ref(0)
   const refreshing = ref(false)
+  // Gates the indicator off during the synchronous first paint -- iOS
+  // sometimes fires a touchmove during route transition before our
+  // composable has even seen its onMounted, and the indicator would
+  // briefly render in the page-head gap.
+  const ready = ref(false)
   let startY = 0
   let pulling = false
   let target = null
@@ -85,6 +90,9 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     target.addEventListener('touchmove', onTouchMove, { passive: false })
     target.addEventListener('touchend', onTouchEnd, { passive: true })
     target.addEventListener('touchcancel', onTouchEnd, { passive: true })
+    // Wait one tick before allowing the indicator to surface, so any
+    // touch event Vue dispatches during mount cannot win the race.
+    requestAnimationFrame(() => { ready.value = true })
   })
 
   onBeforeUnmount(() => {
@@ -95,5 +103,5 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     target.removeEventListener('touchcancel', onTouchEnd)
   })
 
-  return { pullDistance, refreshing, threshold: THRESHOLD }
+  return { pullDistance, refreshing, ready, threshold: THRESHOLD }
 }
