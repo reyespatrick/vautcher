@@ -6,6 +6,15 @@
     <title>restowner — votre clientèle, à votre marque</title>
     <meta name="description"
       content="L’outil discret qui transforme vos clients de passage en habitués fidèles. Pensé pour les restaurateurs indépendants de Suisse romande." />
+    <script>
+      (function(){
+        try {
+          var t = localStorage.getItem('theme');
+          if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', t);
+        } catch(e) { document.documentElement.setAttribute('data-theme', 'light'); }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -20,7 +29,25 @@
         --line: #e7dfd2;
         --accent: #9e053d;
         --accent-dark: #6f032b;
+        --photo-tint: rgba(158,5,61,0.18);
+        --photo-tint2: rgba(28,17,23,0.5);
       }
+      /* Dark theme — paper becomes deep aubergine, type warms to cream,
+         accent brightens for contrast. The photo overlay deepens so
+         the same image sits naturally on either ground. */
+      html[data-theme="dark"] {
+        --ink: #f4ebde;
+        --soft: #c8b8b0;
+        --mut: #8b7c78;
+        --paper: #16101a;
+        --line: #2e2231;
+        --accent: #e0728f;
+        --accent-dark: #f29ab1;
+        --photo-tint: rgba(224,114,143,0.22);
+        --photo-tint2: rgba(8,4,12,0.55);
+      }
+      html { color-scheme: light dark; }
+      body { transition: background-color 0.18s ease, color 0.18s ease; }
       * { box-sizing: border-box; }
       html, body { margin: 0; padding: 0; }
       body {
@@ -70,13 +97,14 @@
       }
       .hero-cta {
         display: inline-block;
-        background: var(--accent); color: #fff;
+        background: var(--accent); color: var(--paper);
         padding: 14px 28px; border-radius: 99px;
         font-weight: 700; font-size: 0.98rem;
         box-shadow: 0 12px 28px rgba(158, 5, 61, 0.28);
         transition: transform 0.12s, box-shadow 0.12s;
       }
-      .hero-cta:hover { background: var(--accent-dark); color: #fff; transform: translateY(-1px); box-shadow: 0 14px 32px rgba(158, 5, 61, 0.32); }
+      .hero-cta:hover { background: var(--accent-dark); color: var(--paper); transform: translateY(-1px); box-shadow: 0 14px 32px rgba(158, 5, 61, 0.32); }
+      html[data-theme="dark"] .hero-cta { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4); }
       .hero-foot {
         margin-top: 16px; font-size: 0.85rem; color: var(--mut);
       }
@@ -84,11 +112,12 @@
       .hero-photo {
         aspect-ratio: 4 / 5; max-height: 520px;
         border-radius: 18px;
-        background: linear-gradient(165deg, rgba(158,5,61,0.18), rgba(28,17,23,0.5)),
+        background: linear-gradient(165deg, var(--photo-tint), var(--photo-tint2)),
                     url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80&auto=format&fit=crop') center/cover;
         position: relative; overflow: hidden;
-        box-shadow: 0 24px 60px rgba(28,17,23,0.16);
+        box-shadow: 0 24px 60px rgba(0,0,0,0.16);
       }
+      html[data-theme="dark"] .hero-photo { box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
       .hero-photo::after { content: ""; position: absolute; inset: 12px; border: 1px solid rgba(255,255,255,0.16); border-radius: 12px; pointer-events: none; }
       .hero-photo .credit {
         position: absolute; bottom: 20px; left: 24px; right: 24px;

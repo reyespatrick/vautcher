@@ -4,15 +4,35 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>restowner — manifeste</title>
+    <script>
+      (function(){
+        try {
+          var t = localStorage.getItem('theme');
+          if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', t);
+        } catch(e) { document.documentElement.setAttribute('data-theme', 'light'); }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;700;900&display=swap" rel="stylesheet" />
     <style>
-      :root { --ink:#000; --mut:#666; --paper:#fff; --accent:#9e053d; }
+      :root { --ink:#000; --mut:#666; --paper:#fff; --accent:#9e053d; --line:#eee; --nav-bg:rgba(255,255,255,0.92); }
+      /* Dark manifeste — pure black ground, white type, vivid neon-
+         burgundy accent. Minimal contrast adjustments only. */
+      html[data-theme="dark"] {
+        --ink: #fff;
+        --mut: #8b8b8b;
+        --paper: #000;
+        --accent: #ff5b85;
+        --line: #1a1a1a;
+        --nav-bg: rgba(0,0,0,0.86);
+      }
+      html { color-scheme: light dark; }
       *{box-sizing:border-box;margin:0;padding:0}
-      html,body{background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;line-height:1.4}
+      html,body{background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;line-height:1.4;transition:background-color 0.18s ease,color 0.18s ease}
       a{color:var(--ink);text-decoration:none}
-      nav{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:20px 28px;z-index:10;background:rgba(255,255,255,0.92);backdrop-filter:blur(12px)}
+      nav{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:20px 28px;z-index:10;background:var(--nav-bg);backdrop-filter:blur(12px)}
       nav .brand{font-weight:900;letter-spacing:-0.02em}
       nav .brand i{font-style:normal;color:var(--accent)}
       nav a.cta-tiny{font-size:0.85rem;font-weight:600}
@@ -24,8 +44,9 @@
       .big .em{color:var(--accent)}
       .big .it{font-style:italic;font-weight:300;color:var(--ink)}
       .sub{font-size:clamp(1.05rem,1.7vw,1.3rem);color:var(--mut);max-width:42ch;margin:0 auto 40px;line-height:1.5;font-weight:400}
-      .cta{display:inline-block;background:var(--ink);color:var(--paper);padding:18px 36px;border-radius:99px;font-weight:700;font-size:0.98rem;transition:transform 0.12s,background 0.12s}
-      .cta:hover{background:var(--accent);transform:translateY(-1px)}
+      .cta{display:inline-block;background:var(--ink);color:var(--paper);padding:18px 36px;border-radius:99px;font-weight:700;font-size:0.98rem;transition:transform 0.12s,background 0.12s,color 0.12s}
+      .cta:hover{background:var(--accent);transform:translateY(-1px);color:#fff}
+      html[data-theme="dark"] .cta:hover{color:#000}
       .small-tag{font-size:0.74rem;font-weight:700;letter-spacing:0.26em;text-transform:uppercase;color:var(--mut);margin-bottom:22px;display:flex;align-items:center;justify-content:center;gap:10px}
       .small-tag::before{content:"";width:18px;height:1px;background:var(--mut)}
       .small-tag::after{content:"";width:18px;height:1px;background:var(--mut)}
@@ -54,7 +75,7 @@
       .end .cta-soft{display:inline-block;background:transparent;color:var(--ink);border:1.5px solid var(--ink);padding:16px 32px;border-radius:99px;font-weight:700;font-size:0.95rem}
       .end .cta-soft:hover{background:var(--ink);color:var(--paper)}
 
-      footer{padding:32px 28px;font-size:0.78rem;color:var(--mut);text-align:center;border-top:1px solid #eee}
+      footer{padding:32px 28px;font-size:0.78rem;color:var(--mut);text-align:center;border-top:1px solid var(--line)}
       footer a{color:var(--mut)}
     </style>
   </head>
