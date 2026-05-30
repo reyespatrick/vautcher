@@ -1,14 +1,23 @@
 // Auth + owner-gating for the restowner console.
 // Owners sign in with an email OTP code; an account is only granted access
 // if its email is listed in vautcher_owners.
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { supabase } from '../lib/supabase'
+
+// The single account treated as the system root. UI surfaces guarded by
+// isRoot (e.g. the Admin tab in the bottom toolbar) are reserved for
+// this user only — moderators added to vautcher_moderators get the
+// approval queue but not the Admin overview.
+const ROOT_EMAIL = 'root@dpcsolutions.com'
 
 const session = ref(null)
 const owner = ref(null)         // { email, restaurant_id, name } — APPROVED owner
 const pendingOwner = ref(null)  // owner row awaiting root approval (approved=false)
 const restaurant = ref(null)    // { id, name, slug }
 const isModerator = ref(false)  // email is in vautcher_moderators
+const isRoot = computed(() =>
+  (session.value?.user?.email || '').toLowerCase() === ROOT_EMAIL
+)
 const ready = ref(false)
 
 let resolveInit
@@ -199,7 +208,7 @@ export function useAuth() {
   }
 
   return {
-    session, owner, pendingOwner, restaurant, isModerator, ready,
+    session, owner, pendingOwner, restaurant, isModerator, isRoot, ready,
     sendOtp, verifyOtp, rootLogin, requestAccess, refreshOwner, signOut
   }
 }

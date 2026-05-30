@@ -11,7 +11,7 @@ import ProfileMenu from './components/ProfileMenu.vue'
 import RestaurantPicker from './components/RestaurantPicker.vue'
 import AppDialog from './components/AppDialog.vue'
 
-const { owner, restaurant, isModerator, signOut } = useAuth()
+const { owner, restaurant, isModerator, isRoot, signOut } = useAuth()
 const { asOwner } = useViewAs()
 const { activeRestaurant, canSwitch } = useScope()
 const router = useRouter()
@@ -135,7 +135,7 @@ async function doSignOut() {
           {{ t('nav.vouchers') }}
         </RouterLink>
         <RouterLink
-          v-if="isModerator && !asOwner"
+          v-if="isRoot && !asOwner"
           :to="{ name: 'admin' }"
           :class="{ on: activeTab === 'admin' }"
         >
