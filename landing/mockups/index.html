@@ -4,39 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>restowner — choix de maquettes</title>
-    <script>
-      (function(){
-        try {
-          var t = localStorage.getItem('theme');
-          if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-          document.documentElement.setAttribute('data-theme', t);
-        } catch(e) { document.documentElement.setAttribute('data-theme', 'light'); }
-      })();
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Rufina:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
-      :root { --ink:#1c1117; --soft:#4d3b44; --mut:#877a82; --paper:#fbf6ed; --accent:#9e053d; --line:#e7dfd2; --card:#ffffff; }
-      html[data-theme="dark"] {
-        --ink: #f4ebde;
-        --soft: #c8b8b0;
-        --mut: #8b7c78;
-        --paper: #16101a;
-        --accent: #e0728f;
-        --line: #2e2231;
-        --card: #20162a;
-      }
-      html { color-scheme: light dark; }
+      :root { --ink:#1c1117; --soft:#4d3b44; --mut:#877a82; --paper:#fbf6ed; --accent:#9e053d; --line:#e7dfd2; }
       *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;transition:background-color 0.18s ease, color 0.18s ease}
+      body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
       h1{font-family:'Rufina',Georgia,serif;font-size:clamp(2rem,5vw,3rem);line-height:1.06;margin-bottom:14px;letter-spacing:-0.005em}
       .sub{color:var(--soft);max-width:54ch;margin-bottom:40px;font-size:1.02rem;line-height:1.55}
       .wrap{max-width:1100px;margin:0 auto;padding:48px 28px 96px}
       a{text-decoration:none;color:inherit}
       .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:28px}
       @media(max-width:760px){.grid{grid-template-columns:1fr}}
-      .card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:transform 0.14s, box-shadow 0.14s, background 0.18s, border-color 0.18s}
+      .card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:transform 0.14s, box-shadow 0.14s}
       .card:hover{transform:translateY(-3px);box-shadow:0 22px 44px rgba(28,17,23,0.1)}
       .preview{aspect-ratio:1.5/1;background:var(--paper);border-bottom:1px solid var(--line);position:relative;display:flex;align-items:center;justify-content:center;font-family:'Rufina',serif;font-size:2rem;letter-spacing:-0.01em;color:var(--ink);overflow:hidden}
       .meta{padding:20px 22px 22px}
