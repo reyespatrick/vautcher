@@ -36,17 +36,26 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
   const ready = ref(false)
   let startY = 0
   let target = null
+  // Movement watchdog -- iOS Safari (not standalone PWA) can hijack
+  // the touch sequence for its own URL-bar pull-to-refresh, so our
+  // touchend never fires and pulling.value stays true with the
+  // indicator stuck visible. If no touchmove arrives for 1.2s while
+  // pulling is true, force a reset.
+  let lastMoveAt = 0
+  let watchdog = null
 
   function onTouchStart(e) {
     if (refreshing.value || !target) return
     if (target.scrollTop > 0) return
     if (!e.touches || !e.touches.length) return
     startY = e.touches[0].clientY
+    lastMoveAt = Date.now()
     pulling.value = true
   }
 
   function onTouchMove(e) {
     if (!pulling.value) return
+    lastMoveAt = Date.now()
     const dy = e.touches[0].clientY - startY
     if (dy <= 0) {
       // User pulled back up -- cancel without firing.
@@ -105,7 +114,20 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     target.addEventListener('touchmove', onTouchMove, { passive: false })
     target.addEventListener('touchend', onTouchEnd, { passive: true })
     target.addEventListener('touchcancel', onTouchEnd, { passive: true })
+    // pointerup is the closest cousin to touchend that iOS Safari is
+    // less likely to swallow when it hijacks the gesture for its own
+    // pull-to-refresh; treat it the same way as touchend.
+    target.addEventListener('pointerup', onTouchEnd, { passive: true })
+    target.addEventListener('pointercancel', onTouchEnd, { passive: true })
     document.addEventListener('visibilitychange', onVisibilityChange)
+    // Movement watchdog -- catches the truly stuck case.
+    watchdog = setInterval(() => {
+      if (!pulling.value || refreshing.value) return
+      if (Date.now() - lastMoveAt > 1200) {
+        pulling.value = false
+        pullDistance.value = 0
+      }
+    }, 400)
     // Wait one tick before allowing the indicator to surface, so any
     // touch event Vue dispatches during mount cannot win the race.
     requestAnimationFrame(() => { ready.value = true })
@@ -117,7 +139,10 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     target.removeEventListener('touchmove', onTouchMove)
     target.removeEventListener('touchend', onTouchEnd)
     target.removeEventListener('touchcancel', onTouchEnd)
+    target.removeEventListener('pointerup', onTouchEnd)
+    target.removeEventListener('pointercancel', onTouchEnd)
     document.removeEventListener('visibilitychange', onVisibilityChange)
+    if (watchdog) { clearInterval(watchdog); watchdog = null }
   })
 
   return { pullDistance, refreshing, ready, pulling, threshold: THRESHOLD }

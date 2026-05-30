@@ -26,7 +26,7 @@ defineProps({
        physically cannot surface at rest -- no matter what value
        pullDistance is computed at on the first paint. -->
   <div
-    v-if="ready && (pulling || refreshing)"
+    v-if="ready && (refreshing || (pulling && pullDistance > 0))"
     class="ptr"
     :style="{
       transform: 'translateY(' + (pullDistance - 56) + 'px)',
