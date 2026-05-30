@@ -102,3 +102,78 @@ if (!patchRes.ok) {
 }
 const [updated] = await patchRes.json()
 console.log(`✓ patched ${updated.slug} (${updated.id}) — home_html ${bespoke.home_html?.length || 0} chars, home_css ${bespoke.home_css?.length || 0} chars`)
+
+// 4. Seed a default event with a real image + appetizing copy ONLY if
+//    the restaurant has none. Without this the SQL fallback in
+//    default-event-seed.sql kicks in on the next platform deploy with
+//    no image and bland "Exemple --- modifiez..." text, which looks
+//    cheap when the salesperson is demoing the deployed diner to a
+//    prospective owner.
+const eventsRes = await fetch(
+  `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/vautcher_events?restaurant_id=eq.${encodeURIComponent(restaurantId)}&select=id&limit=1`,
+  { headers }
+)
+const existingEvents = eventsRes.ok ? await eventsRes.json() : []
+if (existingEvents.length === 0) {
+  // Prefer the first half of the gallery -- the scaffolder ranks the
+  // homepage hero / large gallery shots there; later items tend to be
+  // small interior / team photos.
+  const galleryUrls = (merged.gallery || []).map((g) => g && g.src).filter(Boolean)
+  const front = galleryUrls.slice(0, Math.max(1, Math.ceil(galleryUrls.length / 2)))
+  const imageUrl = front.length ? front[Math.floor(Math.random() * front.length)] : null
+
+  // Five appetizing templates -- pick one at random so two adjacent
+  // demo tenants don't show the exact same event copy.
+  const DEMO_EVENTS = [
+    {
+      title: 'Soirée découverte',
+      description: 'Notre chef vous propose une création originale autour des saveurs de la maison. Une soirée à partager — réservation conseillée.'
+    },
+    {
+      title: 'Brunch du dimanche',
+      description: 'Un brunch généreux dans une ambiance conviviale : viennoiseries fraîches, plats salés du jour et boissons chaudes à volonté.'
+    },
+    {
+      title: 'Menu du marché',
+      description: 'Chaque semaine, un menu unique composé à partir des produits frais du marché. Une cuisine de saison à redécouvrir à chaque visite.'
+    },
+    {
+      title: 'Apéritif gourmand',
+      description: 'Planches à partager, cocktails maison et bonne humeur — tous les jeudis dès 18h, dans une ambiance détendue.'
+    },
+    {
+      title: 'Soirée à thème',
+      description: 'Une fois par mois, nous mettons une région ou une saison à l’honneur : produits, plats et accords inattendus. Suivez-nous pour la prochaine.'
+    }
+  ]
+  const demo = DEMO_EVENTS[Math.floor(Math.random() * DEMO_EVENTS.length)]
+  // Two weeks out so the event is still upcoming when root drops in
+  // for the demo (and the owner has time to edit it before then).
+  const d = new Date()
+  d.setDate(d.getDate() + 14)
+  const dateStr = d.toISOString().slice(0, 10)
+
+  const insertRes = await fetch(
+    `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/vautcher_events`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        restaurant_id: restaurantId,
+        title: demo.title,
+        description: demo.description,
+        event_date: dateStr,
+        published: true,
+        status: 'active',
+        image_url: imageUrl
+      })
+    }
+  )
+  if (insertRes.ok) {
+    console.log(`✓ seeded "${demo.title}"${imageUrl ? ' with gallery image' : ' (no gallery image available)'}`)
+  } else {
+    console.warn(`! seeding default event failed: ${insertRes.status} ${await insertRes.text()}`)
+  }
+} else {
+  console.log('  default event seeding skipped (restaurant already has events)')
+}

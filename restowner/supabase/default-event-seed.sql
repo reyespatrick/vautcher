@@ -1,19 +1,26 @@
 -- ============================================================
---  Default starter event
+--  Default starter event (fallback)
 --
---  Give every restaurant one placeholder event if it has none, so a
---  freshly scaffolded restaurant shows a starter the owner can edit or
---  delete (mirrors the default loyalty card backfill).
+--  The PRIMARY default-event seed runs inside the scaffolder
+--  (scripts/patch-restaurant-config.mjs) and pulls a real image from
+--  the scaffolded gallery. This SQL is the fallback for restaurants
+--  that exist without ever passing through the scaffolder (manual
+--  inserts, dev fixtures), so the copy here is intentionally similar
+--  to the JS templates so a salesperson never lands on the cheap
+--  "Exemple --- modifiez..." text when demoing the diner.
 --
 --  Idempotent: only fills restaurants with zero events. moderation_status
---  is set by the BEFORE trigger (approved for tenants with a trusted owner).
+--  is set by the BEFORE trigger (approved for tenants with a trusted
+--  owner). Uses config.gallery[0].src for the image when the scaffolder
+--  populated one; otherwise the event ships without an image.
 -- ============================================================
-insert into public.vautcher_events (restaurant_id, title, description, event_date, published, status)
+insert into public.vautcher_events (restaurant_id, title, description, event_date, published, status, image_url)
 select r.id,
-       'Votre premier événement',
-       'Exemple — modifiez ou supprimez cet événement depuis la console restowner.',
+       'Soirée découverte',
+       'Notre chef vous propose une création originale autour des saveurs de la maison. Une soirée à partager — réservation conseillée.',
        current_date + 14,
        true,
-       'active'
+       'active',
+       nullif(r.config -> 'gallery' -> 0 ->> 'src', '')
 from public.vautcher_restaurants r
 where not exists (select 1 from public.vautcher_events e where e.restaurant_id = r.id);
