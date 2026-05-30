@@ -23,8 +23,11 @@ function clear() {
 function disable() {
   try {
     localStorage.removeItem('ptr_debug')
+    localStorage.removeItem('ptr_off')
+    document.documentElement.removeAttribute('data-ptr-off')
     const url = new URL(window.location.href)
     url.searchParams.delete('ptr_debug')
+    url.searchParams.delete('ptr_off')
     window.location.replace(url.toString())
   } catch { /* no-op */ }
 }
