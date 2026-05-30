@@ -35,6 +35,21 @@ function formatAddr(tags) {
   return [street, city].filter(Boolean).join(', ')
 }
 
+// Cheap country-code guess from the user's current location. Good
+// enough as a TLD hint for the verifier — when the row itself carries
+// addr:country we prefer that. Bounding boxes are loose; misses are
+// harmless (the verifier just won't get the TLD bias).
+function inferCountry(lat, lng) {
+  if (lat == null || lng == null) return ''
+  if (lat >= 45.8 && lat <= 47.85 && lng >= 5.95 && lng <= 10.55) return 'CH'
+  if (lat >= 47.25 && lat <= 55.1 && lng >= 5.85 && lng <= 15.05) return 'DE'
+  if (lat >= 36.5 && lat <= 47.1 && lng >= 6.6  && lng <= 18.55) return 'IT'
+  if (lat >= 41.3 && lat <= 51.1 && lng >= -5   && lng <= 9.6)   return 'FR'
+  if (lat >= 46.4 && lat <= 49.1 && lng >= 9.5  && lng <= 17.2)  return 'AT'
+  if (lat >= 49.5 && lat <= 51.5 && lng >= 2.5  && lng <= 6.4)   return 'BE'
+  return ''
+}
+
 async function getLocation() {
   if (!navigator.geolocation) {
     geoError.value = t('discover.noGeo')
@@ -88,6 +103,11 @@ out tags center;
           name: tags.name,
           address: formatAddr(tags),
           locality: tags['addr:city'] || tags['addr:town'] || tags['addr:village'] || '',
+          postcode: tags['addr:postcode'] || '',
+          // OSM rarely tags addr:country directly; fall back to a cheap
+          // bbox lookup from the search centre so the verifier still
+          // gets a TLD bias.
+          country: tags['addr:country'] || inferCountry(lat.value, lng.value),
           phone: tags.phone || tags['contact:phone'] || '',
           website: tags.website || tags['contact:website'] || '',
           lat: e.lat ?? e.center?.lat ?? null,
@@ -119,7 +139,12 @@ async function findWebsite(row) {
   row.websiteBusy = true
   try {
     const { data } = await supabase.functions.invoke('osm-website-search', {
-      body: { name: row.name, locality: row.locality }
+      body: {
+        name: row.name,
+        locality: row.locality,
+        postcode: row.postcode,
+        country: row.country
+      }
     })
     if (data?.url) row.website = data.url
   } catch { /* leave website blank — root can paste manually */ }

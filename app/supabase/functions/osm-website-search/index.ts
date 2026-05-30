@@ -69,22 +69,86 @@ async function unwrapDdg(href: string): Promise<string | null> {
   } catch { return null }
 }
 
-async function headOk(url: string): Promise<boolean> {
+// Strip HTML to a lowercase text blob suitable for naive substring search.
+function htmlToText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+}
+
+// Map an OSM-style ISO country code to the TLD we expect the official
+// restaurant site to use most of the time. .com / .net / .org are
+// always allowed; the bias just means a clear country mismatch is one
+// strike against the candidate.
+function preferredTld(country: string): string | null {
+  const c = (country || '').toUpperCase()
+  if (c === 'CH') return '.ch'
+  if (c === 'FR') return '.fr'
+  if (c === 'DE') return '.de'
+  if (c === 'IT') return '.it'
+  if (c === 'AT') return '.at'
+  if (c === 'BE') return '.be'
+  return null
+}
+
+// Fetch a candidate page and check whether it credibly belongs to the
+// OSM entry by looking for the city, postcode or country TLD.
+// Verification ladder (strongest first):
+//   1. OSM postcode appears verbatim in the page text  → STRONG match
+//   2. OSM city/town/village name appears in the text  → MEDIUM match
+//   3. TLD matches the OSM country                     → WEAK match
+// Returns true if at least one signal hits. The home page is usually
+// enough (most sites have the address in the footer); we additionally
+// try common contact URLs when the home page text is inconclusive.
+async function verifyCandidate(
+  url: string,
+  locality: string,
+  postcode: string,
+  country: string
+): Promise<{ ok: boolean; signal: string }> {
+  const tld = preferredTld(country)
   try {
-    const ctl = new AbortController()
-    const timer = setTimeout(() => ctl.abort(), 4000)
-    // Some hosts reject HEAD — fall back to a tiny ranged GET if HEAD 405s.
-    let res = await fetch(url, { method: 'HEAD', headers: { 'User-Agent': UA }, redirect: 'follow', signal: ctl.signal })
-    if (res.status === 405 || res.status === 403) {
-      res = await fetch(url, {
-        method: 'GET',
-        headers: { 'User-Agent': UA, 'Range': 'bytes=0-1024' },
-        redirect: 'follow', signal: ctl.signal
-      })
+    const u = new URL(url)
+    const tldHit = tld && u.hostname.toLowerCase().endsWith(tld)
+
+    const paths = ['', '/', '/contact', '/contact/', '/contact-us', '/nous-contacter', '/kontakt']
+    const seen = new Set<string>()
+    for (const p of paths) {
+      const target = new URL(p || '/', u.origin).toString()
+      if (seen.has(target)) continue
+      seen.add(target)
+      try {
+        const ctl = new AbortController()
+        const timer = setTimeout(() => ctl.abort(), 5000)
+        const res = await fetch(target, {
+          headers: { 'User-Agent': UA, 'Accept-Language': 'fr,en;q=0.7' },
+          redirect: 'follow', signal: ctl.signal
+        })
+        clearTimeout(timer)
+        if (!res.ok) continue
+        const text = htmlToText(await res.text())
+        if (postcode && text.includes(postcode.toLowerCase())) {
+          return { ok: true, signal: `postcode ${postcode}` }
+        }
+        if (locality && text.includes(locality.toLowerCase())) {
+          // City+TLD together is a confident match; city alone is still
+          // accepted but flagged so the caller can tell it through.
+          return { ok: true, signal: tldHit ? `city+tld` : 'city' }
+        }
+      } catch { /* try the next path */ }
     }
-    clearTimeout(timer)
-    return res.status >= 200 && res.status < 400
-  } catch { return false }
+
+    // Nothing in the page text — accept only on a country-TLD match. A
+    // restaurant in Geneva on example.ch with no extractable footer is
+    // a much safer bet than a US developer studio on example.com.
+    if (tldHit) return { ok: true, signal: 'tld-only' }
+  } catch { /* fall through to no-match */ }
+  return { ok: false, signal: 'no-match' }
 }
 
 Deno.serve(async (req) => {
@@ -101,13 +165,18 @@ Deno.serve(async (req) => {
   const { data: u } = await client.auth.getUser()
   if (!u?.user) return json({ error: 'auth required' }, 401)
 
-  let body: { name?: string; locality?: string }
+  let body: { name?: string; locality?: string; postcode?: string; country?: string }
   try { body = await req.json() } catch { return json({ error: 'bad json' }, 400) }
   const name = String(body.name ?? '').trim()
   const locality = String(body.locality ?? '').trim()
+  const postcode = String(body.postcode ?? '').trim()
+  const country = String(body.country ?? '').trim()
   if (!name) return json({ error: 'name required' }, 400)
 
-  const q = locality ? `${name} ${locality}` : name
+  // Search query mirrors what root would type into Google — name plus
+  // the most specific locality we have.
+  const qParts = [name, locality, postcode].filter(Boolean)
+  const q = qParts.join(' ')
   const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`
 
   let html = ''
@@ -130,6 +199,12 @@ Deno.serve(async (req) => {
   const anchors = [...html.matchAll(/<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"/gi)]
     .map((m) => m[1])
 
+  // Walk candidates in DDG-rank order and accept the FIRST one whose
+  // home/contact page contains the OSM address (or shares the country
+  // TLD). This is the fix for the "Inglewood" case where DDG's top hit
+  // was a US developer studio on a .com — the address check now sends
+  // those to the discard pile and continues to the next result.
+  const tried: Array<{ url: string; reason: string }> = []
   for (const href of anchors) {
     const real = await unwrapDdg(href)
     if (!real) continue
@@ -137,10 +212,13 @@ Deno.serve(async (req) => {
     try { parsed = new URL(real) } catch { continue }
     if (!/^https?:$/.test(parsed.protocol)) continue
     if (isAggregator(parsed.hostname)) continue
-    if (await headOk(parsed.href)) {
-      return json({ url: parsed.href, source: 'ddg' })
+    const verdict = await verifyCandidate(parsed.href, locality, postcode, country)
+    if (verdict.ok) {
+      return json({ url: parsed.href, source: 'ddg', signal: verdict.signal })
     }
+    tried.push({ url: parsed.href, reason: verdict.signal })
+    if (tried.length >= 6) break  // don't fan out indefinitely
   }
 
-  return json({ url: null, source: null })
+  return json({ url: null, source: null, tried })
 })
