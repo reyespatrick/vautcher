@@ -72,16 +72,21 @@ async function retry(row) {
     confirmLabel: t('queue.retryConfirm')
   })
   if (!ok) return
-  const { error: insErr } = await supabase
-    .from('vautcher_scaffold_queue').insert({
-      osm_id: null,
-      name: row.name,
-      address: row.address || null,
-      website_url: row.website_url,
-      enqueued_by: row.enqueued_by || null
-    })
-  if (insErr) {
-    await alert({ title: t('queue.retryFailed'), body: insErr.message })
+  // Reuse the existing row instead of inserting a fresh copy: flip its
+  // status back to pending and clear the failure marks. Otherwise the
+  // Echecs bucket grows by one entry every retry, which is exactly the
+  // "Beirut bistrot keeps stacking up" UX the user just flagged.
+  const { error: updErr } = await supabase
+    .from('vautcher_scaffold_queue').update({
+      status: 'pending',
+      error: null,
+      started_at: null,
+      finished_at: null,
+      restaurant_id: null,
+      enqueued_at: new Date().toISOString()
+    }).eq('id', row.id)
+  if (updErr) {
+    await alert({ title: t('queue.retryFailed'), body: updErr.message })
     return
   }
   // Kick the worker so the retry doesn't wait up to a minute.
