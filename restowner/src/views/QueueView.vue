@@ -13,6 +13,7 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { supabase } from '../lib/supabase'
 import { useDialog } from '../composables/useDialog'
+import PullToRefresh from '../components/PullToRefresh.vue'
 
 const { t } = useI18n()
 const { confirm, alert } = useDialog()
@@ -115,6 +116,7 @@ async function remove(row) {
 
 <template>
   <div class="page">
+    <PullToRefresh :busy="loading" @refresh="() => load()" />
     <div class="page-head">
       <h1>{{ t('queue.title') }}</h1>
       <p>{{ t('queue.subtitle') }}</p>

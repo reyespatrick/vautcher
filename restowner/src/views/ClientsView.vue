@@ -7,6 +7,7 @@ import { useScope } from '../composables/useScope'
 import { restaurantClients } from '../lib/clients'
 import { setClientLocked } from '../lib/admin'
 import ClientList from '../components/ClientList.vue'
+import PullToRefresh from '../components/PullToRefresh.vue'
 
 const { isModerator } = useAuth()
 const { activeRestaurantId, activeRestaurant } = useScope()
@@ -53,6 +54,7 @@ async function onToggleLock(c) {
 
 <template>
   <div class="page">
+    <PullToRefresh :busy="loading" @refresh="load" />
     <div class="page-head">
       <h1>{{ t('clients.title') }}</h1>
       <p>{{ activeRestaurant ? activeRestaurant.name : '' }}</p>

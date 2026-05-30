@@ -12,6 +12,7 @@ import {
   adminRestaurants, createRestaurant, scaffoldTenant,
   pendingOwners, approveOwner, rejectOwner
 } from '../lib/admin'
+import PullToRefresh from '../components/PullToRefresh.vue'
 
 const { t } = useI18n()
 const { isModerator } = useAuth()
@@ -307,6 +308,7 @@ onBeforeUnmount(stopQueuePoll)
 
 <template>
   <div class="page">
+    <PullToRefresh :busy="loading" @refresh="async () => { await Promise.all([load(), loadQueueSummary()]) }" />
     <div class="page-head">
       <h1>{{ t('admin.title') }}</h1>
       <p>{{ t('admin.subtitle') }}</p>
