@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>restowner — votre clientèle, à votre marque</title>
+    <meta name="description"
+      content="L’outil discret qui transforme vos clients de passage en habitués fidèles. Pensé pour les restaurateurs indépendants de Suisse romande." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rufina:wght@400;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet" />
+    <style>
+      :root {
+        --ink: #1c1117;
+        --soft: #4d3b44;
+        --mut: #877a82;
+        --paper: #fbf6ed;
+        --line: #e7dfd2;
+        --accent: #9e053d;
+        --accent-dark: #6f032b;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 17px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+      h1, h2, h3 { font-family: 'Rufina', Georgia, serif; font-weight: 700; line-height: 1.12; letter-spacing: -0.005em; }
+      a { color: var(--accent); text-decoration: none; }
+      a:hover { color: var(--accent-dark); }
+
+      /* ---- Top bar ---- */
+      .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 22px 24px;
+        max-width: 880px; margin: 0 auto;
+      }
+      .brand {
+        font-family: 'Rufina', serif; font-size: 1.25rem; color: var(--ink);
+      }
+      .brand b { color: var(--accent); }
+      .nav-cta {
+        font-size: 0.9rem; font-weight: 600;
+        border: 1.5px solid var(--ink); border-radius: 99px;
+        padding: 8px 16px; color: var(--ink);
+      }
+      .nav-cta:hover { background: var(--ink); color: var(--paper); }
+
+      /* ---- Hero ---- */
+      .hero { padding: 64px 0 80px; }
+      .eyebrow {
+        font-size: 0.78rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+        color: var(--accent); margin-bottom: 24px;
+      }
+      .hero h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); margin: 0 0 18px; max-width: 18ch; }
+      .hero .lede {
+        font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+        color: var(--soft); max-width: 36ch; margin: 0 0 32px;
+      }
+      .hero-cta {
+        display: inline-block;
+        background: var(--accent); color: #fff;
+        padding: 14px 26px; border-radius: 99px;
+        font-weight: 700; font-size: 1rem;
+        box-shadow: 0 10px 28px rgba(158, 5, 61, 0.28);
+      }
+      .hero-cta:hover { background: var(--accent-dark); color: #fff; }
+      .hero-foot {
+        margin-top: 18px; font-size: 0.85rem; color: var(--mut);
+      }
+
+      /* ---- Concept ---- */
+      .concept { padding: 32px 0 64px; border-top: 1px solid var(--line); }
+      .concept h2 { font-size: 1.8rem; margin: 0 0 18px; max-width: 22ch; }
+      .concept p { color: var(--soft); max-width: 56ch; }
+
+      /* ---- Pillars (benefits) ---- */
+      .pillars { padding: 56px 0 64px; border-top: 1px solid var(--line); }
+      .pillars h2 { font-size: 1.6rem; margin: 0 0 32px; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 28px 32px;
+      }
+      .pillar { }
+      .pillar .num {
+        display: inline-block;
+        font-family: 'Rufina', serif; font-style: italic;
+        color: var(--accent); font-size: 1.1rem;
+        margin-bottom: 6px;
+      }
+      .pillar h3 { font-size: 1.05rem; margin: 0 0 8px; }
+      .pillar p { margin: 0; color: var(--soft); font-size: 0.95rem; }
+
+      /* ---- Pull-quote ---- */
+      .quote { padding: 72px 0; border-top: 1px solid var(--line); }
+      .quote blockquote {
+        font-family: 'Rufina', serif; font-size: clamp(1.4rem, 3vw, 2rem);
+        line-height: 1.25; color: var(--ink);
+        margin: 0; max-width: 30ch;
+      }
+      .quote cite { display: block; margin-top: 18px; font-style: normal; font-size: 0.9rem; color: var(--mut); }
+
+      /* ---- Closing ---- */
+      .close { padding: 64px 0 96px; border-top: 1px solid var(--line); }
+      .close h2 { font-size: 2rem; margin: 0 0 18px; max-width: 22ch; }
+      .close p { color: var(--soft); margin: 0 0 28px; max-width: 48ch; }
+      .close-cta {
+        display: inline-block; padding: 14px 26px; border-radius: 99px;
+        background: var(--ink); color: var(--paper); font-weight: 700;
+      }
+      .close-cta:hover { background: var(--accent); color: #fff; }
+
+      /* ---- Footer ---- */
+      footer {
+        border-top: 1px solid var(--line); padding: 26px 0 40px;
+        font-size: 0.84rem; color: var(--mut);
+        display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      }
+    </style>
+  </head>
+  <body>
+
+    <header class="topbar">
+      <div class="brand"><b>resto</b>wner</div>
+      <a class="nav-cta" href="mailto:hello@vautcher.ch">Nous écrire</a>
+    </header>
+
+    <main class="wrap">
+
+      <!-- Hero -->
+      <section class="hero">
+        <div class="eyebrow">Pour les restaurateurs indépendants</div>
+        <h1>Votre restaurant. Votre clientèle. Votre marque.</h1>
+        <p class="lede">L’outil discret qui transforme vos clients de passage en habitués fidèles.</p>
+        <a class="hero-cta" href="mailto:hello@vautcher.ch?subject=restowner%20%E2%80%94%20discutons">
+          Discutons de votre établissement →
+        </a>
+        <div class="hero-foot">Conçu en Suisse romande · Genève &amp; Vaud</div>
+      </section>
+
+      <!-- The concept (vague on purpose) -->
+      <section class="concept">
+        <h2>Une console pensée par et pour la salle.</h2>
+        <p>
+          restowner vous redonne une ligne directe avec vos clients. Sans intermédiaire,
+          sans algorithme. Vous publiez ce que vous voulez, à votre rythme, sous votre nom,
+          et vous voyez immédiatement qui répond. Le service en salle ne change pas d’un
+          détail — ce qui change, c’est le lien qui vous attache à vos habitués.
+        </p>
+      </section>
+
+      <!-- Pillars / benefits -->
+      <section class="pillars">
+        <h2>Ce que vous y gagnez.</h2>
+        <div class="grid">
+
+          <div class="pillar">
+            <span class="num">01.</span>
+            <h3>Une clientèle qui vous appartient.</h3>
+            <p>Vous bâtissez votre propre audience. Personne ne s’interpose entre vous et vos clients.</p>
+          </div>
+
+          <div class="pillar">
+            <span class="num">02.</span>
+            <h3>À votre marque, sans compromis.</h3>
+            <p>Votre univers, votre identité visuelle, votre ton. Pas la couleur d’une plateforme.</p>
+          </div>
+
+          <div class="pillar">
+            <span class="num">03.</span>
+            <h3>Un canal qui se mérite.</h3>
+            <p>Vos messages arrivent parce que vos clients ont voulu les recevoir. Pas parce qu’ils ont été poussés.</p>
+          </div>
+
+          <div class="pillar">
+            <span class="num">04.</span>
+            <h3>Une fidélité qui se cultive.</h3>
+            <p>De petites attentions, régulières, qui font la différence entre venir une fois et revenir longtemps.</p>
+          </div>
+
+          <div class="pillar">
+            <span class="num">05.</span>
+            <h3>Sans complications.</h3>
+            <p>Quelques minutes par semaine suffisent. Tout se gère depuis la même console, en salle ou ailleurs.</p>
+          </div>
+
+          <div class="pillar">
+            <span class="num">06.</span>
+            <h3>Pensé local.</h3>
+            <p>Construit en Suisse romande, pour les indépendants de Genève et Vaud. Une équipe à portée d’un café.</p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Pull-quote -->
+      <section class="quote">
+        <blockquote>
+          «&nbsp;Un restaurant, c’est d’abord une relation. restowner nous permet de la cultiver
+          sans qu’elle nous quitte jamais.&nbsp;»
+          <cite>— En cours de tournage avec nos premiers restaurateurs partenaires.</cite>
+        </blockquote>
+      </section>
+
+      <!-- Closing -->
+      <section class="close">
+        <h2>Et si on en parlait autour d’un café&nbsp;?</h2>
+        <p>
+          Nous rencontrons en ce moment quelques établissements pour démarrer l’aventure
+          ensemble. Si vous tenez à votre clientèle et à votre indépendance, écrivez-nous.
+        </p>
+        <a class="close-cta" href="mailto:hello@vautcher.ch?subject=restowner%20%E2%80%94%20rencontre">
+          Prendre rendez-vous
+        </a>
+      </section>
+
+    </main>
+
+    <footer class="wrap">
+      <div>© restowner · Genève &amp; Vaud</div>
+      <div><a href="mailto:hello@vautcher.ch">hello@vautcher.ch</a></div>
+    </footer>
+
+  </body>
+</html>
