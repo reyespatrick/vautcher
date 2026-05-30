@@ -230,7 +230,7 @@ Deno.serve(async (req: Request) => {
   }
   if (!modEmail) return json({ error: 'forbidden' }, 403)
 
-  let body: { url?: string; restaurant_id?: string; redeploy?: boolean; rescaffold?: boolean }
+  let body: { url?: string; restaurant_id?: string; redeploy?: boolean; rescaffold?: boolean; queue_id?: string }
   try { body = await req.json() } catch { return json({ error: 'bad json' }, 400) }
 
   // ---- Mode 3: re-scaffold an existing tenant from its source_url ----
@@ -302,6 +302,17 @@ Deno.serve(async (req: Request) => {
     deploy_status: 'scaffolding'
   }).select('id, slug, name').single()
   if (insErr) return json({ error: insErr.message }, 500)
+
+  // When the queue worker called us, link the new restaurant onto the
+  // queue row HERE — before the GH workflow has a chance to finish.
+  // Otherwise the worker's own writeback can lose a race with the
+  // deploy-status trigger and the queue row gets stranded in
+  // scaffolding until the 15-min watchdog mismarks it as failed.
+  if (body?.queue_id) {
+    await admin.from('vautcher_scaffold_queue')
+      .update({ restaurant_id: inserted.id })
+      .eq('id', body.queue_id)
+  }
 
   // "admin" owner account with a durable claim code. The moderator hands
   // the code to the restaurateur, who signs into restowner with the code

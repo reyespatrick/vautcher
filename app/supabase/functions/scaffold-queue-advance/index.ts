@@ -157,7 +157,10 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
         'X-Cron-Secret': CRON_SECRET
       },
-      body: JSON.stringify({ url: pending.website_url })
+      // Pass our queue row id along: scaffold-tenant links the new
+      // restaurant to it server-side, eliminating the race window
+      // between our own writeback below and the workflow finishing.
+      body: JSON.stringify({ url: pending.website_url, queue_id: pending.id })
     })
     const text = await res.text()
     let payload: any = null
