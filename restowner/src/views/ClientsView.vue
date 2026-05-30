@@ -4,11 +4,9 @@ import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import { useScope } from '../composables/useScope'
-import { usePullToRefresh } from '../composables/usePullToRefresh'
 import { restaurantClients } from '../lib/clients'
 import { setClientLocked } from '../lib/admin'
 import ClientList from '../components/ClientList.vue'
-import PullToRefreshIndicator from '../components/PullToRefreshIndicator.vue'
 
 const { isModerator } = useAuth()
 const { activeRestaurantId, activeRestaurant } = useScope()
@@ -37,7 +35,6 @@ async function load() {
   }
 }
 watch(activeRestaurantId, load, { immediate: true })
-const ptr = usePullToRefresh(load)
 
 // Moderators can lock / unlock a diner from the list. setClientLocked
 // is gated server-side on moderator status (the lib RPC checks).
@@ -56,7 +53,6 @@ async function onToggleLock(c) {
 
 <template>
   <div class="page">
-    <PullToRefreshIndicator v-bind="ptr" />
     <div class="page-head">
       <h1>{{ t('clients.title') }}</h1>
       <p>{{ activeRestaurant ? activeRestaurant.name : '' }}</p>

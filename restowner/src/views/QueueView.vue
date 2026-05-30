@@ -13,8 +13,6 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { supabase } from '../lib/supabase'
 import { useDialog } from '../composables/useDialog'
-import { usePullToRefresh } from '../composables/usePullToRefresh'
-import PullToRefreshIndicator from '../components/PullToRefreshIndicator.vue'
 
 const { t } = useI18n()
 const { confirm, alert } = useDialog()
@@ -57,7 +55,6 @@ onMounted(async () => {
   if (active.value) startPoll()
 })
 onBeforeUnmount(stopPoll)
-const ptr = usePullToRefresh(() => load())
 
 // Buckets in display order.
 const pending = computed(() => rows.value.filter((r) => r.status === 'pending'))
@@ -118,7 +115,6 @@ async function remove(row) {
 
 <template>
   <div class="page">
-    <PullToRefreshIndicator v-bind="ptr" />
     <div class="page-head">
       <h1>{{ t('queue.title') }}</h1>
       <p>{{ t('queue.subtitle') }}</p>

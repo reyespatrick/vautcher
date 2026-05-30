@@ -11,7 +11,6 @@ import { useUpdateAvailable } from './composables/useUpdateAvailable'
 import ProfileMenu from './components/ProfileMenu.vue'
 import RestaurantPicker from './components/RestaurantPicker.vue'
 import AppDialog from './components/AppDialog.vue'
-import PullToRefreshDebug from './components/PullToRefreshDebug.vue'
 
 const { owner, restaurant, isModerator, isRoot, signOut } = useAuth()
 const { asOwner } = useViewAs()
@@ -241,9 +240,6 @@ async function doSignOut() {
     </Teleport>
 
     <AppDialog />
-    <!-- Only renders when the user has opted into PTR tracing via
-         ?ptr_debug=1 or localStorage.ptr_debug='1'. No-op otherwise. -->
-    <PullToRefreshDebug />
   </div>
 </template>
 

@@ -8,12 +8,10 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
 import { supabase } from '../lib/supabase'
-import { usePullToRefresh } from '../composables/usePullToRefresh'
 import {
   adminRestaurants, createRestaurant, scaffoldTenant,
   pendingOwners, approveOwner, rejectOwner
 } from '../lib/admin'
-import PullToRefreshIndicator from '../components/PullToRefreshIndicator.vue'
 
 const { t } = useI18n()
 const { isModerator } = useAuth()
@@ -305,14 +303,10 @@ watch(queueActive, (v) => { if (v) startQueuePoll(); else stopQueuePoll() })
 // Initial fetch — show prior batches even after a refresh.
 loadQueueSummary()
 onBeforeUnmount(stopQueuePoll)
-
-// Pull-to-refresh runs the restaurant list refresh + the queue panel.
-const ptr = usePullToRefresh(async () => { await Promise.all([load(), loadQueueSummary()]) })
 </script>
 
 <template>
   <div class="page">
-    <PullToRefreshIndicator v-bind="ptr" />
     <div class="page-head">
       <h1>{{ t('admin.title') }}</h1>
       <p>{{ t('admin.subtitle') }}</p>
