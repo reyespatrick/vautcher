@@ -7,6 +7,7 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDialog } from '../composables/useDialog'
+import { supabase } from '../lib/supabase'
 import BackBar from '../components/BackBar.vue'
 import {
   adminRestaurants, rescaffoldTenant, deleteTenant, setMenuHidden,
@@ -28,6 +29,50 @@ const deleteBusy = ref(false)
 
 const TRANSIENT = new Set(['scaffolding', 'pending'])
 const isTransient = computed(() => !!r.value && TRANSIENT.has(r.value.deploy_status))
+
+// Source-URL inline editor. Saving updates config.source_url, which the
+// DB trigger picks up and uses to auto-rescaffold the tenant.
+const editingSource = ref(false)
+const sourceDraft = ref('')
+const sourceSaveBusy = ref(false)
+function openSourceEditor() {
+  if (!r.value) return
+  sourceDraft.value = r.value.source_url || ''
+  editingSource.value = true
+}
+function cancelSourceEditor() {
+  editingSource.value = false
+  sourceDraft.value = ''
+}
+async function saveSourceUrl() {
+  if (!r.value || sourceSaveBusy.value) return
+  const next = sourceDraft.value.trim()
+  if (!next) return
+  if (next === (r.value.source_url || '')) {
+    editingSource.value = false
+    return
+  }
+  // Pull the live config so we don't clobber unrelated keys with a
+  // stale snapshot from the row we loaded earlier.
+  sourceSaveBusy.value = true
+  try {
+    const { data: row, error: gErr } = await supabase
+      .from('vautcher_restaurants').select('config').eq('id', r.value.id).single()
+    if (gErr) throw gErr
+    const cfg = { ...(row.config || {}), source_url: next }
+    const { error: uErr } = await supabase
+      .from('vautcher_restaurants').update({ config: cfg }).eq('id', r.value.id)
+    if (uErr) throw uErr
+    editingSource.value = false
+    // The DB trigger will flip deploy_status to scaffolding; refresh
+    // so the user sees the skeleton state immediately.
+    await load()
+  } catch (e) {
+    await alert({ title: t('admin.error'), body: (e && e.message) || String(e) })
+  } finally {
+    sourceSaveBusy.value = false
+  }
+}
 const activateUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/activer'
 
 async function load() {
@@ -221,9 +266,40 @@ async function submitOwner() {
           <a :href="`https://${r.slug}.pages.dev`" target="_blank" rel="noopener" class="resto-url resto-url--live">
             <span class="ic">🌐</span>{{ r.slug }}.pages.dev
           </a>
-          <a v-if="r.source_url" :href="r.source_url" target="_blank" rel="noopener" class="resto-url resto-url--src">
-            <span class="ic">🔗</span>{{ t('admin.sourceUrl') }}
-          </a>
+          <template v-if="!editingSource">
+            <a v-if="r.source_url" :href="r.source_url" target="_blank" rel="noopener" class="resto-url resto-url--src">
+              <span class="ic">🔗</span>{{ t('admin.sourceUrl') }}
+            </a>
+            <button type="button" class="resto-url resto-url--edit"
+              :title="t('admin.sourceUrlEdit')" @click="openSourceEditor">
+              <span class="ic">✏️</span>{{ r.source_url ? t('admin.sourceUrlEdit') : t('admin.sourceUrlSet') }}
+            </button>
+          </template>
+        </div>
+
+        <!-- Inline source-URL editor. Saving writes config.source_url
+             which the DB trigger picks up to auto-rescaffold. -->
+        <div v-if="editingSource" class="source-editor">
+          <label>{{ t('admin.sourceUrlLabel') }}</label>
+          <input
+            v-model="sourceDraft"
+            type="url"
+            inputmode="url"
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            placeholder="https://exemple.ch"
+            @keydown.enter="saveSourceUrl"
+          />
+          <p class="source-hint">{{ t('admin.sourceUrlHint') }}</p>
+          <div class="source-actions">
+            <button type="button" class="btn btn--primary btn--sm"
+              :disabled="sourceSaveBusy || !sourceDraft.trim()" @click="saveSourceUrl">
+              {{ sourceSaveBusy ? t('admin.sourceUrlSaving') : t('admin.sourceUrlSave') }}
+            </button>
+            <button type="button" class="btn btn--plain btn--sm"
+              :disabled="sourceSaveBusy" @click="cancelSourceEditor">
+              {{ t('admin.cancel') }}
+            </button>
+          </div>
         </div>
 
         <!-- While the site is generating: skeleton + only Regenerer stays
@@ -334,6 +410,27 @@ async function submitOwner() {
 }
 .resto-url .ic { font-size: 0.9rem; }
 .resto-url--src { color: var(--mut); }
+.resto-url--edit {
+  cursor: pointer; color: var(--mut); font-family: inherit;
+  background: var(--surface);
+}
+.resto-url--edit:active { transform: scale(0.97); }
+
+/* Inline source-URL editor: drops in just under the .resto-urls row. */
+.source-editor {
+  margin: 4px 0 14px; padding: 12px; border: 1px dashed var(--line);
+  border-radius: 12px; background: var(--surface);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.source-editor label { font-size: 0.78rem; font-weight: 700; color: var(--mut); }
+.source-editor input {
+  width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.92rem;
+  padding: 10px 12px; border: 1.4px solid var(--line); border-radius: 10px;
+  background: #fff; color: var(--ink);
+}
+.source-editor input:focus { outline: none; border-color: var(--accent); }
+.source-hint { margin: 0; color: var(--mut); font-size: 0.78rem; font-style: italic; }
+.source-actions { display: flex; gap: 8px; }
 
 .resto-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--line); }
 .resto-actions .btn--danger { margin-left: auto; }
