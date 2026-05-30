@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>restowner — l’art du restaurateur</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root { --ink:#0a0808; --soft:#bdb3a6; --mut:#7a7167; --paper:#0a0808; --gold:#c9a464; --gold-dim:#7a6336; --line:rgba(201,164,100,0.18); }
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--soft);font-weight:300;-webkit-font-smoothing:antialiased}
+      h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:300;color:#f1ebde}
+      a{color:var(--gold);text-decoration:none}
+      .wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+
+      .top{display:flex;justify-content:space-between;align-items:center;padding:22px 0;border-bottom:1px solid var(--line)}
+      .top .brand{font-family:'Cormorant Garamond',serif;font-size:1.3rem;letter-spacing:0.18em;text-transform:uppercase;color:#f1ebde}
+      .top .brand i{font-style:italic;color:var(--gold)}
+      .top a{font-size:0.82rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--soft)}
+
+      .hero{padding:120px 0 96px;text-align:center;border-bottom:1px solid var(--line)}
+      .eyebrow{font-size:0.72rem;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:32px}
+      .hero h1{font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.04;letter-spacing:-0.005em;max-width:18ch;margin:0 auto 26px}
+      .hero h1 i{font-style:italic;color:var(--gold)}
+      .lede{font-size:1.05rem;max-width:36ch;margin:0 auto 40px;color:var(--soft)}
+      .cta{display:inline-block;padding:14px 32px;border:1px solid var(--gold);color:var(--gold);font-size:0.82rem;letter-spacing:0.24em;text-transform:uppercase}
+      .cta:hover{background:var(--gold);color:var(--ink)}
+
+      .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);margin:0 auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+      @media(max-width:760px){.grid{grid-template-columns:1fr}}
+      .cell{background:var(--paper);padding:54px 44px}
+      .cell .n{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);letter-spacing:0.1em;font-size:1rem;margin-bottom:14px;display:block}
+      .cell h3{font-size:1.5rem;line-height:1.18;margin-bottom:12px;letter-spacing:-0.005em}
+      .cell p{color:var(--soft);font-size:0.96rem;line-height:1.55}
+
+      .concept{padding:96px 0;text-align:center}
+      .concept h2{font-size:clamp(1.7rem,3.4vw,2.4rem);max-width:24ch;margin:0 auto 22px}
+      .concept p{max-width:48ch;margin:0 auto;color:var(--soft);line-height:1.65}
+
+      .pull{padding:96px 0;border-top:1px solid var(--line);text-align:center}
+      .pull blockquote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(1.4rem,3vw,2.1rem);line-height:1.28;color:#f1ebde;max-width:32ch;margin:0 auto}
+      .pull cite{display:block;margin-top:18px;font-size:0.75rem;letter-spacing:0.26em;text-transform:uppercase;color:var(--gold-dim);font-style:normal}
+
+      .close{padding:96px 0 120px;text-align:center;border-top:1px solid var(--line)}
+      .close h2{font-size:clamp(2rem,4vw,2.6rem);max-width:22ch;margin:0 auto 18px}
+      .close p{color:var(--soft);max-width:46ch;margin:0 auto 32px}
+
+      footer{padding:24px 0 36px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:0.74rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--mut);flex-wrap:wrap;gap:12px}
+      footer a{color:var(--mut)}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div class="brand"><i>resto</i>wner</div>
+        <a href="mailto:hello@vautcher.ch">Nous écrire</a>
+      </header>
+
+      <section class="hero">
+        <div class="eyebrow">Pour les restaurateurs indépendants</div>
+        <h1>Votre restaurant. Votre clientèle. <i>Votre marque.</i></h1>
+        <p class="lede">L’outil discret qui transforme vos clients de passage en habitués fidèles.</p>
+        <a class="cta" href="mailto:hello@vautcher.ch?subject=restowner">Discutons</a>
+      </section>
+
+      <section class="concept">
+        <h2>Une console pensée par et pour la salle.</h2>
+        <p>restowner vous redonne une ligne directe avec vos clients. Sans intermédiaire, sans algorithme. Vous publiez à votre rythme, sous votre nom, et vous voyez immédiatement qui répond. Le service en salle ne change pas d’un détail — ce qui change, c’est le lien qui vous attache à vos habitués.</p>
+      </section>
+
+      <div class="grid">
+        <div class="cell"><span class="n">i.</span><h3>Une clientèle qui vous appartient.</h3><p>Vous bâtissez votre propre audience. Personne ne s’interpose entre vous et vos clients.</p></div>
+        <div class="cell"><span class="n">ii.</span><h3>À votre marque, sans compromis.</h3><p>Votre univers, votre identité visuelle, votre ton. Pas la couleur d’une plateforme.</p></div>
+        <div class="cell"><span class="n">iii.</span><h3>Un canal qui se mérite.</h3><p>Vos messages arrivent parce que vos clients ont voulu les recevoir.</p></div>
+        <div class="cell"><span class="n">iv.</span><h3>Une fidélité qui se cultive.</h3><p>De petites attentions, régulières, qui font la différence.</p></div>
+        <div class="cell"><span class="n">v.</span><h3>Sans complications.</h3><p>Quelques minutes par semaine suffisent. Tout se gère depuis la même console.</p></div>
+        <div class="cell"><span class="n">vi.</span><h3>Pensé local.</h3><p>Construit en Suisse romande. Une équipe à portée d’un café.</p></div>
+      </div>
+
+      <section class="pull">
+        <blockquote>«&nbsp;Un restaurant, c’est d’abord une relation. restowner nous permet de la cultiver sans qu’elle nous quitte jamais.&nbsp;»</blockquote>
+        <cite>Restaurateurs partenaires</cite>
+      </section>
+
+      <section class="close">
+        <h2>Et si on en parlait autour d’un café&nbsp;?</h2>
+        <p>Nous rencontrons en ce moment quelques établissements pour démarrer l’aventure ensemble.</p>
+        <a class="cta" href="mailto:hello@vautcher.ch?subject=restowner">Prendre rendez-vous</a>
+      </section>
+
+      <footer>
+        <span>© restowner · Genève &amp; Vaud</span>
+        <a href="mailto:hello@vautcher.ch">hello@vautcher.ch</a>
+      </footer>
+    </div>
+      <script src="/_nav.js" defer></script>
+  </body>
+</html>

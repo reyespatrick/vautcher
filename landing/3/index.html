@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>restowner — votre clientèle, à votre marque</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Rufina:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root { --ink:#1c1117; --soft:#4d3b44; --mut:#877a82; --paper:#f7efe2; --accent:#9e053d; --line:#e7dfd2; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Inter', system-ui, sans-serif; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+      h1, h2 { font-family: 'Rufina', serif; }
+      a { text-decoration: none; color: var(--accent); }
+
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+      .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 36px; font-weight: 700; }
+      .top .brand i { color: var(--accent); font-style: normal; }
+      .top a { font-weight: 600; font-size: 0.9rem; color: var(--ink); }
+
+      .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 36px; align-items: end; margin-bottom: 36px; }
+      @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
+      .hero h1 { font-size: clamp(2.2rem, 4.6vw, 3.4rem); line-height: 1.06; letter-spacing: -0.005em; }
+      .hero p { color: var(--soft); margin-top: 22px; font-size: 1.05rem; max-width: 38ch; }
+      .hero .cta { display: inline-block; margin-top: 26px; background: var(--ink); color: var(--paper); padding: 13px 22px; border-radius: 99px; font-weight: 700; font-size: 0.95rem; }
+      .hero .cta:hover { background: var(--accent); color: #fff; }
+
+      /* Mosaic */
+      .mosaic { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 220px 220px; gap: 10px; }
+      .tile { position: relative; border-radius: 14px; overflow: hidden; color: #fff; padding: 14px 16px; display: flex; align-items: flex-end; font-family: 'Rufina', serif; font-size: 0.92rem; letter-spacing: 0.02em; }
+      .tile span { position: relative; z-index: 2; line-height: 1.2; }
+      .tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.55)); z-index: 1; }
+      .t1 { background: radial-gradient(at 30% 30%, #d97a2b 0, #6f032b 65%); grid-column: span 2; grid-row: span 2; font-size: 1.2rem; }
+      .t2 { background: linear-gradient(135deg, #2b4a55, #0d181d); }
+      .t3 { background: linear-gradient(160deg, #a5572f, #2b1410); }
+      .t4 { background: linear-gradient(135deg, #6e7d4c, #20281b); }
+      .t5 { background: linear-gradient(135deg, #c87b4a, #5b2a17); }
+
+      /* Section */
+      section { padding: 56px 0; border-top: 1px solid var(--line); }
+      section h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 18px; max-width: 24ch; }
+      section p.body { color: var(--soft); max-width: 58ch; font-size: 1.02rem; }
+
+      .pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px 36px; margin-top: 28px; }
+      .pillar h3 { font-family: 'Rufina', serif; font-size: 1.1rem; margin-bottom: 6px; }
+      .pillar p { color: var(--soft); font-size: 0.95rem; }
+      .pillar .n { display: inline-block; font-family: 'Rufina', serif; color: var(--accent); font-style: italic; margin-bottom: 6px; }
+
+      .quote { padding: 64px 0; border-top: 1px solid var(--line); }
+      .quote blockquote { font-family: 'Rufina', serif; font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.25; max-width: 30ch; }
+      .quote cite { display: block; margin-top: 18px; font-size: 0.85rem; color: var(--mut); font-style: normal; }
+
+      .close { padding: 64px 0 88px; border-top: 1px solid var(--line); }
+      .close h2 { font-size: 2rem; margin-bottom: 16px; max-width: 22ch; }
+      .close p { color: var(--soft); margin-bottom: 26px; max-width: 46ch; }
+      .close .cta { display: inline-block; background: var(--accent); color: #fff; padding: 14px 26px; border-radius: 99px; font-weight: 700; }
+      .close .cta:hover { background: #6f032b; }
+
+      footer { padding: 22px 0 40px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 0.84rem; color: var(--mut); flex-wrap: wrap; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="brand"><i>resto</i>wner</div>
+        <a href="mailto:hello@vautcher.ch">Nous écrire</a>
+      </div>
+
+      <header class="hero">
+        <div>
+          <h1>Votre restaurant. Votre clientèle. Votre marque.</h1>
+          <p>L’outil discret qui transforme vos clients de passage en habitués fidèles.</p>
+          <a class="cta" href="mailto:hello@vautcher.ch?subject=restowner">Discutons →</a>
+        </div>
+        <div class="mosaic">
+          <div class="tile t1"><span>Une cuisine.<br/>Une carte. Un instant.</span></div>
+          <div class="tile t2"><span>La salle</span></div>
+          <div class="tile t3"><span>Un détail</span></div>
+          <div class="tile t4"><span>Un retour</span></div>
+          <div class="tile t5"><span>Une habitude</span></div>
+        </div>
+      </header>
+
+      <section>
+        <h2>Une console pensée par et pour la salle.</h2>
+        <p class="body">restowner vous redonne une ligne directe avec vos clients. Sans intermédiaire, sans algorithme. Vous publiez ce que vous voulez, à votre rythme, sous votre nom, et vous voyez immédiatement qui répond. Le service en salle ne change pas d’un détail — ce qui change, c’est le lien qui vous attache à vos habitués.</p>
+      </section>
+
+      <section>
+        <h2>Ce que vous y gagnez.</h2>
+        <div class="pillars">
+          <div class="pillar"><span class="n">01.</span><h3>Une clientèle qui vous appartient.</h3><p>Vous bâtissez votre propre audience. Personne ne s’interpose.</p></div>
+          <div class="pillar"><span class="n">02.</span><h3>À votre marque, sans compromis.</h3><p>Votre univers, votre identité visuelle, votre ton.</p></div>
+          <div class="pillar"><span class="n">03.</span><h3>Un canal qui se mérite.</h3><p>Vos messages arrivent parce que vos clients ont voulu les recevoir.</p></div>
+          <div class="pillar"><span class="n">04.</span><h3>Une fidélité qui se cultive.</h3><p>De petites attentions, régulières, qui font la différence.</p></div>
+          <div class="pillar"><span class="n">05.</span><h3>Sans complications.</h3><p>Quelques minutes par semaine suffisent.</p></div>
+          <div class="pillar"><span class="n">06.</span><h3>Pensé local.</h3><p>Construit en Suisse romande, pour Genève et Vaud.</p></div>
+        </div>
+      </section>
+
+      <section class="quote">
+        <blockquote>«&nbsp;Un restaurant, c’est d’abord une relation. restowner nous permet de la cultiver sans qu’elle nous quitte jamais.&nbsp;»<cite>— Restaurateurs partenaires, Genève.</cite></blockquote>
+      </section>
+
+      <section class="close">
+        <h2>Et si on en parlait autour d’un café&nbsp;?</h2>
+        <p>Nous rencontrons en ce moment quelques établissements pour démarrer l’aventure ensemble. Si vous tenez à votre clientèle et à votre indépendance, écrivez-nous.</p>
+        <a class="cta" href="mailto:hello@vautcher.ch?subject=restowner">Prendre rendez-vous</a>
+      </section>
+
+      <footer>
+        <div>© restowner · Genève &amp; Vaud</div>
+        <a href="mailto:hello@vautcher.ch">hello@vautcher.ch</a>
+      </footer>
+    </div>
+      <script src="/_nav.js" defer></script>
+  </body>
+</html>

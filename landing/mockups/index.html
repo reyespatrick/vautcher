@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>restowner — choix de maquettes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Rufina:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root { --ink:#1c1117; --soft:#4d3b44; --mut:#877a82; --paper:#fbf6ed; --accent:#9e053d; --line:#e7dfd2; }
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
+      h1{font-family:'Rufina',Georgia,serif;font-size:clamp(2rem,5vw,3rem);line-height:1.06;margin-bottom:14px;letter-spacing:-0.005em}
+      .sub{color:var(--soft);max-width:54ch;margin-bottom:36px;font-size:1.02rem;line-height:1.55}
+      .wrap{max-width:1080px;margin:0 auto;padding:48px 28px 80px}
+      a{text-decoration:none;color:inherit}
+      .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}
+      .card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:transform 0.12s, box-shadow 0.12s}
+      .card:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(28,17,23,0.08)}
+      .preview{aspect-ratio:1.5/1;background:var(--paper);border-bottom:1px solid var(--line);position:relative;display:flex;align-items:center;justify-content:center;font-family:'Rufina',serif;font-size:1.8rem;letter-spacing:-0.01em;color:var(--ink);overflow:hidden}
+      .meta{padding:16px 18px 18px}
+      .num{font-family:'Rufina',serif;font-style:italic;color:var(--accent);font-size:0.88rem;letter-spacing:0.04em;margin-bottom:4px;display:block}
+      .name{font-family:'Rufina',serif;font-size:1.1rem;margin-bottom:6px}
+      .tagline{color:var(--soft);font-size:0.9rem;line-height:1.4}
+
+      /* Preview variants -- pure CSS thumbnails so we never have to ship images */
+      .p1{background:#fbf6ed;color:#9e053d}
+      .p2{background:#fff;color:#0a0a0a}
+      .p2::after{content:"→";position:absolute;right:18px;bottom:14px;color:#9e053d;font-size:1.3rem}
+      .p3{background:linear-gradient(135deg,#9e053d 0%,#2b4a55 60%,#6e7d4c 100%);color:#fff;font-size:1.4rem}
+      .p4{background:#f7f3ea;color:#111;font-family:'Playfair Display','Rufina',serif;border-top:6px solid #2a2520;border-bottom:1.5px solid #2a2520}
+      .p5{background:repeating-linear-gradient(0deg,#faf3e0 0 28px,#f4ecd2 28px 29px);color:#7a0a2e;font-style:italic;font-family:'Cormorant Garamond',serif;font-size:2rem}
+      .p6{background:#0a0808;color:#c9a464;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:2.2rem}
+      .p7{background:#fff;color:#9e053d;font-family:'Inter',sans-serif;font-weight:900;font-size:2.4rem;letter-spacing:-0.03em}
+      .p8{background:repeating-linear-gradient(45deg,#efe2c3 0 2px,#f3e9d0 2px 8px);color:#9e053d;font-family:'Caveat',cursive;font-size:2rem}
+      .p9{background:linear-gradient(90deg,#9e053d 0% 50%,#fbf6ed 50% 100%);color:#1c1117}
+      .p9::before{content:"";position:absolute;left:0;top:0;bottom:0;width:50%}
+      .p10{background:radial-gradient(ellipse at 50% 60%,#3f7c91 0,#1e4f63 60%,#fbf6ed 60%);color:#fff}
+
+      .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+      .brand{font-family:'Rufina',serif;font-size:1.2rem}
+      .brand i{font-style:normal;color:var(--accent)}
+      .head a.small{font-size:0.9rem;font-weight:600;color:var(--ink)}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="head">
+        <div class="brand"><i>resto</i>wner</div>
+        <a class="small" href="mailto:hello@vautcher.ch">hello@vautcher.ch</a>
+      </div>
+
+      <h1>10 directions pour la même histoire.</h1>
+      <p class="sub">La copie ne change pas — seul l’univers visuel évolue. Cliquez une maquette pour la voir en grand. Toutes utilisent le même contenu, sans capture d’écran du produit.</p>
+
+      <div class="grid">
+        <a class="card" href="/"><div class="preview p1">restowner</div><div class="meta"><span class="num">— 01 —</span><div class="name">Revue éditoriale</div><div class="tagline">Serif élégant, papier crème. Le défaut actuel.</div></div></a>
+        <a class="card" href="/2/"><div class="preview p2">Above the fold</div><div class="meta"><span class="num">— 02 —</span><div class="name">Conversion plein écran</div><div class="tagline">Un seul écran, un seul CTA. Pour campagnes.</div></div></a>
+        <a class="card" href="/3/"><div class="preview p3">Mosaïque</div><div class="meta"><span class="num">— 03 —</span><div class="name">Mosaïque d’instants</div><div class="tagline">Six fragments d’ambiance. Très visuel.</div></div></a>
+        <a class="card" href="/4/"><div class="preview p4">Gazette</div><div class="meta"><span class="num">— 04 —</span><div class="name">Gazette restaurateur</div><div class="tagline">Masthead, sommaire, rubriques. Sérieux.</div></div></a>
+        <a class="card" href="/5/"><div class="preview p5">Carte</div><div class="meta"><span class="num">— 05 —</span><div class="name">L’ardoise</div><div class="tagline">Comme une carte du restaurant. Tradition.</div></div></a>
+        <a class="card" href="/6/"><div class="preview p6">Or et nuit</div><div class="meta"><span class="num">— 06 —</span><div class="name">Noir &amp; or</div><div class="tagline">Sombre, doré, gastronomique. Très haut de gamme.</div></div></a>
+        <a class="card" href="/7/"><div class="preview p7">.</div><div class="meta"><span class="num">— 07 —</span><div class="name">Manifeste</div><div class="tagline">Une phrase par écran. Style Apple.</div></div></a>
+        <a class="card" href="/8/"><div class="preview p8">Postcards</div><div class="meta"><span class="num">— 08 —</span><div class="name">Cartes postales</div><div class="tagline">Tampons, écritures manuscrites. Chaleureux.</div></div></a>
+        <a class="card" href="/9/"><div class="preview p9">&nbsp;</div><div class="meta"><span class="num">— 09 —</span><div class="name">Diptyque</div><div class="tagline">Demi-écran image, demi-écran texte, en alternance.</div></div></a>
+        <a class="card" href="/10/"><div class="preview p10">Lac</div><div class="meta"><span class="num">— 10 —</span><div class="name">Tour du Léman</div><div class="tagline">Carte stylisée. Très local.</div></div></a>
+      </div>
+    </div>
+  </body>
+</html>

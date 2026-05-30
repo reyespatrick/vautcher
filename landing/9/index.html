@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>restowner — diptyque</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Rufina:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root { --ink:#1c1117; --soft:#4d3b44; --mut:#877a82; --paper:#fbf6ed; --accent:#9e053d; }
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
+      h1,h2,h3{font-family:'Rufina',Georgia,serif}
+      a{color:var(--accent);text-decoration:none}
+
+      .nav{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;max-width:1180px;margin:0 auto}
+      .nav .brand{font-family:'Rufina',serif;font-size:1.2rem}
+      .nav .brand i{color:var(--accent);font-style:normal}
+      .nav a{font-weight:600;font-size:0.9rem;color:var(--ink)}
+
+      .row{display:grid;grid-template-columns:1fr 1fr;min-height:520px;align-items:stretch}
+      @media(max-width:780px){.row{grid-template-columns:1fr;min-height:0}.row .visual{min-height:280px}}
+      .row .visual{position:relative;overflow:hidden}
+      .row .copy{padding:64px 56px;display:flex;flex-direction:column;justify-content:center}
+      @media(max-width:780px){.row .copy{padding:36px 28px}}
+      .row.flip .visual{order:2}
+      @media(max-width:780px){.row.flip .visual{order:0}}
+
+      .v1{background:linear-gradient(160deg,#9e053d 0%,#420320 55%,#1a0008 100%)}
+      .v2{background:radial-gradient(at 30% 70%,#7d4b18 0,#2a1a08 80%)}
+      .v3{background:linear-gradient(135deg,#244650,#0c1a1f)}
+      .v4{background:linear-gradient(160deg,#caa168,#3b2c10)}
+      .v5{background:linear-gradient(135deg,#384b2c,#101a0a)}
+      .v6{background:linear-gradient(135deg,#bf3636,#3a0606)}
+      .row .visual .tag{position:absolute;left:28px;bottom:24px;color:rgba(255,255,255,0.85);font-family:'Rufina',serif;font-style:italic;font-size:0.9rem;letter-spacing:0.06em}
+
+      .eyebrow{font-size:0.74rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+      h1{font-size:clamp(2rem,3.6vw,3rem);line-height:1.05;max-width:18ch;margin-bottom:14px}
+      .lede{color:var(--soft);font-size:1.05rem;max-width:38ch;margin-bottom:24px;line-height:1.55}
+      .cta{display:inline-block;background:var(--ink);color:var(--paper);padding:13px 24px;border-radius:99px;font-weight:600;font-size:0.95rem;width:max-content}
+      .cta:hover{background:var(--accent);color:#fff}
+
+      .copy h2{font-size:clamp(1.6rem,2.6vw,2rem);line-height:1.14;margin-bottom:12px;max-width:22ch}
+      .copy p{color:var(--soft);max-width:42ch;line-height:1.6;font-size:1rem}
+
+      .pill-grid{padding:48px 28px;max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px 36px;border-top:1px solid #ebe2d0;border-bottom:1px solid #ebe2d0}
+      .pill{padding:8px 0}
+      .pill .n{font-family:'Rufina',serif;font-style:italic;color:var(--accent);margin-bottom:6px;display:block}
+      .pill h3{font-size:1.05rem;margin-bottom:6px}
+      .pill p{color:var(--soft);font-size:0.94rem}
+
+      footer{padding:18px 28px;max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;font-size:0.84rem;color:var(--mut);flex-wrap:wrap;gap:12px}
+      footer a{color:var(--mut)}
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="brand"><i>resto</i>wner</div>
+      <a href="mailto:hello@vautcher.ch">Nous écrire</a>
+    </nav>
+
+    <section class="row">
+      <div class="visual v1"><span class="tag">Service du soir</span></div>
+      <div class="copy">
+        <div class="eyebrow">Pour les restaurateurs indépendants</div>
+        <h1>Votre restaurant. Votre clientèle. Votre marque.</h1>
+        <p class="lede">L’outil discret qui transforme vos clients de passage en habitués fidèles.</p>
+        <a class="cta" href="mailto:hello@vautcher.ch?subject=restowner">Discutons →</a>
+      </div>
+    </section>
+
+    <section class="row flip">
+      <div class="visual v2"><span class="tag">La salle</span></div>
+      <div class="copy">
+        <h2>Une console pensée par et pour la salle.</h2>
+        <p>restowner vous redonne une ligne directe avec vos clients. Sans intermédiaire, sans algorithme. Vous publiez à votre rythme, sous votre nom, et vous voyez immédiatement qui répond.</p>
+      </div>
+    </section>
+
+    <section class="row">
+      <div class="visual v3"><span class="tag">Un détail</span></div>
+      <div class="copy">
+        <h2>Une clientèle qui vous appartient.</h2>
+        <p>Vous bâtissez votre propre audience. Personne ne s’interpose entre vous et vos clients.</p>
+      </div>
+    </section>
+
+    <section class="row flip">
+      <div class="visual v4"><span class="tag">Une attention</span></div>
+      <div class="copy">
+        <h2>Une fidélité qui se cultive.</h2>
+        <p>De petites attentions, régulières, qui font la différence entre venir une fois et revenir longtemps.</p>
+      </div>
+    </section>
+
+    <div class="pill-grid">
+      <div class="pill"><span class="n">i.</span><h3>À votre marque.</h3><p>Votre univers, votre identité, votre ton.</p></div>
+      <div class="pill"><span class="n">ii.</span><h3>Un canal qui se mérite.</h3><p>Vos messages arrivent parce qu’on a voulu les recevoir.</p></div>
+      <div class="pill"><span class="n">iii.</span><h3>Sans complications.</h3><p>Quelques minutes par semaine suffisent.</p></div>
+      <div class="pill"><span class="n">iv.</span><h3>Pensé local.</h3><p>Construit en Suisse romande. À portée d’un café.</p></div>
+    </div>
+
+    <section class="row">
+      <div class="visual v6"><span class="tag">Et la suite&nbsp;?</span></div>
+      <div class="copy">
+        <h2>Et si on en parlait autour d’un café&nbsp;?</h2>
+        <p>Nous rencontrons en ce moment quelques établissements pour démarrer l’aventure ensemble.</p>
+        <a class="cta" href="mailto:hello@vautcher.ch?subject=restowner">Prendre rendez-vous</a>
+      </div>
+    </section>
+
+    <footer>
+      <div>© restowner · Genève &amp; Vaud</div>
+      <a href="mailto:hello@vautcher.ch">hello@vautcher.ch</a>
+    </footer>
+      <script src="/_nav.js" defer></script>
+  </body>
+</html>
