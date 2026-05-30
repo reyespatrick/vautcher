@@ -14,6 +14,37 @@
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 
 const DEFAULT_SCROLL_SELECTOR = '.viewport'
+
+// Debug toggle. Enable with one of:
+//   - localStorage.setItem('ptr_debug', '1')
+//   - URL ?ptr_debug=1 (also persisted to localStorage)
+// When on, every gesture event is console.log'd AND the visible
+// PullToRefreshDebug widget rendered in App.vue reads its state from
+// a window-level publishing channel below.
+let DEBUG = false
+try {
+  const url = new URL(window.location.href)
+  if (url.searchParams.get('ptr_debug') === '1') {
+    localStorage.setItem('ptr_debug', '1')
+  }
+  DEBUG = localStorage.getItem('ptr_debug') === '1'
+} catch { /* no localStorage in some embedded contexts */ }
+
+function dbg(label, payload) {
+  if (!DEBUG) return
+  // Lightweight ring buffer so the on-screen widget can show the
+  // last few events without pulling them from console.
+  const w = window
+  if (!w.__ptrLog) w.__ptrLog = []
+  const line = { t: new Date().toISOString().slice(11, 23), label, ...payload }
+  w.__ptrLog.push(line)
+  if (w.__ptrLog.length > 12) w.__ptrLog.shift()
+  // Tell anyone listening (PullToRefreshDebug) that the log changed.
+  w.dispatchEvent(new CustomEvent('ptr-log'))
+  console.log('[ptr]', label, payload)
+}
+
+export const PTR_DEBUG_ENABLED = DEBUG
 const THRESHOLD = 70        // px pulled to trigger refresh
 const MAX_PULL = 110        // hard cap, gives nice rubber-band feel
 const RESISTANCE = 1.8      // divide finger distance by this for the visual pull
@@ -45,12 +76,19 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
   let watchdog = null
 
   function onTouchStart(e) {
-    if (refreshing.value || !target) return
-    if (target.scrollTop > 0) return
+    if (refreshing.value || !target) {
+      dbg('touchstart-skip', { reason: refreshing.value ? 'refreshing' : 'no-target' })
+      return
+    }
+    if (target.scrollTop > 0) {
+      dbg('touchstart-skip', { reason: 'scrolled', scrollTop: target.scrollTop })
+      return
+    }
     if (!e.touches || !e.touches.length) return
     startY = e.touches[0].clientY
     lastMoveAt = Date.now()
     pulling.value = true
+    dbg('touchstart', { y: startY })
   }
 
   function onTouchMove(e) {
@@ -74,11 +112,16 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     // Stop the browser from also scrolling once we are visibly pulling,
     // otherwise the page rubber-bands and our overlay double-tracks.
     if (pullDistance.value > 6 && e.cancelable) e.preventDefault()
+    dbg('touchmove', { dy, pullDistance: Math.round(pullDistance.value) })
   }
 
-  async function onTouchEnd() {
-    if (!pulling.value) return
+  async function onTouchEnd(e) {
+    if (!pulling.value) {
+      dbg('touchend-skip', { type: e && e.type })
+      return
+    }
     pulling.value = false
+    dbg('touchend', { type: e && e.type, pullDistance: Math.round(pullDistance.value), willFire: pullDistance.value >= THRESHOLD })
     if (pullDistance.value >= THRESHOLD && !refreshing.value) {
       refreshing.value = true
       // Hold the indicator at the trigger position while we refresh
@@ -124,6 +167,7 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     watchdog = setInterval(() => {
       if (!pulling.value || refreshing.value) return
       if (Date.now() - lastMoveAt > 1200) {
+        dbg('watchdog-reset', { idleMs: Date.now() - lastMoveAt, pullDistance: Math.round(pullDistance.value) })
         pulling.value = false
         pullDistance.value = 0
       }
