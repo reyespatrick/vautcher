@@ -28,14 +28,14 @@
 
       /* Mosaic */
       .mosaic { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 220px 220px; gap: 10px; }
-      .tile { position: relative; border-radius: 14px; overflow: hidden; color: #fff; padding: 14px 16px; display: flex; align-items: flex-end; font-family: 'Rufina', serif; font-size: 0.92rem; letter-spacing: 0.02em; }
+      .tile { position: relative; border-radius: 14px; overflow: hidden; color: #fff; padding: 16px 18px; display: flex; align-items: flex-end; font-family: 'Rufina', serif; font-size: 0.92rem; letter-spacing: 0.02em; background-size: cover; background-position: center; }
       .tile span { position: relative; z-index: 2; line-height: 1.2; }
-      .tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.55)); z-index: 1; }
-      .t1 { background: radial-gradient(at 30% 30%, #d97a2b 0, #6f032b 65%); grid-column: span 2; grid-row: span 2; font-size: 1.2rem; }
-      .t2 { background: linear-gradient(135deg, #2b4a55, #0d181d); }
-      .t3 { background: linear-gradient(160deg, #a5572f, #2b1410); }
-      .t4 { background: linear-gradient(135deg, #6e7d4c, #20281b); }
-      .t5 { background: linear-gradient(135deg, #c87b4a, #5b2a17); }
+      .tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(28,17,23,0.78) 100%); z-index: 1; }
+      .t1 { background-image: linear-gradient(180deg, rgba(158,5,61,0.05), rgba(0,0,0,0.35)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1400&q=75&auto=format&fit=crop'); grid-column: span 2; grid-row: span 2; font-size: 1.25rem; }
+      .t2 { background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=700&q=75&auto=format&fit=crop'); }
+      .t3 { background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=700&q=75&auto=format&fit=crop'); }
+      .t4 { background-image: url('https://images.unsplash.com/photo-1559339352-11d035aa65de?w=700&q=75&auto=format&fit=crop'); }
+      .t5 { background-image: url('https://images.unsplash.com/photo-1551218808-94e220e084d2?w=700&q=75&auto=format&fit=crop'); }
 
       /* Section */
       section { padding: 56px 0; border-top: 1px solid var(--line); }

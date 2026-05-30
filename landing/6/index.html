@@ -20,7 +20,10 @@
       .top .brand i{font-style:italic;color:var(--gold)}
       .top a{font-size:0.82rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--soft)}
 
-      .hero{padding:120px 0 96px;text-align:center;border-bottom:1px solid var(--line)}
+      .hero{padding:120px 0 96px;text-align:center;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+      .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,8,8,0.62),rgba(10,8,8,0.92)),url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1800&q=78&auto=format&fit=crop') center/cover;animation:slow-zoom 22s ease-in-out infinite alternate;z-index:0}
+      .hero>*{position:relative;z-index:1}
+      @keyframes slow-zoom{from{transform:scale(1)}to{transform:scale(1.08)}}
       .eyebrow{font-size:0.72rem;letter-spacing:0.32em;text-transform:uppercase;color:var(--gold-dim);margin-bottom:32px}
       .hero h1{font-size:clamp(2.4rem,6vw,4.2rem);line-height:1.04;letter-spacing:-0.005em;max-width:18ch;margin:0 auto 26px}
       .hero h1 i{font-style:italic;color:var(--gold)}

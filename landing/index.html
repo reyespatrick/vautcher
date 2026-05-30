@@ -75,6 +75,21 @@
       .hero-foot {
         margin-top: 18px; font-size: 0.85rem; color: var(--mut);
       }
+      /* Hero photo: full-width strip just below the lede. Gradient
+         overlay ties it to the brand burgundy + cream background. */
+      .hero-photo {
+        margin: 48px 0 0;
+        height: clamp(220px, 38vw, 380px);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(158,5,61,0.18), rgba(28,17,23,0.45)),
+                    url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&q=78&auto=format&fit=crop') center/cover;
+        position: relative; overflow: hidden;
+      }
+      .hero-photo .credit {
+        position: absolute; bottom: 14px; right: 16px;
+        font-family: 'Rufina', serif; font-style: italic;
+        color: rgba(255,255,255,0.78); font-size: 0.8rem; letter-spacing: 0.05em;
+      }
 
       /* ---- Concept ---- */
       .concept { padding: 32px 0 64px; border-top: 1px solid var(--line); }
@@ -144,6 +159,7 @@
           Discutons de votre établissement →
         </a>
         <div class="hero-foot">Conçu en Suisse romande · Genève &amp; Vaud</div>
+        <div class="hero-photo" aria-hidden="true"><span class="credit">— Une salle, un instant.</span></div>
       </section>
 
       <!-- The concept (vague on purpose) -->
