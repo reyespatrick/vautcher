@@ -124,6 +124,12 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
    PullToRefreshIndicator that floats above the page-head gap during
    a pull gesture) anchor against the page wrapper. */
 .page { position: relative; padding: 22px 16px 30px; }
+
+/* Nuclear kill-switch (?ptr_off=1) -- physically remove any
+   pull-to-refresh indicator from layout, regardless of what Vue's
+   v-if computes. Last line of defence for the at-rest spinner bug. */
+html[data-ptr-off="1"] .ptr,
+html[data-ptr-off="1"] .ptr-spin { display: none !important; }
 .page-head { margin-bottom: 18px; }
 .page-head h1 { font-size: 1.5rem; color: var(--accent-dark); }
 .page-head p { color: var(--mut); font-size: 0.85rem; margin-top: 3px; }

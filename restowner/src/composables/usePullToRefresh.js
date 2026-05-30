@@ -56,6 +56,17 @@ function dbg(label, payload) {
 export const PTR_DEBUG_ENABLED = DEBUG
 // Mirror the flag state for the on-screen debug widget.
 export const PTR_FLAGS = { DEBUG, DISABLED }
+
+// Nuclear CSS-level hide. When the kill-switch is on we slap a
+// data attribute on <body> and a global rule (in main.css) physically
+// removes any .ptr element from the rendered output, regardless of
+// what Vue's v-if happens to evaluate to. This is the last line of
+// defence against the spinner-at-rest bug.
+try {
+  if (DISABLED && typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-ptr-off', '1')
+  }
+} catch { /* no-op */ }
 const THRESHOLD = 70        // px pulled to trigger refresh
 const MAX_PULL = 110        // hard cap, gives nice rubber-band feel
 const RESISTANCE = 1.8      // divide finger distance by this for the visual pull
