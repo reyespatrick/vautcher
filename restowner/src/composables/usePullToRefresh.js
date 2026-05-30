@@ -24,13 +24,17 @@ const MIN_MOVE = 18         // px of finger travel before we start showing the i
 export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELECTOR) {
   const pullDistance = ref(0)
   const refreshing = ref(false)
+  // Hard invariant: indicator may render ONLY while the finger is down
+  // (pulling) or a refresh is in flight (refreshing). Both default to
+  // false on construction, so first paint can never surface the
+  // spinner -- the v-if in the indicator binds on these refs.
+  const pulling = ref(false)
   // Gates the indicator off during the synchronous first paint -- iOS
   // sometimes fires a touchmove during route transition before our
   // composable has even seen its onMounted, and the indicator would
   // briefly render in the page-head gap.
   const ready = ref(false)
   let startY = 0
-  let pulling = false
   let target = null
 
   function onTouchStart(e) {
@@ -38,16 +42,16 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     if (target.scrollTop > 0) return
     if (!e.touches || !e.touches.length) return
     startY = e.touches[0].clientY
-    pulling = true
+    pulling.value = true
   }
 
   function onTouchMove(e) {
-    if (!pulling) return
+    if (!pulling.value) return
     const dy = e.touches[0].clientY - startY
     if (dy <= 0) {
       // User pulled back up -- cancel without firing.
       pullDistance.value = 0
-      pulling = false
+      pulling.value = false
       return
     }
     if (dy < MIN_MOVE) {
@@ -64,8 +68,8 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
   }
 
   async function onTouchEnd() {
-    if (!pulling) return
-    pulling = false
+    if (!pulling.value) return
+    pulling.value = false
     if (pullDistance.value >= THRESHOLD && !refreshing.value) {
       refreshing.value = true
       // Hold the indicator at the trigger position while we refresh
@@ -81,6 +85,17 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     }
   }
 
+  // Backstop -- if the tab is hidden while a touch is mid-flight (iOS
+  // can suspend the gesture), reset so the indicator never stays
+  // visible behind the scenes.
+  function onVisibilityChange() {
+    if (document.hidden) {
+      pulling.value = false
+      refreshing.value = false
+      pullDistance.value = 0
+    }
+  }
+
   onMounted(() => {
     target = typeof scrollSelector === 'string'
       ? document.querySelector(scrollSelector)
@@ -90,6 +105,7 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     target.addEventListener('touchmove', onTouchMove, { passive: false })
     target.addEventListener('touchend', onTouchEnd, { passive: true })
     target.addEventListener('touchcancel', onTouchEnd, { passive: true })
+    document.addEventListener('visibilitychange', onVisibilityChange)
     // Wait one tick before allowing the indicator to surface, so any
     // touch event Vue dispatches during mount cannot win the race.
     requestAnimationFrame(() => { ready.value = true })
@@ -101,7 +117,8 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     target.removeEventListener('touchmove', onTouchMove)
     target.removeEventListener('touchend', onTouchEnd)
     target.removeEventListener('touchcancel', onTouchEnd)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
   })
 
-  return { pullDistance, refreshing, ready, threshold: THRESHOLD }
+  return { pullDistance, refreshing, ready, pulling, threshold: THRESHOLD }
 }

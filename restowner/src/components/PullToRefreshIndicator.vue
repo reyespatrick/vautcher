@@ -13,16 +13,20 @@
 defineProps({
   pullDistance: { type: Number, default: 0 },
   refreshing: { type: Boolean, default: false },
+  pulling: { type: Boolean, default: false },
   ready: { type: Boolean, default: false },
   threshold: { type: Number, default: 70 }
 })
 </script>
 
 <template>
-  <!-- ready gate: never paint on the very first frame, so even a stray
-       touchmove during route transition can't light the spinner up. -->
+  <!-- HARD invariant: indicator may render ONLY while a touch is
+       actively down (pulling) or a refresh is in flight (refreshing).
+       Both default to false on every composable mount, so the spinner
+       physically cannot surface at rest -- no matter what value
+       pullDistance is computed at on the first paint. -->
   <div
-    v-if="ready && (pullDistance > 0 || refreshing)"
+    v-if="ready && (pulling || refreshing)"
     class="ptr"
     :style="{
       transform: 'translateY(' + (pullDistance - 56) + 'px)',
