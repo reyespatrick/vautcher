@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
   if (!id) return json({ error: 'restaurant_id required' }, 400)
 
   const { data: rest } = await admin
-    .from('vautcher_restaurants').select('id, name, config, deploy_status').eq('id', id).maybeSingle()
+    .from('vautcher_restaurants').select('id, name, slug, config, deploy_status').eq('id', id).maybeSingle()
   if (!rest) return json({ error: 'restaurant not found' }, 404)
 
   const email = String((rest.config as any)?.scaffolded_by ?? '').toLowerCase()
@@ -61,7 +61,12 @@ Deno.serve(async (req) => {
       : {
           title: 'Site en ligne',
           body: `${name} est en ligne.`,
-          url: '/admin',
+          // Clicking the success push opens the freshly generated diner
+          // app (full origin), not the restowner admin. The SW
+          // notificationclick handler detects the cross-origin URL and
+          // routes it to clients.openWindow() instead of trying to
+          // navigate an existing restowner tab cross-origin.
+          url: rest.slug ? `https://${rest.slug}.pages.dev/` : '/admin',
           icon: '/icon-192.png',
           tag: 'scaffold-' + id
         }

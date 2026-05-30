@@ -27,10 +27,17 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const url = (event.notification.data && event.notification.data.url) || '/admin'
+  // Absolute URL? (e.g. the "site en ligne" push opens the freshly
+  // scaffolded diner at https://<slug>.pages.dev). WindowClient.navigate()
+  // refuses cross-origin navigations, so don't try to reuse an existing
+  // restowner tab — just open a new window straight to the diner.
+  const isCrossOrigin = /^https?:\/\//i.test(url) && !url.startsWith(self.location.origin)
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-      for (const c of list) { if ('focus' in c) { c.navigate(url); return c.focus() } }
-      return self.clients.openWindow(url)
-    })
+    isCrossOrigin
+      ? self.clients.openWindow(url)
+      : self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+          for (const c of list) { if ('focus' in c) { c.navigate(url); return c.focus() } }
+          return self.clients.openWindow(url)
+        })
   )
 })
