@@ -34,24 +34,65 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         // Aggressive cache busting so a stale SW can never serve last
-        // week's index.html when a new bundle is deployed:
-        //  • cleanupOutdatedCaches: delete every prior precache the
-        //    moment the new SW activates.
-        //  • navigationPreload: kick the network in parallel with the SW
-        //    boot so HTML navigations always race against fresh content.
-        //  • NetworkFirst for HTML: try the network for index.html with
-        //    a 3-second timeout; only fall back to the precached copy
-        //    when offline. JS/CSS bundles are hashed and stay in
-        //    precache (instant).
+        // week's index.html when a new bundle is deployed.
         cleanupOutdatedCaches: true,
         navigationPreload: true,
+        // Tell Workbox to treat /assets/* (hashed JS/CSS) as immutable
+        // and cache everything else aggressively.
         runtimeCaching: [
+          // HTML navigation — race the network for 1.5s, then serve the
+          // last cached copy. After one visit the page paints instantly
+          // even on flaky/offline networks.
           {
             urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'pages',
-              networkTimeoutSeconds: 3
+              cacheName: 'html-pages',
+              networkTimeoutSeconds: 1.5,
+              expiration: { maxEntries: 32, maxAgeSeconds: 60 * 60 * 24 * 30 }
+            }
+          },
+          // Images — CacheFirst. First visit fills the cache; every
+          // subsequent visit (including offline) paints them
+          // instantly. Covers Supabase Storage, scaffolded event
+          // images and any remote <img> source.
+          {
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images',
+              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          // Supabase REST + RPC GETs (events, restaurants, vouchers,
+          // cards…) — StaleWhileRevalidate: home, events list and
+          // loyalty card show their last-seen data instantly while a
+          // background refresh fetches the latest. Reservations /
+          // event participation still need a live network — that's
+          // fine, the user message said offline DISPLAY only.
+          {
+            urlPattern: ({ url, request }) =>
+              request.method === 'GET' &&
+              url.hostname.endsWith('.supabase.co') &&
+              (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/storage/')),
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'supabase-reads',
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 14 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          // Google Fonts — CacheFirst, near-permanent.
+          {
+            urlPattern: ({ url }) =>
+              url.hostname === 'fonts.googleapis.com' ||
+              url.hostname === 'fonts.gstatic.com',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
             }
           }
         ]
