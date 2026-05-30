@@ -81,8 +81,18 @@ async function getLocation() {
 
 // Geocode the typed address via Nominatim (free, no API key). 1 req/sec
 // limit per their policy; we wrap one call per click so we never burst.
-// User-Agent must identify us — Nominatim asks every consumer to set
-// one so they can reach out if a script misbehaves.
+//
+// Restricted by product decision to Geneva + Vaud:
+//   - countrycodes=ch keeps the result in Switzerland,
+//   - viewbox + bounded=1 hard-clips Nominatim's candidate list to the
+//     bounding box that covers cantons GE and VD,
+//   - addressdetails=1 lets us re-verify the canton (state) of the
+//     returned match before accepting it -- catches the edge case
+//     where a fuzzy match still slipped a Fribourg or Valais address
+//     through the bbox.
+const GE_VD_VIEWBOX = '5.95,46.99,7.25,46.12'  // lng,lat,lng,lat — covers GE+VD
+const ALLOWED_CANTONS = new Set(['genève', 'geneve', 'geneva', 'vaud'])
+
 async function geocodeAddress() {
   const q = addressInput.value.trim()
   if (!q || addressBusy.value) return
@@ -90,17 +100,29 @@ async function geocodeAddress() {
   geoError.value = ''
   try {
     const url = 'https://nominatim.openstreetmap.org/search'
-      + '?format=json&limit=1&addressdetails=0&q=' + encodeURIComponent(q)
+      + '?format=json&limit=1&addressdetails=1'
+      + '&countrycodes=ch'
+      + '&viewbox=' + encodeURIComponent(GE_VD_VIEWBOX)
+      + '&bounded=1'
+      + '&q=' + encodeURIComponent(q)
     const res = await fetch(url, {
       headers: { 'Accept-Language': 'fr,en;q=0.7' }
     })
     if (!res.ok) throw new Error('Nominatim ' + res.status)
     const arr = await res.json()
     if (!Array.isArray(arr) || !arr.length) {
-      geoError.value = t('discover.addressNotFound')
+      geoError.value = t('discover.addressNotFoundGeVd')
       return
     }
     const hit = arr[0]
+    const canton = String(hit.address?.state || '').toLowerCase()
+    // Belt + braces: if the bbox somehow leaked a non-GE/VD canton
+    // through, refuse it rather than letting the queue scaffold a
+    // restaurant outside the target sales territory.
+    if (canton && !ALLOWED_CANTONS.has(canton)) {
+      geoError.value = t('discover.addressOutOfArea')
+      return
+    }
     lat.value = parseFloat(hit.lat)
     lng.value = parseFloat(hit.lon)
     accuracy.value = null
