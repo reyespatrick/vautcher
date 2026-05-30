@@ -22,8 +22,13 @@ const loading = ref(true)
 const loadError = ref(false)
 let pollHandle = null
 
-async function load() {
-  loading.value = true
+// silent=true skips the loading.value toggle so a background poll
+// doesn't tear the list down -- which is what made the page scroll
+// back to the top every 10 seconds. Vue's :key="r.id" v-for then
+// patches the existing rows in place, preserving scroll position and
+// any open native menus.
+async function load(silent = false) {
+  if (!silent) loading.value = true
   loadError.value = false
   try {
     const { data, error } = await supabase
@@ -33,16 +38,16 @@ async function load() {
     if (error) throw error
     rows.value = data || []
   } catch {
-    loadError.value = true
+    if (!silent) loadError.value = true
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
 const active = computed(() =>
   rows.value.some((r) => r.status === 'pending' || r.status === 'scaffolding')
 )
-function startPoll() { if (!pollHandle) pollHandle = setInterval(load, 10000) }
+function startPoll() { if (!pollHandle) pollHandle = setInterval(() => load(true), 10000) }
 function stopPoll() { if (pollHandle) { clearInterval(pollHandle); pollHandle = null } }
 
 onMounted(async () => {
