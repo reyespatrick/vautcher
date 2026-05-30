@@ -7,8 +7,10 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDialog } from '../composables/useDialog'
+import { usePullToRefresh } from '../composables/usePullToRefresh'
 import { supabase } from '../lib/supabase'
 import BackBar from '../components/BackBar.vue'
+import PullToRefreshIndicator from '../components/PullToRefreshIndicator.vue'
 import {
   adminRestaurants, rescaffoldTenant, deleteTenant, setMenuHidden,
   setOwnerFlags, createOwnerCode, regenerateOwnerCode, provisionOwner
@@ -88,6 +90,7 @@ async function load() {
   }
 }
 load()
+const ptr = usePullToRefresh(load)
 
 // Silent poll while the site is still scaffolding/deploying.
 let pollHandle = null
@@ -243,6 +246,7 @@ async function submitOwner() {
 
 <template>
   <div class="page">
+    <PullToRefreshIndicator v-bind="ptr" />
     <BackBar :to="{ name: 'admin' }" :label="r ? r.name : t('admin.tabRestaurants')" />
 
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>

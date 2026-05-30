@@ -4,7 +4,9 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
 import { useDialog } from '../composables/useDialog'
+import { usePullToRefresh } from '../composables/usePullToRefresh'
 import { listVouchers, voucherStats, updateVoucher, archiveVoucher } from '../lib/vouchers'
+import PullToRefreshIndicator from '../components/PullToRefreshIndicator.vue'
 
 const { activeRestaurantId } = useScope()
 const { confirm } = useDialog()
@@ -79,10 +81,13 @@ async function move(index, dir) {
   ])
   load()
 }
+
+const ptr = usePullToRefresh(load)
 </script>
 
 <template>
   <div class="page">
+    <PullToRefreshIndicator v-bind="ptr" />
     <div class="page-head">
       <h1>{{ t('vouchers.title') }}</h1>
       <p>{{ t('vouchers.subtitle') }}</p>

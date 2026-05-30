@@ -3,9 +3,11 @@ import { ref, watch, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useScope } from '../composables/useScope'
+import { usePullToRefresh } from '../composables/usePullToRefresh'
 import { listEvents, listEventStats } from '../lib/events'
 import { today } from '../lib/format'
 import EventRow from '../components/EventRow.vue'
+import PullToRefreshIndicator from '../components/PullToRefreshIndicator.vue'
 
 const { activeRestaurantId, activeRestaurant } = useScope()
 const { t } = useI18n()
@@ -41,6 +43,9 @@ async function load() {
 // Re-fetches when the scope changes (header dropdown).
 watch(activeRestaurantId, load, { immediate: true })
 
+// Pull-down on the viewport reloads the list.
+const ptr = usePullToRefresh(load)
+
 // Upcoming = today or later. Past events live in History.
 // Latest event first.
 const upcoming = computed(() =>
@@ -53,6 +58,7 @@ const upcoming = computed(() =>
 
 <template>
   <div class="page">
+    <PullToRefreshIndicator v-bind="ptr" />
     <div class="page-head">
       <h1>{{ t('dashboard.title') }}</h1>
       <p>{{ activeRestaurant ? activeRestaurant.name : '' }}</p>

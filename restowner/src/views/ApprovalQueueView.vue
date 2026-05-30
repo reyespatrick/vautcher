@@ -3,7 +3,9 @@ import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import { useScope } from '../composables/useScope'
+import { usePullToRefresh } from '../composables/usePullToRefresh'
 import { listPendingEvents, approveEvent, refuseEvent } from '../lib/events'
+import PullToRefreshIndicator from '../components/PullToRefreshIndicator.vue'
 
 const { isModerator } = useAuth()
 const { scopeRestaurantId } = useScope()
@@ -41,6 +43,7 @@ async function load() {
 watch(isModerator, (v) => { if (v) load() }, { immediate: true })
 // Re-fetch when the header dropdown narrows / widens the scope.
 watch(scopeRestaurantId, () => { if (isModerator.value) load() })
+const ptr = usePullToRefresh(load)
 
 function fmtDate(d) {
   if (!d) return ''
@@ -84,6 +87,7 @@ async function confirmRefuse() {
 
 <template>
   <div class="page">
+    <PullToRefreshIndicator v-bind="ptr" />
     <div class="page-head">
       <h1>{{ t('approve.title') }}</h1>
     </div>
