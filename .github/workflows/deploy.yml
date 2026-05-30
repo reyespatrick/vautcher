@@ -152,6 +152,7 @@ jobs:
             restowner/supabase/admin-set-template.sql \
             restowner/supabase/menu-hidden-schema.sql \
             restowner/supabase/scaffold-queue-schema.sql \
+            restowner/supabase/rescaffold-on-source-url-change.sql \
             app/supabase/pass-schema.sql \
             restowner/supabase/api-grants.sql; do
             echo "→ applying $f"
