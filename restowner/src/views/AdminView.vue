@@ -21,6 +21,21 @@ const loading = ref(true)
 const loadError = ref(false)
 const busy = ref(false)
 
+// Name filter for the restaurant list — case- and accent-insensitive
+// substring match. As the cross-restaurant overview grows, this is the
+// only way to find a specific tenant quickly on mobile.
+const nameFilter = ref('')
+function stripDiacritics(s) {
+  return String(s || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+}
+const filteredRestaurants = computed(() => {
+  const q = stripDiacritics(nameFilter.value.trim())
+  if (!q) return restaurants.value
+  return restaurants.value.filter((r) =>
+    stripDiacritics(r.name).includes(q) || stripDiacritics(r.slug).includes(q)
+  )
+})
+
 // Inline forms
 const showNewRestaurant = ref(false)
 const showManual = ref(false)
@@ -436,13 +451,36 @@ function closeNewDialog() {
 
       <p v-if="!restaurants.length" class="empty">{{ t('admin.empty') }}</p>
 
-      <div v-else class="r-list">
-        <RouterLink
-          v-for="r in restaurants"
-          :key="r.id"
-          :to="{ name: 'admin-restaurant', params: { id: r.id } }"
-          class="card resto-row"
-        >
+      <template v-else>
+        <div class="r-filter">
+          <input
+            v-model="nameFilter"
+            type="search"
+            inputmode="search"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+            :placeholder="t('admin.filterPlaceholder')"
+            class="r-filter-input"
+          />
+          <button
+            v-if="nameFilter"
+            type="button"
+            class="r-filter-clear"
+            :title="t('admin.filterClear')"
+            @click="nameFilter = ''"
+          >×</button>
+        </div>
+
+        <p v-if="!filteredRestaurants.length" class="empty">{{ t('admin.filterEmpty') }}</p>
+
+        <div v-else class="r-list">
+          <RouterLink
+            v-for="r in filteredRestaurants"
+            :key="r.id"
+            :to="{ name: 'admin-restaurant', params: { id: r.id } }"
+            class="card resto-row"
+          >
           <div class="resto-row-main">
             <strong class="resto-row-name">{{ r.name }}</strong>
             <span class="resto-row-slug">{{ r.slug }}</span>
@@ -454,8 +492,9 @@ function closeNewDialog() {
           >{{ t('admin.deployState.' + r.deploy_status) }}</span>
           <span class="resto-row-owners">{{ r.owners.length }}</span>
           <svg class="resto-row-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-        </RouterLink>
-      </div>
+          </RouterLink>
+        </div>
+      </template>
     </template>
   </div>
 </template>
@@ -464,6 +503,41 @@ function closeNewDialog() {
 .retry { display: block; margin: 14px auto 0; }
 .create-btn { margin-bottom: 18px; }
 .plus { font-size: 1.15rem; font-weight: 700; line-height: 0; }
+
+/* Name filter — sticks just above the list. */
+.r-filter {
+  position: relative;
+  margin-bottom: 12px;
+}
+.r-filter-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 11px 38px 11px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.r-filter-input:focus { outline: none; border-color: var(--accent); }
+.r-filter-input::-webkit-search-cancel-button { display: none; }
+.r-filter-clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 99px;
+  background: var(--line);
+  color: var(--ink);
+  font-size: 1.1rem;
+  line-height: 28px;
+  cursor: pointer;
+  padding: 0;
+}
 
 /* Compact restaurant row — taps through to the detail page. */
 .resto-row {

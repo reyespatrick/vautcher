@@ -279,6 +279,9 @@ const fr = {
   admin: {
     title: 'Administration',
     subtitle: 'Restaurants, propriétaires et clients de la plateforme.',
+    filterPlaceholder: 'Filtrer par nom ou identifiant…',
+    filterClear: 'Effacer le filtre',
+    filterEmpty: 'Aucun restaurant ne correspond.',
     scaffoldTitle: 'Nouveau restaurant à partir d’une URL',
     scaffoldHint: 'Collez l’adresse du site web du restaurant. On extrait le contenu, on crée la fiche et on déploie l’app cliente sur <slug>.pages.dev.',
     scaffoldPlaceholder: 'unrestaurant.ch',
@@ -562,6 +565,9 @@ const de = {
   admin: {
     title: 'Verwaltung',
     subtitle: 'Restaurants, Inhaber und Kunden der Plattform.',
+    filterPlaceholder: 'Nach Name oder Kennung filtern…',
+    filterClear: 'Filter löschen',
+    filterEmpty: 'Kein Restaurant entspricht.',
     tabRestaurants: 'Restaurants', tabClients: 'Kunden',
     newRestaurant: 'Neues Restaurant',
     restaurantName: 'Name des Restaurants', restaurantSlug: 'Kennung (Slug)',
@@ -733,6 +739,9 @@ const it = {
   admin: {
     title: 'Amministrazione',
     subtitle: 'Ristoranti, proprietari e clienti della piattaforma.',
+    filterPlaceholder: 'Filtra per nome o identificativo…',
+    filterClear: 'Cancella filtro',
+    filterEmpty: 'Nessun ristorante corrisponde.',
     tabRestaurants: 'Ristoranti', tabClients: 'Clienti',
     newRestaurant: 'Nuovo ristorante',
     restaurantName: 'Nome del ristorante', restaurantSlug: 'Identificativo (slug)',
