@@ -97,15 +97,53 @@ function slugify(s: string): string {
     .slice(0, 48) || 'restaurant'
 }
 
+// Probes <slug>.pages.dev to detect collisions with OTHER Cloudflare
+// customers. CF Pages subdomains are globally unique -- if the name is
+// already taken by someone else's account, wrangler will silently
+// deploy our tenant to <slug>-NNN.pages.dev instead, and the rest of
+// the system (UI link, QR code, delete cleanup) ends up tracking the
+// wrong URL. Catching it at slug-picking time keeps the slug == real
+// subdomain invariant.
+//
+// Signal: a missing/unowned project returns HTTP 404. A real project
+// (ours or someone else's) returns 200/3xx/5xx for the root path.
+// DNS failure is treated as available (best-effort; if DNS is broken
+// wrangler will succeed too).
+async function pagesDevTaken(slug: string): Promise<boolean> {
+  try {
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), 4500)
+    const res = await fetch(`https://${slug}.pages.dev/`, {
+      method: 'GET',
+      headers: { 'User-Agent': UA, 'Range': 'bytes=0-512' },
+      redirect: 'manual',
+      signal: ctl.signal
+    })
+    clearTimeout(timer)
+    if (res.status === 404) return false       // not registered
+    if (res.status >= 200) return true         // 200/206/301/302/5xx etc.
+    return false
+  } catch {
+    return false                               // DNS/abort: treat as free
+  }
+}
+
 async function uniqueSlug(base: string): Promise<string> {
   const { data: existing } = await admin.from('vautcher_restaurants')
     .select('slug').like('slug', `${base}%`)
   const taken = new Set((existing || []).map((r: { slug: string }) => r.slug))
-  if (!taken.has(base)) return base
+  // A candidate is valid only when it's free BOTH in our DB AND on the
+  // global pages.dev namespace. The probe is awaited sequentially -- we
+  // only need to keep trying until one comes back clean.
+  if (!taken.has(base) && !(await pagesDevTaken(base))) return base
   for (let i = 2; i < 50; i++) {
     const cand = `${base}-${i}`
-    if (!taken.has(cand)) return cand
+    if (taken.has(cand)) continue
+    if (await pagesDevTaken(cand)) continue
+    return cand
   }
+  // Both probes failed for 49 candidates -- fall back to a timestamp
+  // suffix that's overwhelmingly likely to be free.
   return `${base}-${Date.now()}`
 }
 
