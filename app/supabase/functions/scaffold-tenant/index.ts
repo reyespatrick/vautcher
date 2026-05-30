@@ -29,6 +29,12 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 const GITHUB_TOKEN = Deno.env.get('GITHUB_TOKEN') || ''
 const GITHUB_REPO = Deno.env.get('GITHUB_REPO') || 'reyespatrick/vautcher'
+// The queue auto-drainer (scaffold-queue-advance) calls us with this
+// header — there is no human user behind the request, so the normal
+// moderator-JWT path doesn't apply. When the header is present and
+// matches, we attribute the scaffold to root@dpcsolutions.com.
+const CRON_SECRET = Deno.env.get('CRON_SECRET') ?? ''
+const ROOT_EMAIL = 'root@dpcsolutions.com'
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 
@@ -175,7 +181,15 @@ async function dispatchWorkflow(workflow: string, inputs: Record<string, string>
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS })
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
-  const modEmail = await callerModeratorEmail(req)
+  // Auth: either a moderator JWT (the AdminView "Créer" path) or the
+  // shared cron secret (the queue auto-drainer). The cron path attributes
+  // the scaffold to root so notify-scaffold still has a real address.
+  let modEmail: string | null = null
+  if (CRON_SECRET && (req.headers.get('x-cron-secret') ?? '') === CRON_SECRET) {
+    modEmail = ROOT_EMAIL
+  } else {
+    modEmail = await callerModeratorEmail(req)
+  }
   if (!modEmail) return json({ error: 'forbidden' }, 403)
 
   let body: { url?: string; restaurant_id?: string; redeploy?: boolean; rescaffold?: boolean }

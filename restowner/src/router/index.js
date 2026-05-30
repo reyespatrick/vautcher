@@ -14,6 +14,7 @@ import VouchersView from '../views/VouchersView.vue'
 import VoucherEditorView from '../views/VoucherEditorView.vue'
 import AdminView from '../views/AdminView.vue'
 import RestaurantDetailView from '../views/RestaurantDetailView.vue'
+import DiscoverView from '../views/DiscoverView.vue'
 import ClientsView from '../views/ClientsView.vue'
 import RestaurantConfigView from '../views/RestaurantConfigView.vue'
 import InstallView from '../views/InstallView.vue'
@@ -40,6 +41,7 @@ const routes = [
   { path: '/clients', name: 'clients', component: ClientsView },
   { path: '/approve', name: 'approve', component: ApprovalQueueView },
   { path: '/admin', name: 'admin', component: AdminView },
+  { path: '/admin/discover', name: 'admin-discover', component: DiscoverView },
   { path: '/admin/restaurant/:id', name: 'admin-restaurant', component: RestaurantDetailView },
   { path: '/restaurant/:id', name: 'restaurant-config', component: RestaurantConfigView },
   { path: '/:pathMatch(.*)*', redirect: '/' }
@@ -57,7 +59,7 @@ router.beforeEach(async (to) => {
   if (to.meta.open) return true
   console.log('[boot] router: guard awaiting auth for', to.path)
   await whenAuthReady()
-  const { session, owner, isModerator } = useAuth()
+  const { session, owner, isModerator, isRoot } = useAuth()
   console.log('[boot] router: auth gate open, deciding route for', to.path)
   // Access = signed in AND a recognised owner OR moderator.
   const access = !!session.value && (!!owner.value || isModerator.value)
@@ -69,6 +71,11 @@ router.beforeEach(async (to) => {
   if (!access) return { name: 'login' }
   // The approval queue, admin console and restaurant editor are moderator-only.
   if (['approve', 'admin', 'admin-restaurant', 'restaurant-config'].includes(to.name) && !isModerator.value) {
+    return { name: 'dashboard' }
+  }
+  // The Découvrir page (nearby-restaurant discovery + scaffold queue) is
+  // root-only, matching the Admin tab gate in App.vue.
+  if (to.name === 'admin-discover' && !isRoot.value) {
     return { name: 'dashboard' }
   }
   return true

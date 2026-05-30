@@ -151,6 +151,7 @@ jobs:
             restowner/supabase/admin-restaurants-tier.sql \
             restowner/supabase/admin-set-template.sql \
             restowner/supabase/menu-hidden-schema.sql \
+            restowner/supabase/scaffold-queue-schema.sql \
             app/supabase/pass-schema.sql \
             restowner/supabase/api-grants.sql; do
             echo "→ applying $f"
@@ -232,3 +233,5 @@ jobs:
           supabase functions deploy notify-owner-approved --project-ref yfyfoqrautdogivalimb
           supabase functions deploy scaffold-tenant --project-ref yfyfoqrautdogivalimb
           supabase functions deploy delete-tenant --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy scaffold-queue-advance --project-ref yfyfoqrautdogivalimb
+          supabase functions deploy osm-website-search --project-ref yfyfoqrautdogivalimb

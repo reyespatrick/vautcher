@@ -7,6 +7,7 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import { useDialog } from '../composables/useDialog'
+import { supabase } from '../lib/supabase'
 import {
   adminRestaurants, createRestaurant, scaffoldTenant,
   pendingOwners, approveOwner, rejectOwner
@@ -269,6 +270,39 @@ function closeNewDialog() {
 
 // Per-restaurant + owner management now lives in RestaurantDetailView
 // (/admin/restaurant/:id). The Admin list only links to it.
+
+// ---------- Scaffold queue summary ----------
+// Compact panel above the list while a batch is draining. Polls the
+// queue table every 10s as long as something is non-terminal.
+const queueSummary = ref({ pending: 0, scaffolding: 0, done: 0, failed: 0, current: null })
+let queuePollHandle = null
+async function loadQueueSummary() {
+  const { data } = await supabase
+    .from('vautcher_scaffold_queue')
+    .select('id, name, status')
+    .in('status', ['pending', 'scaffolding', 'done', 'failed'])
+  if (!data) return
+  const acc = { pending: 0, scaffolding: 0, done: 0, failed: 0, current: null }
+  for (const r of data) {
+    acc[r.status] = (acc[r.status] || 0) + 1
+    if (r.status === 'scaffolding') acc.current = r.name
+  }
+  queueSummary.value = acc
+}
+const queueActive = computed(() =>
+  queueSummary.value.pending > 0 || queueSummary.value.scaffolding > 0
+)
+function startQueuePoll() {
+  if (queuePollHandle) return
+  queuePollHandle = setInterval(loadQueueSummary, 10000)
+}
+function stopQueuePoll() {
+  if (queuePollHandle) { clearInterval(queuePollHandle); queuePollHandle = null }
+}
+watch(queueActive, (v) => { if (v) startQueuePoll(); else stopQueuePoll() })
+// Initial fetch — show prior batches even after a refresh.
+loadQueueSummary()
+onBeforeUnmount(stopQueuePoll)
 </script>
 
 <template>
@@ -276,6 +310,14 @@ function closeNewDialog() {
     <div class="page-head">
       <h1>{{ t('admin.title') }}</h1>
       <p>{{ t('admin.subtitle') }}</p>
+      <RouterLink :to="{ name: 'admin-discover' }" class="discover-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="11" r="3" />
+          <path d="M12 21s-7-6.5-7-12a7 7 0 1 1 14 0c0 5.5-7 12-7 12z" />
+        </svg>
+        {{ t('admin.discoverBtn') }}
+      </RouterLink>
     </div>
 
     <p v-if="loading" class="spinner-note">{{ t('common.loading') }}</p>
@@ -452,6 +494,29 @@ function closeNewDialog() {
       <p v-if="!restaurants.length" class="empty">{{ t('admin.empty') }}</p>
 
       <template v-else>
+        <!-- Scaffold queue status — only visible while a batch is non-terminal. -->
+        <section
+          v-if="queueSummary.pending || queueSummary.scaffolding || queueSummary.done || queueSummary.failed"
+          class="queue-card card"
+          :class="{ 'queue-card--active': queueActive }"
+        >
+          <div class="queue-head">
+            <strong>{{ t('admin.queueTitle') }}</strong>
+            <span v-if="queueActive" class="queue-dot" aria-hidden="true"></span>
+          </div>
+          <div class="queue-counts">
+            <span class="qc qc--pending">{{ t('admin.queuePending', { n: queueSummary.pending }) }}</span>
+            <span class="qc qc--going">{{ t('admin.queueScaffolding', { n: queueSummary.scaffolding }) }}</span>
+            <span class="qc qc--done">{{ t('admin.queueDone', { n: queueSummary.done }) }}</span>
+            <span v-if="queueSummary.failed" class="qc qc--fail">
+              {{ t('admin.queueFailed', { n: queueSummary.failed }) }}
+            </span>
+          </div>
+          <div v-if="queueSummary.current" class="queue-current">
+            {{ t('admin.queueCurrent', { name: queueSummary.current }) }}
+          </div>
+        </section>
+
         <div class="r-filter">
           <input
             v-model="nameFilter"
@@ -502,6 +567,45 @@ function closeNewDialog() {
 <style scoped>
 .retry { display: block; margin: 14px auto 0; }
 .create-btn { margin-bottom: 18px; }
+
+/* Scaffold queue status panel. */
+.queue-card {
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.queue-card--active { border-color: var(--accent); }
+.queue-head { display: flex; align-items: center; gap: 8px; }
+.queue-head strong { font-size: 0.92rem; }
+.queue-dot {
+  width: 9px; height: 9px; border-radius: 99px;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 var(--accent);
+  animation: queue-pulse 1.4s ease-out infinite;
+}
+@keyframes queue-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  80%, 100% { box-shadow: 0 0 0 8px transparent; }
+}
+.queue-counts { display: flex; gap: 6px; flex-wrap: wrap; font-size: 0.8rem; }
+.qc { padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line); }
+.qc--pending { background: #f7f1e3; color: #7b5a13; border-color: #e7d9b1; }
+.qc--going   { background: #ecf3ff; color: #1a3a8f; border-color: #cbdbff; }
+.qc--done    { background: #e8f5ee; color: #1f7a3a; border-color: #c1ddc8; }
+.qc--fail    { background: #fdecec; color: #a31616; border-color: #f3c5c5; }
+.queue-current { font-size: 0.82rem; color: var(--mut); }
+
+/* Discover nearby restaurants — root-only entry into /admin/discover. */
+.discover-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 9px 14px;
+  border: 1.4px solid var(--accent); border-radius: 99px;
+  background: var(--surface); color: var(--accent);
+  font-weight: 700; font-size: 0.86rem; text-decoration: none;
+}
+.discover-btn:active { transform: scale(0.98); }
+.discover-btn svg { width: 16px; height: 16px; }
+
 .plus { font-size: 1.15rem; font-weight: 700; line-height: 0; }
 
 /* Name filter — sticks just above the list. */
