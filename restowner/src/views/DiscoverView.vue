@@ -19,9 +19,15 @@ const { alert } = useDialog()
 const lat = ref(null)
 const lng = ref(null)
 const accuracy = ref(null)
+const locationLabel = ref('')      // human-readable summary of the picked spot
 const radius = ref(500)            // metres, default per product decision
 const geoBusy = ref(false)
 const geoError = ref('')
+
+// Address-based location alternative for when root is planning the
+// next demo from a desk instead of standing on the street corner.
+const addressInput = ref('')
+const addressBusy = ref(false)
 
 const searchBusy = ref(false)
 const searchError = ref('')
@@ -62,6 +68,7 @@ async function getLocation() {
       lat.value = pos.coords.latitude
       lng.value = pos.coords.longitude
       accuracy.value = Math.round(pos.coords.accuracy)
+      locationLabel.value = t('discover.locationFromGps')
       geoBusy.value = false
     },
     (err) => {
@@ -70,6 +77,39 @@ async function getLocation() {
     },
     { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
   )
+}
+
+// Geocode the typed address via Nominatim (free, no API key). 1 req/sec
+// limit per their policy; we wrap one call per click so we never burst.
+// User-Agent must identify us — Nominatim asks every consumer to set
+// one so they can reach out if a script misbehaves.
+async function geocodeAddress() {
+  const q = addressInput.value.trim()
+  if (!q || addressBusy.value) return
+  addressBusy.value = true
+  geoError.value = ''
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search'
+      + '?format=json&limit=1&addressdetails=0&q=' + encodeURIComponent(q)
+    const res = await fetch(url, {
+      headers: { 'Accept-Language': 'fr,en;q=0.7' }
+    })
+    if (!res.ok) throw new Error('Nominatim ' + res.status)
+    const arr = await res.json()
+    if (!Array.isArray(arr) || !arr.length) {
+      geoError.value = t('discover.addressNotFound')
+      return
+    }
+    const hit = arr[0]
+    lat.value = parseFloat(hit.lat)
+    lng.value = parseFloat(hit.lon)
+    accuracy.value = null
+    locationLabel.value = hit.display_name || q
+  } catch (e) {
+    geoError.value = (e && e.message) || String(e)
+  } finally {
+    addressBusy.value = false
+  }
 }
 
 async function runOverpass() {
@@ -217,9 +257,33 @@ onMounted(() => {
         <button type="button" class="btn btn--primary" :disabled="geoBusy" @click="getLocation">
           {{ geoBusy ? t('discover.locating') : t('discover.useMyLocation') }}
         </button>
-        <div class="geo-meta" v-if="lat != null">
-          <small>{{ lat.toFixed(5) }} · {{ lng.toFixed(5) }} (±{{ accuracy }} m)</small>
-        </div>
+        <span class="geo-or">{{ t('discover.or') }}</span>
+      </div>
+
+      <div class="addr-row">
+        <input
+          v-model="addressInput"
+          type="text"
+          inputmode="search"
+          autocomplete="off" autocorrect="off" spellcheck="false"
+          :placeholder="t('discover.addressPlaceholder')"
+          class="addr-input"
+          @keydown.enter.prevent="geocodeAddress"
+        />
+        <button
+          type="button" class="btn btn--ghost"
+          :disabled="addressBusy || !addressInput.trim()"
+          @click="geocodeAddress"
+        >
+          {{ addressBusy ? t('discover.geocoding') : t('discover.useAddress') }}
+        </button>
+      </div>
+
+      <div class="geo-meta" v-if="lat != null">
+        <small>
+          📍 {{ locationLabel || `${lat.toFixed(5)} · ${lng.toFixed(5)}` }}
+          <span v-if="accuracy != null"> (±{{ accuracy }} m)</span>
+        </small>
       </div>
       <div v-if="geoError" class="err">{{ geoError }}</div>
 
@@ -316,7 +380,16 @@ onMounted(() => {
 <style scoped>
 .geo-card { padding: 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 14px; }
 .geo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.geo-meta { font-size: 0.8rem; color: var(--mut); }
+.geo-or { font-size: 0.75rem; font-weight: 700; color: var(--mut); letter-spacing: 0.06em; text-transform: uppercase; }
+.addr-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+.addr-input {
+  flex: 1 1 180px; min-width: 0;
+  font-family: inherit; font-size: 0.92rem;
+  padding: 10px 12px; border: 1.4px solid var(--line); border-radius: 11px;
+  background: var(--surface); color: var(--ink); box-sizing: border-box;
+}
+.addr-input:focus { outline: none; border-color: var(--accent); }
+.geo-meta { font-size: 0.85rem; color: var(--ink); }
 .radius-row { display: flex; flex-direction: column; gap: 6px; font-size: 0.88rem; color: var(--ink); }
 .radius-row input[type="range"] { width: 100%; }
 
