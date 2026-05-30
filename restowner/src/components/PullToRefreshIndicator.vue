@@ -11,7 +11,11 @@ defineProps({
 </script>
 
 <template>
+  <!-- Only mount the indicator while a pull is actually in flight (or a
+       refresh is running). Without this guard the empty 0-height flex
+       host can still flash on iOS during page-mount overscroll. -->
   <div
+    v-if="pullDistance > 0 || refreshing"
     class="ptr"
     :style="{
       height: pullDistance + 'px',

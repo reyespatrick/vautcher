@@ -14,9 +14,12 @@
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 
 const DEFAULT_SCROLL_SELECTOR = '.viewport'
-const THRESHOLD = 70    // px pulled to trigger refresh
-const MAX_PULL = 110    // hard cap, gives nice rubber-band feel
-const RESISTANCE = 1.8  // divide finger distance by this for the visual pull
+const THRESHOLD = 70        // px pulled to trigger refresh
+const MAX_PULL = 110        // hard cap, gives nice rubber-band feel
+const RESISTANCE = 1.8      // divide finger distance by this for the visual pull
+const MIN_MOVE = 18         // px of finger travel before we start showing the indicator,
+                            // filters iOS overscroll/momentum twitches that otherwise
+                            // light the spinner up the moment the page loads
 
 export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELECTOR) {
   const pullDistance = ref(0)
@@ -42,7 +45,14 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
       pulling = false
       return
     }
-    pullDistance.value = Math.min(MAX_PULL, dy / RESISTANCE)
+    if (dy < MIN_MOVE) {
+      // Too small to count as a deliberate pull. Keep tracking the
+      // gesture but do not surface the indicator yet -- otherwise
+      // iOS load-time overscroll twitches paint the spinner for no
+      // reason every time the page mounts.
+      return
+    }
+    pullDistance.value = Math.min(MAX_PULL, (dy - MIN_MOVE) / RESISTANCE)
     // Stop the browser from also scrolling once we are visibly pulling,
     // otherwise the page rubber-bands and our overlay double-tracks.
     if (pullDistance.value > 6 && e.cancelable) e.preventDefault()
