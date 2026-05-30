@@ -7,6 +7,7 @@ import { fontScale, useUiPrefs } from './composables/usePrefs'
 import { useViewAs } from './composables/useViewAs'
 import { useScope } from './composables/useScope'
 import { useVersionToast } from './composables/useVersionToast'
+import { useUpdateAvailable } from './composables/useUpdateAvailable'
 import ProfileMenu from './components/ProfileMenu.vue'
 import RestaurantPicker from './components/RestaurantPicker.vue'
 import AppDialog from './components/AppDialog.vue'
@@ -20,6 +21,7 @@ const { t } = useI18n()
 const { hydrateFromOwner } = useUiPrefs()
 const { currentVersion, visible: updateVisible, init: initVersionToast, dismiss: dismissVersionToast } = useVersionToast()
 onMounted(initVersionToast)
+const { available: updateReady, reload: applyUpdate } = useUpdateAvailable()
 
 // Shell (header + tab bar) shows everywhere except the login screen and
 // always-open public pages like the install landing.
@@ -75,6 +77,25 @@ async function doSignOut() {
           <path d="M5 12.5l4.5 4.5L19 7.5" />
         </svg>
         <span>{{ t('versionToast.updated', { v: currentVersion }) }}</span>
+      </button>
+    </transition>
+
+    <!-- Persistent "Recharger" banner. Surfaces the moment a newer
+         bundle is detected on the server (useUpdateAvailable polls
+         index.html); side-steps the iOS PWA stale-snapshot problem. -->
+    <transition name="vbanner">
+      <button
+        v-if="updateReady"
+        type="button"
+        class="version-toast version-toast--update"
+        @click="applyUpdate"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3.5 12a8.5 8.5 0 1 1 2.6 6.1" />
+          <path d="M3.5 19v-5h5" />
+        </svg>
+        <span>{{ t('versionToast.available') }}</span>
       </button>
     </transition>
 
@@ -248,6 +269,12 @@ async function doSignOut() {
   cursor: pointer;
 }
 .version-toast svg { width: 16px; height: 16px; flex: 0 0 auto; }
+/* Update-available variant: uses the brand accent so it reads as an
+   actionable nudge ("tap me to reload"), not a success confirmation. */
+.version-toast--update {
+  background: var(--accent);
+  box-shadow: 0 8px 22px rgba(158, 5, 61, 0.32);
+}
 .vbanner-enter-active, .vbanner-leave-active { transition: all 0.28s ease; }
 .vbanner-enter-from { opacity: 0; transform: translate(-50%, -16px); }
 .vbanner-leave-to { opacity: 0; transform: translate(-50%, -16px); }

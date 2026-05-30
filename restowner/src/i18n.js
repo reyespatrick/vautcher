@@ -25,7 +25,8 @@ const fr = {
   app: { tagline: 'Console restaurateur' },
   versionToast: {
     updated: 'Mise à jour installée — v{v}',
-    dismiss: 'Masquer'
+    dismiss: 'Masquer',
+    available: 'Nouvelle version disponible — Recharger'
   },
   common: {
     loading: 'Chargement…', save: 'Enregistrer', cancel: 'Annuler',
@@ -519,7 +520,8 @@ const de = {
   app: { tagline: 'Gastronomen-Konsole' },
   versionToast: {
     updated: 'Update installiert — v{v}',
-    dismiss: 'Ausblenden'
+    dismiss: 'Ausblenden',
+    available: 'Neue Version verfügbar — Neu laden'
   },
   common: {
     loading: 'Wird geladen…', save: 'Speichern', cancel: 'Abbrechen',
@@ -763,7 +765,8 @@ const it = {
   app: { tagline: 'Console ristoratore' },
   versionToast: {
     updated: 'Aggiornamento installato — v{v}',
-    dismiss: 'Nascondi'
+    dismiss: 'Nascondi',
+    available: 'Nuova versione disponibile — Ricarica'
   },
   common: {
     loading: 'Caricamento…', save: 'Salva', cancel: 'Annulla',
