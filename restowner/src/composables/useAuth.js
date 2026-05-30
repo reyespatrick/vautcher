@@ -178,6 +178,11 @@ export function useAuth() {
     pendingOwner.value = null
     restaurant.value = null
     isModerator.value = false
+    // Wipe the persisted scope pick so the next user on this device
+    // can never inherit the previous account's restaurant selection
+    // (the diner's "published events" RLS policy would otherwise leak
+    // those events into their dashboard — see useScope.js).
+    try { localStorage.removeItem('vautcher.scope.restaurantId') } catch {}
   }
 
   // The signed-in user asks to become an owner. Creates a pending row

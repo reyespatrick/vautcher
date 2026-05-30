@@ -54,16 +54,24 @@ export function useScope() {
     watch([session, owner, isModerator], ([s, o, m]) => {
       if (s) loadRestaurants()
       else { restaurants.value = []; loadInFlight = null }
+      // CRITICAL: plain owners must never inherit a scope from a previous
+      // moderator/root session left on the device. Without this, the
+      // diner's public "published events" RLS policy lets a stale stored
+      // restaurant_id (e.g. la-gioconda) leak that restaurant's events
+      // into a code-account owner's dashboard.
+      if (o && !m) setScope(null)
     }, { immediate: true })
   }
 
   // Effective restaurant id used by every data query:
-  //   1. explicit scope pick (from the dropdown / persisted)
-  //   2. else the owner's own restaurant (works for plain owners)
-  //   3. else null (locked-out / not-onboarded moderator)
-  const activeRestaurantId = computed(() =>
-    scopeRestaurantId.value || restaurant.value?.id || null
-  )
+  //   1. plain owner — ALWAYS their own restaurant; stored scope ignored
+  //      (belt + suspenders alongside the setScope(null) above).
+  //   2. moderator — explicit pick from the dropdown / persisted scope.
+  //   3. else the owner's own restaurant, else null (not-onboarded mod).
+  const activeRestaurantId = computed(() => {
+    if (owner.value && !isModerator.value) return restaurant.value?.id || null
+    return scopeRestaurantId.value || restaurant.value?.id || null
+  })
 
   const activeRestaurant = computed(() => {
     const id = activeRestaurantId.value
