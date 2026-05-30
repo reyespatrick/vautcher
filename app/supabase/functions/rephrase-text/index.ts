@@ -35,12 +35,25 @@ function json(body: unknown, status = 200): Response {
   })
 }
 
-const SYSTEM =
+// Two prompts: REPHRASE when the owner already wrote something, and
+// COMPOSE when only the title exists. The compose path also has to be
+// careful not to invent facts (dates, prices, dishes), since with just
+// a title there is nothing concrete to anchor those to.
+const SYSTEM_REPHRASE =
   'Tu es rédacteur pour une app de restaurants. Reformule la description ' +
   "(événement ou offre) en français : attrayante, chaleureuse, soignée. " +
   'Contraintes STRICTES : maximum 200 caractères, 1 à 2 phrases, garde tous ' +
   'les faits (dates, prix, plats, horaires) intacts, n\'invente rien, pas de ' +
   'guillemets. Réponds UNIQUEMENT avec le texte reformulé.'
+
+const SYSTEM_COMPOSE =
+  'Tu es rédacteur pour une app de restaurants. À partir du titre d’un ' +
+  'événement ou d’une offre, écris une description courte en français : ' +
+  'attrayante, chaleureuse, donne envie de venir. Contraintes STRICTES : ' +
+  'maximum 200 caractères, 1 à 2 phrases, n’invente AUCUN fait spécifique ' +
+  '(pas de date, prix, plat ou horaire qui ne soit pas dans le titre), reste ' +
+  'général et évocateur. Pas de guillemets. Réponds UNIQUEMENT avec la ' +
+  'description.'
 
 async function callerEmail(req: Request): Promise<string | null> {
   const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
@@ -77,9 +90,22 @@ Deno.serve(async (req) => {
     const email = await callerEmail(req)
     if (!(await authorized(email))) return json({ error: 'not authorized' }, 403)
 
-    const { text } = await req.json().catch(() => ({} as any))
-    const input = (text ?? '').toString().trim()
-    if (!input) return json({ error: 'empty' }, 400)
+    const body = await req.json().catch(() => ({} as any))
+    const text = (body?.text ?? '').toString().trim()
+    const title = (body?.title ?? '').toString().trim()
+    if (!text && !title) return json({ error: 'empty' }, 400)
+
+    // Compose-from-title vs rephrase-existing-text. When both are
+    // present, give Claude the title for context and ask it to refine
+    // the existing description against that title.
+    const compose = !text
+    const system = compose ? SYSTEM_COMPOSE : SYSTEM_REPHRASE
+    const userContent = compose
+      ? `Titre : ${title}`
+      : (title
+          ? `Titre : ${title}\nDescription actuelle : ${text}`
+          : text
+        )
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -91,8 +117,8 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 200,
-        system: SYSTEM,
-        messages: [{ role: 'user', content: input.slice(0, 1200) }]
+        system,
+        messages: [{ role: 'user', content: userContent.slice(0, 1200) }]
       })
     })
     if (!res.ok) return json({ error: 'ai_failed' }, 502)

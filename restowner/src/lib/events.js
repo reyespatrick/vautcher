@@ -56,10 +56,14 @@ export async function pushEventNow(id) {
   return { error }
 }
 
-// Asks the rephrase-text edge function to polish a description (<=200 chars).
+// Asks the rephrase-text edge function to polish (or compose) a
+// description (<=200 chars). Accepts an optional title:
+//   - text + title → polish text using title for context,
+//   - title only   → compose a short description from the title,
+//   - text only    → polish text (backwards compatible).
 // The Anthropic key stays server-side. Returns { data: { text } } or { error }.
-export async function rephraseText(text) {
-  const { data, error } = await supabase.functions.invoke('rephrase-text', { body: { text } })
+export async function rephraseText(text, title = '') {
+  const { data, error } = await supabase.functions.invoke('rephrase-text', { body: { text, title } })
   if (error) return { error }
   if (data && data.error) return { error: { message: data.error } }
   return { data }

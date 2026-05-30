@@ -10,6 +10,7 @@ import {
   uploadEventImage, listUploadedImages, deleteEventImage,
   materializeSeries, pushEventNow, rephraseText
 } from '../lib/events'
+import { enhanceImage } from '../lib/imageEnhance'
 import BackBar from '../components/BackBar.vue'
 
 const route = useRoute()
@@ -114,7 +115,10 @@ async function onPickFile(e) {
   uploading.value = true
   error.value = ''
   try {
-    const { url, path, error: e2 } = await uploadEventImage(activeRestaurantId.value, file)
+    // Auto-enhance: orient from EXIF, cap at 2000px, vivid filter, JPEG.
+    // Falls through unchanged for SVG/GIF or unreadable files.
+    const polished = await enhanceImage(file)
+    const { url, path, error: e2 } = await uploadEventImage(activeRestaurantId.value, polished)
     if (e2) { error.value = t('editor.uploadFailed'); return }
     uploadedImages.value.unshift({ url, path })
     form.value.image_url = url
@@ -312,18 +316,24 @@ const recurPreview = computed(() => {
   }
 })
 
-// "Améliorer avec l'IA" — rephrase the description (<=200 chars) via the
+// "Améliorer avec l'IA" — compose-or-rephrase (<=200 chars) via the
 // rephrase-text edge function and drop the result back into the field.
+//   - empty description + non-empty title → COMPOSE a description from
+//     the title (so the owner has somewhere to start);
+//   - non-empty description → POLISH it, passing the title along as
+//     additional context;
+//   - both empty → ask the owner to type at least a title first.
 async function improveDescription() {
   const text = form.value.description.trim()
-  if (!text) {
+  const title = form.value.title.trim()
+  if (!text && !title) {
     await alert({ title: t('editor.aiTitle'), body: t('editor.aiEmpty') })
     return
   }
   if (aiBusy.value) return
   aiBusy.value = true
   try {
-    const { data, error: e } = await rephraseText(text)
+    const { data, error: e } = await rephraseText(text, title)
     if (e || !data?.text) {
       await alert({ title: t('editor.aiTitle'), body: t('editor.aiFailed') })
       return
