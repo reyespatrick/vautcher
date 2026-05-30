@@ -54,6 +54,8 @@ function dbg(label, payload) {
 }
 
 export const PTR_DEBUG_ENABLED = DEBUG
+// Mirror the flag state for the on-screen debug widget.
+export const PTR_FLAGS = { DEBUG, DISABLED }
 const THRESHOLD = 70        // px pulled to trigger refresh
 const MAX_PULL = 110        // hard cap, gives nice rubber-band feel
 const RESISTANCE = 1.8      // divide finger distance by this for the visual pull
@@ -133,14 +135,27 @@ export function usePullToRefresh(onRefresh, scrollSelector = DEFAULT_SCROLL_SELE
     dbg('touchend', { type: e && e.type, pullDistance: Math.round(pullDistance.value), willFire: pullDistance.value >= THRESHOLD })
     if (pullDistance.value >= THRESHOLD && !refreshing.value) {
       refreshing.value = true
-      // Hold the indicator at the trigger position while we refresh
-      // so the user gets feedback that something is happening.
       pullDistance.value = THRESHOLD
+      // Hard ceiling on how long the spinner stays up. If onRefresh
+      // (the page's load function) hangs -- a hung fetch, a network
+      // dropout -- we still clear the spinner so the user is not
+      // stuck looking at a stale animation. The actual fetch resolves
+      // later in the background; it is the visual that we are gating.
+      let timedOut = false
+      const failsafe = setTimeout(() => {
+        timedOut = true
+        dbg('refresh-timeout', { ms: 12000 })
+        refreshing.value = false
+        pullDistance.value = 0
+      }, 12000)
       try {
         await onRefresh()
       } catch { /* swallow -- the page already surfaces its own errors */ }
-      refreshing.value = false
-      pullDistance.value = 0
+      clearTimeout(failsafe)
+      if (!timedOut) {
+        refreshing.value = false
+        pullDistance.value = 0
+      }
     } else {
       pullDistance.value = 0
     }

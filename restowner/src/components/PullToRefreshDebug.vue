@@ -6,7 +6,7 @@
 //
 // Long-press the badge for ~600ms to clear the log.
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { PTR_DEBUG_ENABLED } from '../composables/usePullToRefresh'
+import { PTR_DEBUG_ENABLED, PTR_FLAGS } from '../composables/usePullToRefresh'
 
 const enabled = PTR_DEBUG_ENABLED
 const log = ref([])
@@ -115,7 +115,7 @@ onBeforeUnmount(() => {
   <div v-if="enabled" class="ptrd"
     @touchstart="onPressStart" @touchend="onPressEnd" @touchcancel="onPressEnd">
     <div class="ptrd-hdr">
-      <span>PTR debug</span>
+      <span>PTR debug · disabled={{ PTR_FLAGS.DISABLED }}</span>
       <button type="button" class="ptrd-act" :class="{ on: inspectMode }" @click.stop="toggleInspect">
         {{ inspectMode ? 'tap an element' : 'inspect' }}
       </button>
