@@ -20,6 +20,7 @@ import ClientsView from '../views/ClientsView.vue'
 import RestaurantConfigView from '../views/RestaurantConfigView.vue'
 import InstallView from '../views/InstallView.vue'
 import ActivateView from '../views/ActivateView.vue'
+import AbonnementView from '../views/AbonnementView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
@@ -46,6 +47,7 @@ const routes = [
   { path: '/admin/queue', name: 'admin-queue', component: QueueView },
   { path: '/admin/restaurant/:id', name: 'admin-restaurant', component: RestaurantDetailView },
   { path: '/restaurant/:id', name: 'restaurant-config', component: RestaurantConfigView },
+  { path: '/abonnement', name: 'abonnement', component: AbonnementView },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 

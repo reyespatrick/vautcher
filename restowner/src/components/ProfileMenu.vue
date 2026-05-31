@@ -4,9 +4,11 @@ import { useI18n } from 'vue-i18n'
 import { useUiPrefs } from '../composables/usePrefs'
 import { useViewAs } from '../composables/useViewAs'
 import { useTheme } from '../composables/useTheme'
+import { useBilling } from '../composables/useBilling'
 import { usePushAdmin } from '../composables/usePushAdmin'
 import { DINER_APP_URL } from '../lib/config'
 import { SUPPORTED_LOCALES } from '../i18n'
+import { useRouter } from 'vue-router'
 
 defineProps({
   restaurant: { type: Object, default: null },
@@ -19,8 +21,15 @@ const { fontScale, locale, larger, smaller, resetSize, setLocale } = useUiPrefs(
 const { asOwner } = useViewAs()
 const { mode: themeMode, setMode: setTheme } = useTheme()
 const { supported: pushSupported, subscribed: pushSubscribed, enable: enablePush, disable: disablePush } = usePushAdmin()
+const router = useRouter()
+const { loaded: billingLoaded } = useBilling()
 const open = ref(false)
 const pushBusy = ref(false)
+
+function goBilling() {
+  open.value = false
+  router.push({ name: 'abonnement' })
+}
 
 async function toggleNotif() {
   if (pushBusy.value) return
@@ -100,6 +109,14 @@ function openClient() {
             <button type="button" :class="{ on: themeMode === 'auto' }"
               @click="setTheme('auto')">{{ t('profile.themeAuto') }}</button>
           </div>
+        </div>
+
+        <!-- Subscription shortcut. Hidden for moderators / root who don't
+             own a tenant. -->
+        <div v-if="restaurant && !isModerator" class="pm-section">
+          <button type="button" class="pm-viewclient" @click="goBilling">
+            {{ t('profile.billing') }} ›
+          </button>
         </div>
 
         <!-- Push notifications (scaffold ready / failed). Registers THIS

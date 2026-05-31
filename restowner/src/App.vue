@@ -8,6 +8,7 @@ import { useViewAs } from './composables/useViewAs'
 import { useScope } from './composables/useScope'
 import { useVersionToast } from './composables/useVersionToast'
 import { useUpdateAvailable } from './composables/useUpdateAvailable'
+import { useBilling } from './composables/useBilling'
 import ProfileMenu from './components/ProfileMenu.vue'
 import RestaurantPicker from './components/RestaurantPicker.vue'
 import AppDialog from './components/AppDialog.vue'
@@ -52,6 +53,20 @@ watch(() => route.fullPath, () => { moreOpen.value = false })
 
 // Pull the owner's saved language / text size once they're known.
 watch(owner, (o) => { if (o) hydrateFromOwner(o) }, { immediate: true })
+
+// Load the billing snapshot once the owner is known. The composable
+// dedupes concurrent calls so this is safe to call on every change.
+const { isBlocked: billingBlocked, refresh: refreshBilling } = useBilling()
+watch(owner, (o) => { if (o) refreshBilling() }, { immediate: true })
+
+// The blocked banner: don't show it on /abonnement itself (the page is
+// the resolution), the login screen, or the always-open install / activate
+// public routes.
+const showBlockedBanner = computed(() =>
+  billingBlocked.value && !isModerator.value
+    && route.name && !['login','abonnement','install','activate'].includes(route.name)
+)
+function goBilling() { router.push({ name: 'abonnement' }) }
 
 async function doSignOut() {
   await signOut()
@@ -98,6 +113,24 @@ async function doSignOut() {
         <span>{{ t('versionToast.available') }}</span>
       </button>
     </transition>
+
+    <!-- Subscription blocked banner. Stays pinned below the header
+         until the owner regularises (or a moderator views the shell).
+         Tapping pushes to /abonnement. -->
+    <button
+      v-if="showBlockedBanner"
+      type="button"
+      class="billing-banner"
+      @click="goBilling"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 9v4M12 17h.01" />
+        <path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      </svg>
+      <span class="bb-text">{{ t('billing.banner.blocked') }}</span>
+      <span class="bb-cta">{{ t('billing.banner.cta') }} ›</span>
+    </button>
 
     <template v-if="showShell">
       <header class="app-header">
@@ -244,6 +277,32 @@ async function doSignOut() {
 </template>
 
 <style scoped>
+/* Subscription blocked: pinned warning bar. Always visible (not a
+   toast); the owner has to deal with it. */
+.billing-banner {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px calc(10px + env(safe-area-inset-top) * 0);
+  padding-top: calc(env(safe-area-inset-top) + 10px);
+  border: 0;
+  background: var(--danger);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+.billing-banner svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.bb-text { flex: 1; line-height: 1.3; }
+.bb-cta { flex: 0 0 auto; font-weight: 800; letter-spacing: 0.02em; }
+
 /* "New build is running" banner — fixed at the top, drops out after
    5 seconds. Discreet success-green so it can't be confused with an
    error toast. */

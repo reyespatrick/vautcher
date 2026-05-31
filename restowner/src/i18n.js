@@ -80,7 +80,56 @@ const fr = {
     smaller: 'Réduire', reset: 'Normal', larger: 'Agrandir',
     notifications: 'Notifications',
     notifPush: 'M’alerter (site prêt, échec)',
-    theme: 'Thème', themeLight: 'Clair', themeDark: 'Sombre', themeAuto: 'Auto'
+    theme: 'Thème', themeLight: 'Clair', themeDark: 'Sombre', themeAuto: 'Auto',
+    billing: 'Mon abonnement'
+  },
+  billing: {
+    title: 'Mon abonnement',
+    subtitle: 'Plan vautcher — sans engagement.',
+    status: {
+      trialing: 'Essai gratuit',
+      expired: 'Essai expiré',
+      active: 'Actif',
+      past_due: 'Paiement en retard',
+      suspended: 'Suspendu',
+      cancelled: 'Annulé',
+      unknown: '—'
+    },
+    trial: {
+      heading: 'Essai gratuit — {days} jours restants',
+      body: 'Vous avez accès à toutes les fonctionnalités. Aucun paiement requis pendant l’essai.',
+      expiryNote: 'À l’expiration ({date}) votre site sera mis en pause jusqu’à activation.'
+    },
+    expired: {
+      heading: 'Votre essai gratuit est terminé',
+      body: 'Activez votre abonnement pour remettre votre site en ligne.'
+    },
+    active: {
+      heading: 'Abonnement actif',
+      renews: 'Prochain renouvellement le {date}.',
+      cancelling: 'Annulation programmée pour le {date}.'
+    },
+    pastDue: {
+      heading: 'Paiement en retard',
+      body: 'Le dernier prélèvement a échoué. Mettez à jour votre moyen de paiement pour éviter la suspension.'
+    },
+    suspended: {
+      heading: 'Abonnement inactif',
+      body: 'Votre site n’est plus accessible à vos clients. Reprenez votre abonnement pour le remettre en ligne.'
+    },
+    cta: {
+      subscribe: 'S’abonner',
+      resubscribe: 'Reprendre l’abonnement',
+      manage: 'Gérer mon abonnement',
+      updateCard: 'Mettre à jour le moyen de paiement'
+    },
+    banner: {
+      blocked: 'Votre abonnement est inactif. Votre site n’est plus accessible à vos clients.',
+      cta: 'Régulariser'
+    },
+    unknown: 'Aucun abonnement associé à ce compte.',
+    errCheckout: 'Impossible de démarrer l’abonnement.',
+    errPortal: 'Impossible d’ouvrir le portail.'
   },
   login: {
     title: 'Connexion', subtitle: 'Recevez un code à usage unique par e-mail.',
@@ -532,7 +581,56 @@ const de = {
   profile: {
     title: 'Profil', textSize: 'Textgröße', language: 'Sprache',
     smaller: 'Verkleinern', reset: 'Normal', larger: 'Vergrößern',
-    theme: 'Thema', themeLight: 'Hell', themeDark: 'Dunkel', themeAuto: 'Auto'
+    theme: 'Thema', themeLight: 'Hell', themeDark: 'Dunkel', themeAuto: 'Auto',
+    billing: 'Mein Abonnement'
+  },
+  billing: {
+    title: 'Mein Abonnement',
+    subtitle: 'vautcher-Plan — jederzeit kündbar.',
+    status: {
+      trialing: 'Testphase',
+      expired: 'Testphase abgelaufen',
+      active: 'Aktiv',
+      past_due: 'Zahlung überfällig',
+      suspended: 'Gesperrt',
+      cancelled: 'Gekündigt',
+      unknown: '—'
+    },
+    trial: {
+      heading: 'Kostenlose Testphase — noch {days} Tage',
+      body: 'Sie haben Zugang zu allen Funktionen. Während der Testphase ist keine Zahlung erforderlich.',
+      expiryNote: 'Nach Ablauf ({date}) wird Ihre Seite pausiert, bis Sie aktivieren.'
+    },
+    expired: {
+      heading: 'Ihre kostenlose Testphase ist beendet',
+      body: 'Aktivieren Sie Ihr Abonnement, um Ihre Seite wieder online zu schalten.'
+    },
+    active: {
+      heading: 'Abonnement aktiv',
+      renews: 'Nächste Verlängerung am {date}.',
+      cancelling: 'Kündigung geplant für {date}.'
+    },
+    pastDue: {
+      heading: 'Zahlung überfällig',
+      body: 'Die letzte Abbuchung ist fehlgeschlagen. Aktualisieren Sie Ihre Zahlungsmethode, um eine Sperrung zu vermeiden.'
+    },
+    suspended: {
+      heading: 'Abonnement inaktiv',
+      body: 'Ihre Seite ist für Ihre Gäste nicht mehr erreichbar. Reaktivieren Sie Ihr Abonnement, um sie wieder online zu schalten.'
+    },
+    cta: {
+      subscribe: 'Abonnieren',
+      resubscribe: 'Abonnement reaktivieren',
+      manage: 'Abonnement verwalten',
+      updateCard: 'Zahlungsmethode aktualisieren'
+    },
+    banner: {
+      blocked: 'Ihr Abonnement ist inaktiv. Ihre Seite ist für Ihre Gäste nicht mehr erreichbar.',
+      cta: 'Reaktivieren'
+    },
+    unknown: 'Diesem Konto ist kein Abonnement zugeordnet.',
+    errCheckout: 'Abonnement konnte nicht gestartet werden.',
+    errPortal: 'Portal kann nicht geöffnet werden.'
   },
   login: {
     title: 'Anmeldung', subtitle: 'Erhalten Sie einen Einmalcode per E-Mail.',
@@ -778,7 +876,56 @@ const it = {
   profile: {
     title: 'Profilo', textSize: 'Dimensione del testo', language: 'Lingua',
     smaller: 'Riduci', reset: 'Normale', larger: 'Ingrandisci',
-    theme: 'Tema', themeLight: 'Chiaro', themeDark: 'Scuro', themeAuto: 'Auto'
+    theme: 'Tema', themeLight: 'Chiaro', themeDark: 'Scuro', themeAuto: 'Auto',
+    billing: 'Il mio abbonamento'
+  },
+  billing: {
+    title: 'Il mio abbonamento',
+    subtitle: 'Piano vautcher — nessun impegno.',
+    status: {
+      trialing: 'Periodo di prova',
+      expired: 'Prova scaduta',
+      active: 'Attivo',
+      past_due: 'Pagamento in ritardo',
+      suspended: 'Sospeso',
+      cancelled: 'Annullato',
+      unknown: '—'
+    },
+    trial: {
+      heading: 'Prova gratuita — {days} giorni rimanenti',
+      body: 'Hai accesso a tutte le funzionalità. Nessun pagamento richiesto durante la prova.',
+      expiryNote: 'Alla scadenza ({date}) il tuo sito sarà sospeso fino all’attivazione.'
+    },
+    expired: {
+      heading: 'La prova gratuita è terminata',
+      body: 'Attiva il tuo abbonamento per rimettere online il tuo sito.'
+    },
+    active: {
+      heading: 'Abbonamento attivo',
+      renews: 'Prossimo rinnovo il {date}.',
+      cancelling: 'Annullamento previsto per il {date}.'
+    },
+    pastDue: {
+      heading: 'Pagamento in ritardo',
+      body: 'L’ultimo addebito non è riuscito. Aggiorna il metodo di pagamento per evitare la sospensione.'
+    },
+    suspended: {
+      heading: 'Abbonamento inattivo',
+      body: 'Il tuo sito non è più accessibile ai clienti. Riprendi l’abbonamento per rimetterlo online.'
+    },
+    cta: {
+      subscribe: 'Abbonati',
+      resubscribe: 'Riprendi abbonamento',
+      manage: 'Gestisci abbonamento',
+      updateCard: 'Aggiorna metodo di pagamento'
+    },
+    banner: {
+      blocked: 'Il tuo abbonamento è inattivo. Il tuo sito non è più accessibile ai clienti.',
+      cta: 'Regolarizza'
+    },
+    unknown: 'Nessun abbonamento associato a questo account.',
+    errCheckout: 'Impossibile avviare l’abbonamento.',
+    errPortal: 'Impossibile aprire il portale.'
   },
   login: {
     title: 'Accesso', subtitle: 'Ricevi un codice monouso via e-mail.',

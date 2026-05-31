@@ -63,3 +63,19 @@ verify_jwt = false
 # a signed-in root user. JWT required.
 [functions.osm-website-search]
 verify_jwt = true
+
+# stripe-checkout — called from restowner's Abonnement page by a signed-in
+# owner. JWT required; the function resolves the caller's restaurant via
+# vautcher_owners.
+[functions.stripe-checkout]
+verify_jwt = true
+
+# stripe-portal — same gating as stripe-checkout. Owner must be signed in.
+[functions.stripe-portal]
+verify_jwt = true
+
+# stripe-webhook — Stripe calls us directly with no Supabase JWT. The
+# function verifies the request itself via the Stripe-Signature header
+# (HMAC over the raw body with STRIPE_WEBHOOK_SECRET). Gateway gate OFF.
+[functions.stripe-webhook]
+verify_jwt = false
