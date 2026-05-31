@@ -90,7 +90,7 @@ function openClient() {
           </select>
         </div>
 
-        <div class="pm-section pm-section--row">
+        <div class="pm-section">
           <span class="pm-label">{{ t('profile.theme') }}</span>
           <div class="pm-seg" role="group" :aria-label="t('profile.theme')">
             <button type="button" :class="{ on: themeMode === 'light' }"
@@ -218,32 +218,6 @@ function openClient() {
   border-radius: 9px;
   padding: 8px 10px;
   cursor: pointer;
-}
-/* Three-state theme segmented control (light / dark / auto). */
-.pm-seg {
-  display: inline-flex;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  overflow: hidden;
-  background: var(--surface);
-}
-.pm-seg button {
-  flex: 0 0 auto;
-  border: 0;
-  background: transparent;
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--mut);
-  padding: 7px 12px;
-  cursor: pointer;
-  border-right: 1px solid var(--line);
-  letter-spacing: 0.01em;
-}
-.pm-seg button:last-child { border-right: 0; }
-.pm-seg button.on {
-  background: var(--accent);
-  color: #fff;
 }
 .pm-toggle {
   display: flex;
