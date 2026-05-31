@@ -961,7 +961,7 @@ async function onDeleteEvent() {
   position: absolute; top: 3px; left: 3px;
   width: 20px; height: 20px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.32);
   transition: transform 0.18s;
 }
@@ -1079,7 +1079,7 @@ async function onDeleteEvent() {
   margin-top: 9px;
   font-family: inherit; font-weight: 700; font-size: 0.8rem;
   color: var(--accent);
-  background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px;
   padding: 8px 14px; cursor: pointer;
   transition: background 0.15s, border-color 0.15s, opacity 0.15s;
 }

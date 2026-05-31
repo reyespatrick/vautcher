@@ -89,7 +89,7 @@ async function onActivate() {
   display: flex; align-items: center; justify-content: center; padding: 28px 20px;
 }
 .card {
-  width: 100%; max-width: 380px; background: #fff; border-radius: 22px;
+  width: 100%; max-width: 380px; background: var(--surface); border-radius: 22px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28); padding: 32px 28px 24px; text-align: center;
 }
 .app-icon { width: 76px; height: 76px; border-radius: 18px; box-shadow: 0 8px 22px rgba(158, 5, 61, 0.3); }
@@ -99,7 +99,7 @@ h1 { font-family: 'Rufina', serif; font-size: 1.5rem; color: var(--accent-dark);
 .field label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--mut); margin-bottom: 6px; }
 .field input {
   width: 100%; font-family: inherit; font-size: 1rem; padding: 12px 13px;
-  border: 1.5px solid var(--line); border-radius: 11px; background: #fff; color: var(--ink); box-sizing: border-box;
+  border: 1.5px solid var(--line); border-radius: 11px; background: var(--surface); color: var(--ink); box-sizing: border-box;
 }
 .field input:focus { outline: none; border-color: var(--accent); }
 .code-input { text-align: center; font-size: 1.25rem; letter-spacing: 0.28em; font-weight: 700; text-transform: uppercase; }

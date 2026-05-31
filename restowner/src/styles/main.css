@@ -171,7 +171,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 .btn--ghost { background: transparent; color: var(--accent); }
 .btn--ghost:hover { background: rgba(158, 5, 61, 0.07); }
 .btn--plain { background: var(--surface); color: var(--ink); border-color: var(--line); }
-.btn--plain:hover { background: #faf6ee; }
+.btn--plain:hover { background: var(--surface-2); }
 .btn--danger { background: var(--danger); border-color: var(--danger); }
 .btn--sm { padding: 8px 13px; font-size: 0.76rem; border-radius: 9px; }
 
@@ -200,7 +200,8 @@ input[type=tel], select, textarea {
   padding: 12px 13px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
+  color: var(--ink);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }

@@ -317,7 +317,7 @@ function openClient() {
   text-align: left;
   cursor: pointer;
 }
-.pm-viewclient:active { background: #faf4ea; }
+.pm-viewclient:active { background: var(--surface-2); }
 .pm-signout {
   width: 100%;
   padding: 14px;
@@ -329,14 +329,14 @@ function openClient() {
   font-size: 0.88rem;
   cursor: pointer;
 }
-.pm-signout:active { background: #faf4ea; }
+.pm-signout:active { background: var(--surface-2); }
 .pm-version {
   padding: 9px 18px 11px;
   text-align: center;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #000;
+  color: var(--ink);
   border-top: 1px solid var(--line);
 }
 </style>

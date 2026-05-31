@@ -700,7 +700,7 @@ onBeforeUnmount(stopQueuePoll)
 }
 .pending-sub { font-size: 0.8rem; color: var(--mut); margin: 4px 0 12px; line-height: 1.45; }
 .pending-row {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 11px 12px;
@@ -832,7 +832,7 @@ onBeforeUnmount(stopQueuePoll)
   display: block;
   font-size: 0.7rem;
   word-break: break-all;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 8px 10px;
@@ -1012,7 +1012,7 @@ onBeforeUnmount(stopQueuePoll)
 .claim-block {
   margin-top: 12px;
   padding: 12px 14px;
-  background: #fff;
+  background: var(--surface);
   border: 1px dashed var(--accent);
   border-radius: 10px;
 }
@@ -1276,7 +1276,7 @@ onBeforeUnmount(stopQueuePoll)
 }
 .install-qr {
   flex: 0 0 auto; width: 118px; height: 118px; border-radius: 12px;
-  background: #fff; border: 1px solid var(--line); padding: 7px; display: block;
+  background: var(--surface); border: 1px solid var(--line); padding: 7px; display: block;
 }
 .install-qr img { width: 100%; height: 100%; display: block; }
 @media (max-width: 460px) {

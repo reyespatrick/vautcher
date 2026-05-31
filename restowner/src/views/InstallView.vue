@@ -87,7 +87,7 @@ async function onInstall() {
 }
 .card {
   width: 100%; max-width: 420px;
-  background: #fff; border-radius: 22px;
+  background: var(--surface); border-radius: 22px;
   box-shadow: 0 24px 60px rgba(60, 20, 30, 0.16);
   border-top: 5px solid var(--accent);
   padding: 34px 30px 28px; text-align: center;

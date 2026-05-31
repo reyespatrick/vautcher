@@ -256,7 +256,7 @@ async function onCancel() {
    Class prefix .cp- + neutral burgundy tones so the look reads as
    the diner-side, not as a restowner form. */
 .client-preview {
-  background: #fff;
+  background: var(--surface);
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
@@ -371,7 +371,7 @@ async function onCancel() {
   justify-content: space-between;
   gap: 12px;
   padding: 8px 12px;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
   text-decoration: none;
@@ -391,7 +391,7 @@ async function onCancel() {
 }
 .owner-tag {
   font-size: 0.78rem;
-  background: #fff;
+  background: var(--surface);
   color: var(--mut);
   border: 1px solid var(--line);
   border-radius: 8px;

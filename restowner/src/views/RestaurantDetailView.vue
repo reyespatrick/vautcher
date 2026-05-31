@@ -431,7 +431,7 @@ async function submitOwner() {
 .source-editor input {
   width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.92rem;
   padding: 10px 12px; border: 1.4px solid var(--line); border-radius: 10px;
-  background: #fff; color: var(--ink);
+  background: var(--surface); color: var(--ink);
 }
 .source-editor input:focus { outline: none; border-color: var(--accent); }
 .source-hint { margin: 0; color: var(--mut); font-size: 0.78rem; font-style: italic; }

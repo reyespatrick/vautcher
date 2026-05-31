@@ -168,7 +168,7 @@ watch(state, async (v) => {
   padding: 10px 12px;
   border: 1.5px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
   color: var(--ink);
   box-sizing: border-box;
 }
